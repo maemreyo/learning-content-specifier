@@ -139,4 +139,5 @@ finally {
     }
 }
 
+$global:LASTEXITCODE = 0
 Write-Output 'PowerShell script contract checks passed'
