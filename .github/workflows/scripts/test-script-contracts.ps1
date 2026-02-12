@@ -17,6 +17,7 @@ if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
 if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
     $repoRoot = (Get-Location).Path
 }
+$repoRoot = (@($repoRoot) | Where-Object { $_ -and "$_".Trim() } | Select-Object -First 1)
 $repoRoot = "$repoRoot".Trim()
 if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
     throw 'Could not determine repository root.'
