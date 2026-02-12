@@ -56,13 +56,13 @@
     "cleanupCacheHistory": false,
     "disableGitFeatures": false,
     "globalMetadata": {
-      "_appTitle": "Spec Kit Documentation",
-      "_appName": "Spec Kit",
-      "_appFooter": "Spec Kit - A specification-driven development toolkit",
+      "_appTitle": "LCS Documentation",
+      "_appName": "LCS",
+      "_appFooter": "LCS - A specification-driven development toolkit",
       "_enableSearch": true,
       "_disableContribution": false,
       "_gitContribute": {
-        "repo": "https://github.com/github/spec-kit",
+        "repo": "https://github.com/maemreyo/learning-content-specifier",
         "branch": "main"
       }
     }

@@ -1,32 +1,32 @@
 # Quick Start Guide
 
-This guide will help you get started with Spec-Driven Development using Spec Kit.
+This guide will help you get started with Spec-Driven Development using LCS.
 
 > [!NOTE]
-> All automation scripts now provide both Bash (`.sh`) and PowerShell (`.ps1`) variants. The `specify` CLI auto-selects based on OS unless you pass `--script sh|ps`.
+> All automation scripts now provide both Bash (`.sh`) and PowerShell (`.ps1`) variants. The `lcs` CLI auto-selects based on OS unless you pass `--script sh|ps`.
 
 ## The 6-Step Process
 
 > [!TIP]
-> **Context Awareness**: Spec Kit commands automatically detect the active feature based on your current Git branch (e.g., `001-feature-name`). To switch between different specifications, simply switch Git branches.
+> **Context Awareness**: LCS commands automatically detect the active feature based on your current Git branch (e.g., `001-feature-name`). To switch between different specifications, simply switch Git branches.
 
-### Step 1: Install Specify
+### Step 1: Install LCS
 
-**In your terminal**, run the `specify` CLI command to initialize your project:
+**In your terminal**, run the `lcs` CLI command to initialize your project:
 
 ```bash
 # Create a new project directory
-uvx --from git+https://github.com/github/spec-kit.git lcs init <PROJECT_NAME>
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME>
 
 # OR initialize in the current directory
-uvx --from git+https://github.com/github/spec-kit.git lcs init .
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init .
 ```
 
 Pick script type explicitly (optional):
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init <PROJECT_NAME> --script ps  # Force PowerShell
-uvx --from git+https://github.com/github/spec-kit.git lcs init <PROJECT_NAME> --script sh  # Force POSIX shell
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME> --script ps  # Force PowerShell
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME> --script sh  # Force POSIX shell
 ```
 
 ### Step 2: Define Your Constitution
@@ -161,4 +161,4 @@ Finally, implement the solution:
 
 - Read the [complete methodology](../spec-driven.md) for in-depth guidance
 - Check out [more examples](../templates) in the repository
-- Explore the [source code on GitHub](https://github.com/github/spec-kit)
+- Explore the [source code on GitHub](https://github.com/maemreyo/learning-content-specifier)

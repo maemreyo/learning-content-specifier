@@ -15,29 +15,29 @@
 The easiest way to get started is to initialize a new project:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init <PROJECT_NAME>
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME>
 ```
 
 Or initialize in the current directory:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init .
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init .
 # or use the --here flag
-uvx --from git+https://github.com/github/spec-kit.git lcs init --here
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init --here
 ```
 
-### Specify AI Agent
+### Choose AI Agent
 
-You can proactively specify your AI agent during initialization:
+You can choose your AI agent during initialization:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --ai claude
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --ai gemini
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --ai copilot
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --ai codebuddy
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai claude
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai gemini
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai copilot
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai codebuddy
 ```
 
-### Specify Script Type (Shell vs PowerShell)
+### Choose Script Type (Shell vs PowerShell)
 
 All automation scripts now have both Bash (`.sh`) and PowerShell (`.ps1`) variants.
 
@@ -50,8 +50,8 @@ Auto behavior:
 Force a specific script type:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --script sh
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --script ps
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --script sh
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --script ps
 ```
 
 ### Ignore Agent Tools Check
@@ -59,7 +59,7 @@ uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --
 If you prefer to get the templates without checking for the right tools:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init <project_name> --ai claude --ignore-agent-tools
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai claude --ignore-agent-tools
 ```
 
 ## Verification
@@ -70,7 +70,7 @@ After initialization, you should see the following commands available in your AI
 - `/lcs.plan` - Generate implementation plans  
 - `/lcs.tasks` - Break down into actionable tasks
 
-The `.specify/scripts` directory will contain both `.sh` and `.ps1` scripts.
+The `.lcs/scripts` directory will contain both `.sh` and `.ps1` scripts.
 
 ## Troubleshooting
 

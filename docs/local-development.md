@@ -1,14 +1,14 @@
 # Local Development Guide
 
-This guide shows how to iterate on the `specify` CLI locally without publishing a release or committing to `main` first.
+This guide shows how to iterate on the `lcs` CLI locally without publishing a release or committing to `main` first.
 
 > Scripts now have both Bash (`.sh`) and PowerShell (`.ps1`) variants. The CLI auto-selects based on OS unless you pass `--script sh|ps`.
 
 ## 1. Clone and Switch Branches
 
 ```bash
-git clone https://github.com/github/spec-kit.git
-cd spec-kit
+git clone https://github.com/maemreyo/learning-content-specifier.git
+cd learning-content-specifier
 # Work on a feature branch
 git checkout -b your-feature-branch
 ```
@@ -19,14 +19,15 @@ You can execute the CLI via the module entrypoint without installing anything:
 
 ```bash
 # From repo root
-python -m src.specify_cli --help
-python -m src.specify_cli init demo-project --ai claude --ignore-agent-tools --script sh
+PYTHONPATH=src python3 -c "import lcs_cli; print('Import OK')"
+PYTHONPATH=src python3 -m lcs_cli --help
+PYTHONPATH=src python3 -m lcs_cli init demo-project --ai claude --ignore-agent-tools --script sh
 ```
 
 If you prefer invoking the script file style (uses shebang):
 
 ```bash
-python src/specify_cli/__init__.py init demo-project --script ps
+PYTHONPATH=src python3 src/lcs_cli/__init__.py init demo-project --script ps
 ```
 
 ## 3. Use Editable Install (Isolated Environment)
@@ -41,8 +42,8 @@ source .venv/bin/activate  # or on Windows PowerShell: .venv\Scripts\Activate.ps
 # Install project in editable mode
 uv pip install -e .
 
-# Now 'specify' entrypoint is available
-specify --help
+# Now 'lcs' entrypoint is available
+lcs --help
 ```
 
 Re-running after code edits requires no reinstall because of editable mode.
@@ -60,7 +61,7 @@ You can also point uvx at a specific branch without merging:
 ```bash
 # Push your working branch first
 git push origin your-feature-branch
-uvx --from git+https://github.com/github/spec-kit.git@your-feature-branch lcs init demo-branch-test --script ps
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git@your-feature-branch lcs init demo-branch-test --script ps
 ```
 
 ### 4a. Absolute Path uvx (Run From Anywhere)
@@ -68,23 +69,23 @@ uvx --from git+https://github.com/github/spec-kit.git@your-feature-branch lcs in
 If you're in another directory, use an absolute path instead of `.`:
 
 ```bash
-uvx --from /mnt/c/GitHub/spec-kit specify --help
-uvx --from /mnt/c/GitHub/spec-kit lcs init demo-anywhere --ai copilot --ignore-agent-tools --script sh
+uvx --from /mnt/c/GitHub/learning-content-specifier lcs --help
+uvx --from /mnt/c/GitHub/learning-content-specifier lcs init demo-anywhere --ai copilot --ignore-agent-tools --script sh
 ```
 
 Set an environment variable for convenience:
 
 ```bash
-export SPEC_KIT_SRC=/mnt/c/GitHub/spec-kit
-uvx --from "$SPEC_KIT_SRC" lcs init demo-env --ai copilot --ignore-agent-tools --script ps
+export LCS_SRC=/mnt/c/GitHub/learning-content-specifier
+uvx --from "$LCS_SRC" lcs init demo-env --ai copilot --ignore-agent-tools --script ps
 ```
 
 (Optional) Define a shell function:
 
 ```bash
-specify-dev() { uvx --from /mnt/c/GitHub/spec-kit specify "$@"; }
+ lcs-dev() { uvx --from /mnt/c/GitHub/learning-content-specifier lcs "$@"; }
 # Then
-specify-dev --help
+lcs-dev --help
 ```
 
 ## 5. Testing Script Permission Logic
@@ -103,7 +104,7 @@ On Windows you will instead use the `.ps1` scripts (no chmod needed).
 Currently no enforced lint config is bundled, but you can quickly sanity check importability:
 
 ```bash
-python -c "import specify_cli; print('Import OK')"
+PYTHONPATH=src python3 -c "import lcs_cli; print('Import OK')"
 ```
 
 ## 7. Build a Wheel Locally (Optional)
@@ -123,7 +124,7 @@ When testing `init --here` in a dirty directory, create a temp workspace:
 
 ```bash
 mkdir /tmp/spec-test && cd /tmp/spec-test
-python -m src.specify_cli init --here --ai claude --ignore-agent-tools --script sh  # if repo copied here
+PYTHONPATH=src python3 -m lcs_cli init --here --ai claude --ignore-agent-tools --script sh  # if repo copied here
 ```
 
 Or copy only the modified CLI portion if you want a lighter sandbox.
@@ -143,11 +144,11 @@ lcs init demo --skip-tls --ai gemini --ignore-agent-tools --script ps
 
 | Action | Command |
 |--------|---------|
-| Run CLI directly | `python -m src.specify_cli --help` |
-| Editable install | `uv pip install -e .` then `specify ...` |
-| Local uvx run (repo root) | `uvx --from . specify ...` |
-| Local uvx run (abs path) | `uvx --from /mnt/c/GitHub/spec-kit specify ...` |
-| Git branch uvx | `uvx --from git+URL@branch specify ...` |
+| Run CLI directly | `PYTHONPATH=src python3 -m lcs_cli --help` |
+| Editable install | `uv pip install -e .` then `lcs ...` |
+| Local uvx run (repo root) | `uvx --from . lcs ...` |
+| Local uvx run (abs path) | `uvx --from /mnt/c/GitHub/learning-content-specifier lcs ...` |
+| Git branch uvx | `uvx --from git+URL@branch lcs ...` |
 | Build wheel | `uv build` |
 
 ## 11. Cleaning Up
