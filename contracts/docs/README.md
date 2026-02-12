@@ -15,6 +15,11 @@ This folder defines the context-safe contract surface for the standalone `lcs-ou
 - `contracts/docs/*.md`
 - `contracts/fixtures/*.json`
 
+## Included API Digests
+
+- `CONSUMER-API-V1.md` for the standalone library backbone.
+- `TUTORING-BFF-API-V1.md` for teacher/learner application integration.
+
 ## Local Verification
 
 ```bash

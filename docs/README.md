@@ -20,3 +20,4 @@ Open `http://localhost:8080`.
 - `toc.yml`
 - `../contracts/docs/README.md`
 - `system/architect/lcs-output-consumer-standalone-blueprint.md`
+- `system/architect/tutoring-platform-monorepo-blueprint.md`

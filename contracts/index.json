@@ -22,8 +22,8 @@
     "docs_digest": [
       {
         "path": "contracts/docs/COMPATIBILITY-MATRIX.md",
-        "sha256": "ad1e74f3b8f9806aeafd24cf0584dc202f9ddbecc1cea317909af956c6c7836e",
-        "size_bytes": 951
+        "sha256": "10df7e3df8a348d7d3cbb41391c9741a20dac75286662dc1902f180bb3bad568",
+        "size_bytes": 1431
       },
       {
         "path": "contracts/docs/CONSUMER-API-V1.md",
@@ -32,8 +32,13 @@
       },
       {
         "path": "contracts/docs/README.md",
-        "sha256": "fefcbf20ea605e1b4aa42854b8d735ca44bd20d3816adef0cddaf86d86575f21",
-        "size_bytes": 739
+        "sha256": "aaae9a48f7b43455af1b14d385d18a4a2af5be6432cd45e9262da46a1738160b",
+        "size_bytes": 897
+      },
+      {
+        "path": "contracts/docs/TUTORING-BFF-API-V1.md",
+        "sha256": "e11841ba943efbf2e494042d7af927193c09d408332d957714e1b119968dc0a3",
+        "size_bytes": 872
       },
       {
         "path": "contracts/README.md",

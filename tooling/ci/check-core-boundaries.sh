@@ -22,7 +22,16 @@ forbid_path() {
 # Core/consumer boundary invariants.
 forbid_path "scaffolds/lcs-output-consumer"
 forbid_path "scripts/scaffold_output_consumer.py"
+forbid_path "apps/teacher"
+forbid_path "apps/learner"
+forbid_path "services/bff"
+forbid_path "services/workers"
+forbid_path "packages/api-client"
+forbid_path "packages/shared-ui"
+forbid_path "packages/types"
 require_file "factory/scripts/python/bootstrap_consumer.py"
+require_file "factory/scripts/python/scaffold_tutoring_platform.py"
+require_file "factory/scripts/python/scaffold_output_consumer_repo.py"
 require_file "contracts/index.json"
 require_file "contracts/consumer-contract-version.txt"
 

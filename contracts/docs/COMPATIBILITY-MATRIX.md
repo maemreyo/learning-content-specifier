@@ -21,6 +21,14 @@
 - Consumers MUST block ingest on incompatible major versions.
 - Consumers MUST use manifest-first resolution, no path guessing.
 
+## Three-Repo Compatibility Rules
+
+- `learning-content-specifier` publishes contract package (`contracts/index.json` + checksums).
+- `lcs-output-consumer` MUST ingest only compatible major versions of published contracts.
+- `tutoring-platform` MUST pin required major in `contracts/consumer-contract-version.txt`.
+- `tutoring-platform` BFF MUST block startup/catalog sync on major mismatch.
+- Frontend apps MUST integrate through BFF only; direct consumer calls are not allowed.
+
 ## LCS Runtime Alignment
 
 Required machine contracts:

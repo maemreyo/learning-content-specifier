@@ -24,7 +24,11 @@
       href: ../contracts/docs/README.md
     - name: Consumer API v1
       href: ../contracts/docs/CONSUMER-API-V1.md
+    - name: Tutoring BFF API v1
+      href: ../contracts/docs/TUTORING-BFF-API-V1.md
     - name: Compatibility Matrix
       href: ../contracts/docs/COMPATIBILITY-MATRIX.md
     - name: Standalone Consumer Blueprint
       href: system/architect/lcs-output-consumer-standalone-blueprint.md
+    - name: Tutoring Platform Blueprint
+      href: system/architect/tutoring-platform-monorepo-blueprint.md
