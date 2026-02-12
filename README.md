@@ -103,12 +103,6 @@ uv run python factory/scripts/python/bootstrap_consumer.py --consumer-version v0
 
 The bootstrap flow enforces contract-major compatibility between downloaded `contracts/index.json` and the pinned requirement in `contracts/consumer-contract-version.txt` (or `--required-contract-version`).
 
-Scaffold a fresh standalone consumer repo (for initial bring-up before first tagged release):
-
-```bash
-uv run python factory/scripts/python/scaffold_output_consumer_repo.py --target ../lcs-output-consumer
-```
-
 Bootstrap standalone tutoring apps repo (teacher + learner + bff + workers):
 
 ```bash

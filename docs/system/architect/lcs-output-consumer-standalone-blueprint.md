@@ -90,9 +90,3 @@ uv run python factory/scripts/python/bootstrap_consumer.py --consumer-version v0
 ```
 
 Bootstrap blocks when downloaded `contracts/index.json::contract_version` has a different major from the pinned requirement in `contracts/consumer-contract-version.txt` (or explicit `--required-contract-version`).
-
-## Initial scaffold command (before first consumer release exists)
-
-```bash
-uv run python factory/scripts/python/scaffold_output_consumer_repo.py --target ../lcs-output-consumer
-```

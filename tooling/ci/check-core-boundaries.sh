@@ -31,7 +31,6 @@ forbid_path "packages/shared-ui"
 forbid_path "packages/types"
 require_file "factory/scripts/python/bootstrap_consumer.py"
 require_file "factory/scripts/python/scaffold_tutoring_platform.py"
-require_file "factory/scripts/python/scaffold_output_consumer_repo.py"
 require_file "contracts/index.json"
 require_file "contracts/consumer-contract-version.txt"
 
