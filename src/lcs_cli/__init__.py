@@ -244,7 +244,7 @@ TAGLINE = "LCS - Learning Content Specifier"
 
 DEFAULT_TEMPLATE_REPO_OWNER = os.getenv("LCS_TEMPLATE_REPO_OWNER", "github")
 DEFAULT_TEMPLATE_REPO_NAME = os.getenv("LCS_TEMPLATE_REPO_NAME", "learning-content-specifier")
-DEFAULT_TEMPLATE_ASSET_PREFIX = os.getenv("LCS_TEMPLATE_ASSET_PREFIX", "lcs-template")
+DEFAULT_TEMPLATE_ASSET_PREFIX = os.getenv("LCS_TEMPLATE_ASSET_PREFIX", "learning-content-specifier-template")
 class StepTracker:
     """Track and render hierarchical steps without emojis, similar to Claude Code tree output.
     Supports live auto-refresh via an attached refresh callback.
