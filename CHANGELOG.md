@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hardened author gate determinism by prioritizing `audit-report.json` when present.
 - Updated command templates and docs to enforce manifest-first consumption and deterministic json parity.
 - Added tests for artifact contracts, gate determinism, and pedagogy defaults.
+- Hardened schema strictness for `brief` and `outputs/manifest`:
+  - tighter LO rules (`LO` id format, priority set, statement/evidence minimums, Given/When/Then acceptance criteria),
+  - stricter manifest checks (relative paths, MIME/checksum patterns, non-empty xAPI refs, conditional PASS counters).
+- Added end-to-end golden-path snapshot test for full learning-content command chain artifact readiness.
 
 ## [0.3.0] - 2026-02-12
 

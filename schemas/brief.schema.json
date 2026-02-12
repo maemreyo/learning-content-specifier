@@ -32,11 +32,11 @@
         "delivery_context"
       ],
       "properties": {
-        "primary": {"type": "string", "minLength": 1},
-        "entry_level": {"type": "string", "minLength": 1},
-        "delivery_context": {"type": "string", "minLength": 1}
+        "primary": {"type": "string", "minLength": 3},
+        "entry_level": {"type": "string", "enum": ["beginner", "intermediate", "advanced", "mixed"]},
+        "delivery_context": {"type": "string", "enum": ["self-paced", "instructor-led", "blended", "cohort-based"]}
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "duration_minutes": {
       "type": "integer",
@@ -45,6 +45,7 @@
     "learning_outcomes": {
       "type": "array",
       "minItems": 1,
+      "maxItems": 20,
       "items": {
         "type": "object",
         "required": [
@@ -57,21 +58,26 @@
         "properties": {
           "lo_id": {
             "type": "string",
-            "pattern": "^(LO[0-9]+|[A-Za-z0-9_-]+)$"
+            "pattern": "^LO[1-9][0-9]*$"
           },
           "priority": {
             "type": "string",
-            "pattern": "^P[1-9][0-9]*$"
+            "enum": ["P1", "P2", "P3", "P4", "P5"]
           },
-          "statement": {"type": "string", "minLength": 1},
-          "evidence": {"type": "string", "minLength": 1},
+          "statement": {"type": "string", "minLength": 12, "pattern": "^[Ll]earner will be able to .+"},
+          "evidence": {"type": "string", "minLength": 12},
           "acceptance_criteria": {
             "type": "array",
             "minItems": 1,
-            "items": {"type": "string", "minLength": 1}
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "minLength": 20,
+              "pattern": ".*Given.*When.*Then.*"
+            }
           }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     },
     "scope": {
@@ -80,8 +86,8 @@
         "in_scope": {"type": "array", "items": {"type": "string"}},
         "out_of_scope": {"type": "array", "items": {"type": "string"}}
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

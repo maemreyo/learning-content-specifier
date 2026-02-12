@@ -157,18 +157,20 @@ if [[ ! -f "$BRIEF_JSON_FILE" ]]; then
   "unit_id": "$UNIT_NAME",
   "title": "$UNIT_NAME",
   "audience": {
-    "primary": "unspecified",
-    "entry_level": "unspecified",
-    "delivery_context": "unspecified"
+    "primary": "general learners",
+    "entry_level": "beginner",
+    "delivery_context": "self-paced"
   },
   "duration_minutes": 60,
   "learning_outcomes": [
     {
       "lo_id": "LO1",
       "priority": "P1",
-      "statement": "Populate from brief.md",
-      "evidence": "Populate from brief.md",
-      "acceptance_criteria": ["Populate from brief.md"]
+      "statement": "Learner will be able to demonstrate LO1 with measurable evidence.",
+      "evidence": "Assessment evidence mapped to LO1 is available in artifacts.",
+      "acceptance_criteria": [
+        "Given the learning context, When the learner attempts LO1 practice, Then observable evidence meets the completion criteria."
+      ]
     }
   ],
   "scope": {

@@ -46,18 +46,20 @@ if ($ForceReset -or -not (Test-Path $paths.BRIEF_JSON_FILE)) {
   "unit_id": "$unitId",
   "title": "$unitId",
   "audience": {
-    "primary": "unspecified",
-    "entry_level": "unspecified",
-    "delivery_context": "unspecified"
+    "primary": "general learners",
+    "entry_level": "beginner",
+    "delivery_context": "self-paced"
   },
   "duration_minutes": 60,
   "learning_outcomes": [
     {
       "lo_id": "LO1",
       "priority": "P1",
-      "statement": "Populate from brief.md",
-      "evidence": "Populate from brief.md",
-      "acceptance_criteria": ["Populate from brief.md"]
+      "statement": "Learner will be able to demonstrate LO1 with measurable evidence.",
+      "evidence": "Assessment evidence mapped to LO1 is available in artifacts.",
+      "acceptance_criteria": [
+        "Given the learning context, When the learner attempts LO1 practice, Then observable evidence meets the completion criteria."
+      ]
     }
   ],
   "scope": {
@@ -243,7 +245,7 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
     {
       "lo_id": "LO1",
       "priority": "P1",
-      "evidence_refs": []
+      "evidence_refs": ["brief:LO1"]
     }
   ],
   "artifacts": [
@@ -252,7 +254,7 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
       "type": "brief",
       "path": "brief.md",
       "media_type": "text/markdown",
-      "checksum": "sha256:000000"
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],
   "gate_status": {
@@ -263,8 +265,8 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
   "interop": {
     "xapi": {
       "version": "1.0.3",
-      "activity_id_set": [],
-      "statement_template_refs": []
+      "activity_id_set": ["https://example.org/xapi/activity/LO1"],
+      "statement_template_refs": ["https://example.org/xapi/template/LO1"]
     }
   }
 }
