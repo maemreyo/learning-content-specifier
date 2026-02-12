@@ -69,7 +69,7 @@ lcs init --here --ai claude
 lcs check
 ```
 
-To upgrade Specify, see the [Upgrade Guide](./docs/upgrade.md) for detailed instructions. Quick upgrade:
+To upgrade LCS, see the [Upgrade Guide](./docs/upgrade.md) for detailed instructions. Quick upgrade:
 
 ```bash
 uv tool install lcs-cli --force --from git+https://github.com/maemreyo/learning-content-specifier.git
@@ -171,7 +171,7 @@ The `lcs` command supports the following options:
 
 | Command | Description                                                                                                                                             |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `init`  | Initialize a new Specify project from the latest template                                                                                               |
+| `init`  | Initialize a new LCS project from the latest template                                                                                               |
 | `check` | Check for installed tools (`git`, `claude`, `gemini`, `code`/`code-insiders`, `cursor-agent`, `windsurf`, `qwen`, `opencode`, `codex`, `shai`, `qoder`) |
 
 ### `lcs init` Arguments & Options
@@ -272,7 +272,7 @@ Additional commands for enhanced quality and validation:
 
 | Variable          | Description                                                                                                                                                                                                                                                                                            |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SPECIFY_FEATURE` | Override feature detection for non-Git repositories. Set to the feature directory name (e.g., `001-photo-albums`) to work on a specific feature when not using Git branches.<br/>\*\*Must be set in the context of the agent you're working with prior to using `/lcs.plan` or follow-up commands. |
+| `LCS_FEATURE` | Override feature detection for non-Git repositories. Set to the feature directory name (e.g., `001-photo-albums`) to work on a specific feature when not using Git branches.<br/>\*\*Must be set in the context of the agent you're working with prior to using `/lcs.plan` or follow-up commands. |
 
 ## 📚 Core Philosophy
 
@@ -440,7 +440,7 @@ The produced specification should contain a set of user stories and functional r
 At this stage, your project folder contents should resemble the following:
 
 ```text
-└── .specify
+└── .lcs
     ├── memory
     │  └── constitution.md
     ├── scripts
@@ -501,30 +501,31 @@ The output of this step will include a number of implementation detail documents
 
 ```text
 .
-├── CLAUDE.md
-├── memory
-│  └── constitution.md
-├── scripts
-│  ├── check-prerequisites.sh
-│  ├── common.sh
-│  ├── create-new-feature.sh
-│  ├── setup-plan.sh
-│  └── update-claude-md.sh
-├── specs
-│  └── 001-create-taskify
-│      ├── contracts
-│      │  ├── api-spec.json
-│      │  └── signalr-spec.md
-│      ├── data-model.md
-│      ├── plan.md
-│      ├── quickstart.md
-│      ├── research.md
-│      └── spec.md
-└── templates
-    ├── CLAUDE-template.md
-    ├── plan-template.md
-    ├── spec-template.md
-    └── tasks-template.md
+├── .lcs
+│  ├── memory
+│  │  └── constitution.md
+│  ├── scripts
+│  │  ├── check-prerequisites.sh
+│  │  ├── common.sh
+│  │  ├── create-new-feature.sh
+│  │  ├── setup-plan.sh
+│  │  └── update-claude-md.sh
+│  ├── specs
+│  │  └── 001-create-taskify
+│  │      ├── contracts
+│  │      │  ├── api-spec.json
+│  │      │  └── signalr-spec.md
+│  │      ├── data-model.md
+│  │      ├── plan.md
+│  │      ├── quickstart.md
+│  │      ├── research.md
+│  │      └── spec.md
+│  └── templates
+│     ├── CLAUDE-template.md
+│     ├── plan-template.md
+│     ├── spec-template.md
+│     └── tasks-template.md
+└── CLAUDE.md
 ```
 
 Check the `research.md` document to ensure that the right tech stack is used, based on your instructions. You can ask Claude Code to refine it if any of the components stand out, or even have it check the locally-installed version of the platform/framework you want to use (e.g., .NET).
