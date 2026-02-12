@@ -57,14 +57,14 @@ Here are a few things you can do that will increase the likelihood of your pull 
 
 When working on spec-kit:
 
-1. Test changes with the `specify` CLI commands (`/speckit.specify`, `/speckit.plan`, `/speckit.tasks`) in your coding agent of choice
+1. Test changes with the `specify` CLI commands (`/lcs.specify`, `/lcs.plan`, `/lcs.tasks`) in your coding agent of choice
 2. Verify templates are working correctly in `templates/` directory
 3. Test script functionality in the `scripts/` directory
 4. Ensure memory files (`memory/constitution.md`) are updated if major process changes are made
 
 ### Testing template and command changes locally
 
-Running `uv run specify init` pulls released packages, which won’t include your local changes.  
+Running `uv run lcs init` pulls released packages, which won’t include your local changes.  
 To test your templates, commands, and other changes locally, follow these steps:
 
 1. **Create release packages**

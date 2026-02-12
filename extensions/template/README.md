@@ -32,7 +32,7 @@ Starter template for creating a Spec Kit extension.
 
    ```bash
    cd /path/to/spec-kit-project
-   specify extension add --dev /path/to/my-extension
+   lcs extension add --dev /path/to/my-extension
    ```
 
 7. **Publish** (optional):

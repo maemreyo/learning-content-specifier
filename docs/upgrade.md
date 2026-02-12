@@ -8,8 +8,8 @@
 
 | What to Upgrade | Command | When to Use |
 |----------------|---------|-------------|
-| **CLI Tool Only** | `uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git` | Get latest CLI features without touching project files |
-| **Project Files** | `specify init --here --force --ai <your-agent>` | Update slash commands, templates, and scripts in your project |
+| **CLI Tool Only** | `uv tool install lcs-cli --force --from git+https://github.com/github/spec-kit.git` | Get latest CLI features without touching project files |
+| **Project Files** | `lcs init --here --force --ai <your-agent>` | Update slash commands, templates, and scripts in your project |
 | **Both** | Run CLI upgrade, then project update | Recommended for major version updates |
 
 ---
@@ -21,7 +21,7 @@ The CLI tool (`specify`) is separate from your project files. Upgrade it to get 
 ### If you installed with `uv tool install`
 
 ```bash
-uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git
+uv tool install lcs-cli --force --from git+https://github.com/github/spec-kit.git
 ```
 
 ### If you use one-shot `uvx` commands
@@ -29,13 +29,13 @@ uv tool install specify-cli --force --from git+https://github.com/github/spec-ki
 No upgrade needed—`uvx` always fetches the latest version. Just run your commands as normal:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai copilot
+uvx --from git+https://github.com/github/spec-kit.git lcs init --here --ai copilot
 ```
 
 ### Verify the upgrade
 
 ```bash
-specify check
+lcs check
 ```
 
 This shows installed tools and confirms the CLI is working.
@@ -48,7 +48,7 @@ When Spec Kit releases new features (like new slash commands or updated template
 
 ### What gets updated?
 
-Running `specify init --here --force` will update:
+Running `lcs init --here --force` will update:
 
 - ✅ **Slash command files** (`.claude/commands/`, `.github/prompts/`, etc.)
 - ✅ **Script files** (`.specify/scripts/`)
@@ -71,7 +71,7 @@ The `specs/` directory is completely excluded from template packages and will ne
 Run this inside your project directory:
 
 ```bash
-specify init --here --force --ai <your-agent>
+lcs init --here --force --ai <your-agent>
 ```
 
 Replace `<your-agent>` with your AI assistant. Refer to this list of [Supported AI Agents](../README.md#-supported-ai-agents)
@@ -79,7 +79,7 @@ Replace `<your-agent>` with your AI assistant. Refer to this list of [Supported 
 **Example:**
 
 ```bash
-specify init --here --force --ai copilot
+lcs init --here --force --ai copilot
 ```
 
 ### Understanding the `--force` flag
@@ -102,7 +102,7 @@ With `--force`, it skips the confirmation and proceeds immediately.
 
 ### 1. Constitution file will be overwritten
 
-**Known issue:** `specify init --here --force` currently overwrites `.specify/memory/constitution.md` with the default template, erasing any customizations you made.
+**Known issue:** `lcs init --here --force` currently overwrites `.specify/memory/constitution.md` with the default template, erasing any customizations you made.
 
 **Workaround:**
 
@@ -111,7 +111,7 @@ With `--force`, it skips the confirmation and proceeds immediately.
 cp .specify/memory/constitution.md .specify/memory/constitution-backup.md
 
 # 2. Run the upgrade
-specify init --here --force --ai copilot
+lcs init --here --force --ai copilot
 
 # 3. Restore your customized constitution
 mv .specify/memory/constitution-backup.md .specify/memory/constitution.md
@@ -151,8 +151,8 @@ cd .kilocode/rules/
 ls -la
 
 # Delete old versions (example filenames - yours may differ)
-rm speckit.specify-old.md
-rm speckit.plan-v1.md
+rm lcs.specify-old.md
+rm lcs.plan-v1.md
 ```
 
 Restart your IDE to refresh the command list.
@@ -165,10 +165,10 @@ Restart your IDE to refresh the command list.
 
 ```bash
 # Upgrade CLI (if using persistent install)
-uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git
+uv tool install lcs-cli --force --from git+https://github.com/github/spec-kit.git
 
 # Update project files to get new commands
-specify init --here --force --ai copilot
+lcs init --here --force --ai copilot
 
 # Restore your constitution if customized
 git restore .specify/memory/constitution.md
@@ -182,10 +182,10 @@ cp .specify/memory/constitution.md /tmp/constitution-backup.md
 cp -r .specify/templates /tmp/templates-backup
 
 # 2. Upgrade CLI
-uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git
+uv tool install lcs-cli --force --from git+https://github.com/github/spec-kit.git
 
 # 3. Update project
-specify init --here --force --ai copilot
+lcs init --here --force --ai copilot
 
 # 4. Restore customizations
 mv /tmp/constitution-backup.md .specify/memory/constitution.md
@@ -204,7 +204,7 @@ cd .kilocode/rules/
 ls -la
 
 # Delete old command files
-rm speckit.old-command-name.md
+rm lcs.old-command-name.md
 
 # Restart your IDE
 ```
@@ -218,7 +218,7 @@ If you initialized your project with `--no-git`, you can still upgrade:
 cp .specify/memory/constitution.md /tmp/constitution-backup.md
 
 # Run upgrade
-specify init --here --force --ai copilot --no-git
+lcs init --here --force --ai copilot --no-git
 
 # Restore customizations
 mv /tmp/constitution-backup.md .specify/memory/constitution.md
@@ -239,13 +239,13 @@ The `--no-git` flag tells Spec Kit to **skip git repository initialization**. Th
 **During initial setup:**
 
 ```bash
-specify init my-project --ai copilot --no-git
+lcs init my-project --ai copilot --no-git
 ```
 
 **During upgrade:**
 
 ```bash
-specify init --here --force --ai copilot --no-git
+lcs init --here --force --ai copilot --no-git
 ```
 
 ### What `--no-git` does NOT do
@@ -323,7 +323,7 @@ Do you want to continue? [y/N]
 
 **What this means:**
 
-This warning appears when you run `specify init --here` (or `specify init .`) in a directory that already has files. It's telling you:
+This warning appears when you run `lcs init --here` (or `lcs init .`) in a directory that already has files. It's telling you:
 
 1. **The directory has existing content** - In the example, 25 files/folders
 2. **Files will be merged** - New template files will be added alongside your existing files
@@ -352,7 +352,7 @@ Only Spec Kit infrastructure files:
 - **Use `--force` flag** - Skip this confirmation entirely:
 
   ```bash
-  specify init --here --force --ai copilot
+  lcs init --here --force --ai copilot
   ```
 
 **When you see this warning:**
@@ -371,7 +371,7 @@ Verify the installation:
 # Check installed tools
 uv tool list
 
-# Should show specify-cli
+# Should show lcs-cli
 
 # Verify path
 which specify
@@ -382,23 +382,23 @@ which specify
 If not found, reinstall:
 
 ```bash
-uv tool uninstall specify-cli
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+uv tool uninstall lcs-cli
+uv tool install lcs-cli --from git+https://github.com/github/spec-kit.git
 ```
 
 ### "Do I need to run specify every time I open my project?"
 
-**Short answer:** No, you only run `specify init` once per project (or when upgrading).
+**Short answer:** No, you only run `lcs init` once per project (or when upgrading).
 
 **Explanation:**
 
 The `specify` CLI tool is used for:
 
-- **Initial setup:** `specify init` to bootstrap Spec Kit in your project
-- **Upgrades:** `specify init --here --force` to update templates and commands
-- **Diagnostics:** `specify check` to verify tool installation
+- **Initial setup:** `lcs init` to bootstrap Spec Kit in your project
+- **Upgrades:** `lcs init --here --force` to update templates and commands
+- **Diagnostics:** `lcs check` to verify tool installation
 
-Once you've run `specify init`, the slash commands (like `/speckit.specify`, `/speckit.plan`, etc.) are **permanently installed** in your project's agent folder (`.claude/`, `.github/prompts/`, etc.). Your AI assistant reads these command files directly—no need to run `specify` again.
+Once you've run `lcs init`, the slash commands (like `/lcs.specify`, `/lcs.plan`, etc.) are **permanently installed** in your project's agent folder (`.claude/`, `.github/prompts/`, etc.). Your AI assistant reads these command files directly—no need to run `specify` again.
 
 **If your agent isn't recognizing slash commands:**
 
@@ -414,7 +414,7 @@ Once you've run `specify init`, the slash commands (like `/speckit.specify`, `/s
 
 2. **Restart your IDE/editor completely** (not just reload window)
 
-3. **Check you're in the correct directory** where you ran `specify init`
+3. **Check you're in the correct directory** where you ran `lcs init`
 
 4. **For some agents**, you may need to reload the workspace or clear cache
 
@@ -438,7 +438,7 @@ Spec Kit follows semantic versioning for major releases. The CLI and project fil
 
 After upgrading:
 
-- **Test new slash commands:** Run `/speckit.constitution` or another command to verify everything works
+- **Test new slash commands:** Run `/lcs.constitution` or another command to verify everything works
 - **Review release notes:** Check [GitHub Releases](https://github.com/github/spec-kit/releases) for new features and breaking changes
 - **Update workflows:** If new commands were added, update your team's development workflows
 - **Check documentation:** Visit [github.io/spec-kit](https://github.github.io/spec-kit/) for updated guides

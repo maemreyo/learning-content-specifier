@@ -72,7 +72,7 @@ Introduce an extension system to Spec Kit that allows modular integration with e
 
 - Standard directory structure (`.specify/extensions/{name}/`)
 - Declarative manifest (`extension.yml`)
-- Predictable command naming (`speckit.{extension}.{command}`)
+- Predictable command naming (`lcs.{extension}.{command}`)
 
 ### 2. Fail-Safe Defaults
 
@@ -88,7 +88,7 @@ Introduce an extension system to Spec Kit that allows modular integration with e
 
 ### 4. Developer Experience
 
-- Simple installation: `specify extension add jira`
+- Simple installation: `lcs extension add jira`
 - Clear error messages for compatibility issues
 - Local development mode for testing extensions
 
@@ -140,9 +140,9 @@ project/
 │  └──────────────────────────────────────────────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Core Commands                                   │   │
-│  │  - /speckit.specify                              │   │
-│  │  - /speckit.tasks                                │   │
-│  │  - /speckit.implement                            │   │
+│  │  - /lcs.specify                              │   │
+│  │  - /lcs.tasks                                │   │
+│  │  - /lcs.implement                            │   │
 │  └─────────┬────────────────────────────────────────┘   │
 └────────────┼────────────────────────────────────────────┘
              │ Hook Points (after_tasks, after_implement)
@@ -151,12 +151,12 @@ project/
 │                    Extensions                           │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Jira Extension                                  │   │
-│  │  - /speckit.jira.specstoissues                   │   │
-│  │  - /speckit.jira.discover-fields                 │   │
+│  │  - /lcs.jira.specstoissues                   │   │
+│  │  - /lcs.jira.discover-fields                 │   │
 │  └──────────────────────────────────────────────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Linear Extension                                │   │
-│  │  - /speckit.linear.sync                          │   │
+│  │  - /lcs.linear.sync                          │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
              │ Calls external tools
@@ -209,7 +209,7 @@ requires:
 
   # Core spec-kit commands this extension depends on
   commands:
-    - "speckit.tasks"             # Extension needs tasks command
+    - "lcs.tasks"             # Extension needs tasks command
 
   # Core scripts required
   scripts:
@@ -219,16 +219,16 @@ requires:
 provides:
   # Commands added to AI agent
   commands:
-    - name: "speckit.jira.specstoissues"
+    - name: "lcs.jira.specstoissues"
       file: "commands/specstoissues.md"
       description: "Create Jira hierarchy from spec and tasks"
-      aliases: ["speckit.specstoissues"]  # Alternate names
+      aliases: ["lcs.specstoissues"]  # Alternate names
 
-    - name: "speckit.jira.discover-fields"
+    - name: "lcs.jira.discover-fields"
       file: "commands/discover-fields.md"
       description: "Discover Jira custom fields for configuration"
 
-    - name: "speckit.jira.sync-status"
+    - name: "lcs.jira.sync-status"
       file: "commands/sync-status.md"
       description: "Sync task completion status to Jira"
 
@@ -272,16 +272,16 @@ config_schema:
 
 # Integration hooks (OPTIONAL)
 hooks:
-  # Hook fired after /speckit.tasks completes
+  # Hook fired after /lcs.tasks completes
   after_tasks:
-    command: "speckit.jira.specstoissues"
+    command: "lcs.jira.specstoissues"
     optional: true
     prompt: "Create Jira issues from tasks?"
     description: "Automatically create Jira hierarchy after task generation"
 
-  # Hook fired after /speckit.implement completes
+  # Hook fired after /lcs.implement completes
   after_implement:
-    command: "speckit.jira.sync-status"
+    command: "lcs.jira.sync-status"
     optional: true
     prompt: "Sync completion status to Jira?"
 
@@ -321,7 +321,7 @@ support:
 ### 1. Discovery
 
 ```bash
-specify extension search jira
+lcs extension search jira
 # Searches catalog for extensions matching "jira"
 ```
 
@@ -334,7 +334,7 @@ specify extension search jira
 ### 2. Installation
 
 ```bash
-specify extension add jira
+lcs extension add jira
 ```
 
 **Process:**
@@ -382,19 +382,19 @@ vim .specify/extensions/jira/jira-config.yml
 
 ```bash
 claude
-> /speckit.jira.specstoissues
+> /lcs.jira.specstoissues
 ```
 
 **Command resolution:**
 
-1. AI agent finds command in `.claude/commands/speckit.jira.specstoissues.md`
+1. AI agent finds command in `.claude/commands/lcs.jira.specstoissues.md`
 2. Command file references extension scripts/config
 3. Extension executes with full context
 
 ### 5. Update
 
 ```bash
-specify extension update jira
+lcs extension update jira
 ```
 
 **Process:**
@@ -410,7 +410,7 @@ specify extension update jira
 ### 6. Removal
 
 ```bash
-specify extension remove jira
+lcs extension remove jira
 ```
 
 **Process:**
@@ -457,7 +457,7 @@ $ARGUMENTS
 
 #### Claude Code Registration
 
-**Output**: `.claude/commands/speckit.jira.specstoissues.md`
+**Output**: `.claude/commands/lcs.jira.specstoissues.md`
 
 ```markdown
 ---
@@ -488,11 +488,11 @@ $ARGUMENTS
 
 #### Gemini CLI Registration
 
-**Output**: `.gemini/commands/speckit.jira.specstoissues.toml`
+**Output**: `.gemini/commands/lcs.jira.specstoissues.toml`
 
 ```toml
 [command]
-name = "speckit.jira.specstoissues"
+name = "lcs.jira.specstoissues"
 description = "Create Jira hierarchy from spec and tasks"
 
 [command.tools]
@@ -712,7 +712,7 @@ except jsonschema.ValidationError as e:
 ```yaml
 hooks:
   after_tasks:
-    command: "speckit.jira.specstoissues"
+    command: "lcs.jira.specstoissues"
     optional: true
     prompt: "Create Jira issues from tasks?"
     description: "Automatically create Jira hierarchy"
@@ -739,14 +739,14 @@ settings:
 hooks:
   after_tasks:
     - extension: jira
-      command: speckit.jira.specstoissues
+      command: lcs.jira.specstoissues
       enabled: true
       optional: true
       prompt: "Create Jira issues from tasks?"
 
   after_implement:
     - extension: jira
-      command: speckit.jira.sync-status
+      command: lcs.jira.sync-status
       enabled: true
       optional: true
       prompt: "Sync completion status to Jira?"
@@ -804,7 +804,7 @@ fi
 
 **AI Agent Handling:**
 
-The AI agent sees `EXECUTE_COMMAND: speckit.jira.specstoissues` in output and automatically invokes that command.
+The AI agent sees `EXECUTE_COMMAND: lcs.jira.specstoissues` in output and automatically invokes that command.
 
 **Alternative**: Direct call in agent context (if agent supports it):
 
@@ -833,7 +833,7 @@ Extensions can specify **conditions** for hooks:
 ```yaml
 hooks:
   after_tasks:
-    command: "speckit.jira.specstoissues"
+    command: "lcs.jira.specstoissues"
     optional: true
     condition: "config.project.key is set and config.enabled == true"
 ```
@@ -917,16 +917,16 @@ def should_execute_hook(hook: dict, config: dict) -> bool:
 
 ```bash
 # List all available extensions
-specify extension search
+lcs extension search
 
 # Search by keyword
-specify extension search jira
+lcs extension search jira
 
 # Search by tag
-specify extension search --tag issue-tracking
+lcs extension search --tag issue-tracking
 
 # Show extension details
-specify extension info jira
+lcs extension info jira
 ```
 
 ### Custom Catalogs
@@ -935,13 +935,13 @@ Organizations can host private catalogs:
 
 ```bash
 # Add custom catalog
-specify extension add-catalog https://internal.company.com/spec-kit/catalog.json
+lcs extension add-catalog https://internal.company.com/spec-kit/catalog.json
 
 # Set as default
-specify extension set-catalog --default https://internal.company.com/spec-kit/catalog.json
+lcs extension set-catalog --default https://internal.company.com/spec-kit/catalog.json
 
 # List catalogs
-specify extension catalogs
+lcs extension catalogs
 ```
 
 **Catalog priority**:
@@ -954,14 +954,14 @@ specify extension catalogs
 
 ## CLI Commands
 
-### `specify extension` Subcommands
+### `lcs extension` Subcommands
 
-#### `specify extension list`
+#### `lcs extension list`
 
 List installed extensions in current project.
 
 ```bash
-$ specify extension list
+$ lcs extension list
 
 Installed Extensions:
   ✓ jira (v1.0.0) - Jira Integration
@@ -976,12 +976,12 @@ Installed Extensions:
 - `--available`: Show available (not installed) extensions from catalog
 - `--all`: Show both installed and available
 
-#### `specify extension search [QUERY]`
+#### `lcs extension search [QUERY]`
 
 Search extension catalog.
 
 ```bash
-$ specify extension search jira
+$ lcs extension search jira
 
 Found 1 extension:
 
@@ -1000,7 +1000,7 @@ Found 1 extension:
 │ Documentation: github.com/.../docs                      │
 └─────────────────────────────────────────────────────────┘
 
-Install: specify extension add jira
+Install: lcs extension add jira
 ```
 
 **Options:**
@@ -1009,12 +1009,12 @@ Install: specify extension add jira
 - `--author AUTHOR`: Filter by author
 - `--verified`: Show only verified extensions
 
-#### `specify extension info NAME`
+#### `lcs extension info NAME`
 
 Show detailed information about an extension.
 
 ```bash
-$ specify extension info jira
+$ lcs extension info jira
 
 Jira Integration (jira) v1.0.0
 
@@ -1032,9 +1032,9 @@ Requirements:
 
 Provides:
   Commands:
-    • speckit.jira.specstoissues - Create Jira hierarchy from spec and tasks
-    • speckit.jira.discover-fields - Discover Jira custom fields
-    • speckit.jira.sync-status - Sync task completion status
+    • lcs.jira.specstoissues - Create Jira hierarchy from spec and tasks
+    • lcs.jira.discover-fields - Discover Jira custom fields
+    • lcs.jira.sync-status - Sync task completion status
 
   Hooks:
     • after_tasks - Prompt to create Jira issues
@@ -1044,15 +1044,15 @@ Tags: issue-tracking, jira, atlassian, project-management
 
 Downloads: 1,250 | Stars: 45 | Verified: ✓
 
-Install: specify extension add jira
+Install: lcs extension add jira
 ```
 
-#### `specify extension add NAME`
+#### `lcs extension add NAME`
 
 Install an extension.
 
 ```bash
-$ specify extension add jira
+$ lcs extension add jira
 
 Installing extension: Jira Integration
 
@@ -1070,8 +1070,8 @@ Extension installed successfully!
 
 Next steps:
   1. Configure: vim .specify/extensions/jira/jira-config.yml
-  2. Discover fields: /speckit.jira.discover-fields
-  3. Use commands: /speckit.jira.specstoissues
+  2. Discover fields: /lcs.jira.discover-fields
+  3. Use commands: /lcs.jira.specstoissues
 ```
 
 **Options:**
@@ -1081,12 +1081,12 @@ Next steps:
 - `--dev PATH`: Install from local path (development mode)
 - `--no-register`: Skip command registration (manual setup)
 
-#### `specify extension remove NAME`
+#### `lcs extension remove NAME`
 
 Uninstall an extension.
 
 ```bash
-$ specify extension remove jira
+$ lcs extension remove jira
 
 ⚠  This will remove:
    • 3 commands from AI agent
@@ -1102,7 +1102,7 @@ Continue? (yes/no): yes
 
 Extension removed successfully.
 
-To reinstall: specify extension add jira
+To reinstall: lcs extension add jira
 ```
 
 **Options:**
@@ -1110,12 +1110,12 @@ To reinstall: specify extension add jira
 - `--keep-config`: Don't remove config file
 - `--force`: Skip confirmation
 
-#### `specify extension update [NAME]`
+#### `lcs extension update [NAME]`
 
 Update extension(s) to latest version.
 
 ```bash
-$ specify extension update jira
+$ lcs extension update jira
 
 Checking for updates...
 
@@ -1146,18 +1146,18 @@ Changelog: https://github.com/statsperform/spec-kit-jira/blob/main/CHANGELOG.md#
 - `--check`: Check for updates without installing
 - `--force`: Force update even if already latest
 
-#### `specify extension enable/disable NAME`
+#### `lcs extension enable/disable NAME`
 
 Enable or disable an extension without removing it.
 
 ```bash
-$ specify extension disable jira
+$ lcs extension disable jira
 
 ✓ Disabled extension: jira
   • Commands unregistered (but files preserved)
   • Hooks will not execute
 
-To re-enable: specify extension enable jira
+To re-enable: lcs extension enable jira
 ```
 
 ---
@@ -1190,7 +1190,7 @@ def check_compatibility(extension_manifest: dict) -> bool:
         raise IncompatibleVersionError(
             f"Extension requires spec-kit {required_speckit}, "
             f"but {current_speckit} is installed. "
-            f"Upgrade spec-kit with: uv tool install specify-cli --force"
+            f"Upgrade spec-kit with: uv tool install lcs-cli --force"
         )
 
     # 2. Check required tools
@@ -1231,18 +1231,18 @@ def check_compatibility(extension_manifest: dict) -> bool:
 ```yaml
 provides:
   commands:
-    - name: "speckit.jira.old-command"
+    - name: "lcs.jira.old-command"
       file: "commands/old-command.md"
       deprecated: true
-      deprecated_message: "Use speckit.jira.new-command instead"
+      deprecated_message: "Use lcs.jira.new-command instead"
       removal_version: "2.0.0"
 ```
 
 **At runtime, show warning:**
 
 ```text
-⚠️  Warning: /speckit.jira.old-command is deprecated
-   Use /speckit.jira.new-command instead
+⚠️  Warning: /lcs.jira.old-command is deprecated
+   Use /lcs.jira.new-command instead
    This command will be removed in v2.0.0
 ```
 
@@ -1323,7 +1323,7 @@ CLI verifies signature before extraction.
 
 **Strategy**:
 
-1. **Core commands unchanged**: `/speckit.tasks`, `/speckit.implement`, etc. remain in core
+1. **Core commands unchanged**: `/lcs.tasks`, `/lcs.implement`, etc. remain in core
 
 2. **Optional extensions**: Users opt-in to extensions
 
@@ -1347,7 +1347,7 @@ CLI verifies signature before extraction.
 
 **Scenario 3**: User wants Jira (new requirement)
 
-- `specify extension add jira`
+- `lcs extension add jira`
 - Configure and use
 
 **Scenario 4**: User has custom scripts calling `taskstoissues`
@@ -1361,11 +1361,11 @@ CLI verifies signature before extraction.
 
 ```bash
 # Old (core command)
-/speckit.taskstoissues
+/lcs.taskstoissues
 
 # New (extension command)
-specify extension add github-projects
-/speckit.github.taskstoissues
+lcs extension add github-projects
+/lcs.github.taskstoissues
 ```
 
 **Compatibility shim** (if needed):
@@ -1374,9 +1374,9 @@ specify extension add github-projects
 # extension.yml
 provides:
   commands:
-    - name: "speckit.github.taskstoissues"
+    - name: "lcs.github.taskstoissues"
       file: "commands/taskstoissues.md"
-      aliases: ["speckit.taskstoissues"]  # Backward compatibility
+      aliases: ["lcs.taskstoissues"]  # Backward compatibility
 ```
 
 AI agent registers both names, so old scripts work.
@@ -1394,9 +1394,9 @@ AI agent registers both names, so old scripts work.
 - [ ] Extension manifest schema (`extension.yml`)
 - [ ] Extension directory structure
 - [ ] CLI commands:
-  - [ ] `specify extension list`
-  - [ ] `specify extension add` (from URL)
-  - [ ] `specify extension remove`
+  - [ ] `lcs extension list`
+  - [ ] `lcs extension add` (from URL)
+  - [ ] `lcs extension remove`
 - [ ] Extension registry (`.specify/extensions/.registry`)
 - [ ] Command registration (Claude only initially)
 - [ ] Basic validation (manifest schema, compatibility)
@@ -1441,8 +1441,8 @@ AI agent registers both names, so old scripts work.
 - [ ] Central catalog (`extensions/catalog.json` in spec-kit repo)
 - [ ] Catalog fetch and parsing
 - [ ] CLI commands:
-  - [ ] `specify extension search`
-  - [ ] `specify extension info`
+  - [ ] `lcs extension search`
+  - [ ] `lcs extension info`
 - [ ] Catalog publishing process (GitHub Action)
 - [ ] Documentation (how to publish extensions)
 
@@ -1462,8 +1462,8 @@ AI agent registers both names, so old scripts work.
 - [ ] Hook registration and execution
 - [ ] Project extensions config (`.specify/extensions.yml`)
 - [ ] CLI commands:
-  - [ ] `specify extension update`
-  - [ ] `specify extension enable/disable`
+  - [ ] `lcs extension update`
+  - [ ] `lcs extension enable/disable`
 - [ ] Command registration for multiple agents (Gemini, Copilot)
 - [ ] Extension update notifications
 - [ ] Configuration layer resolution (project, local, env)
@@ -1507,7 +1507,7 @@ AI agent registers both names, so old scripts work.
 
 **Options**:
 
-- A) Prefixed: `/speckit.jira.specstoissues` (explicit, avoids conflicts)
+- A) Prefixed: `/lcs.jira.specstoissues` (explicit, avoids conflicts)
 - B) Short alias: `/jira.specstoissues` (shorter, less verbose)
 - C) Both: Register both names, prefer prefixed in docs
 
@@ -1550,7 +1550,7 @@ AI agent registers both names, so old scripts work.
 **Options**:
 
 - A) AI agent interprets: Core commands output `EXECUTE_COMMAND: name`
-- B) CLI executes: Core commands call `specify extension hook after_tasks`
+- B) CLI executes: Core commands call `lcs extension hook after_tasks`
 - C) Agent built-in: Extension system built into AI agent (Claude SDK)
 
 **Recommendation**: A initially (simpler), move to C long-term

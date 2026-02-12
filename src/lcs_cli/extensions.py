@@ -1,11 +1,11 @@
-"""
-Extension Manager for Spec Kit
+"""Extension Manager for LCS.
 
-Handles installation, removal, and management of Spec Kit extensions.
-Extensions are modular packages that add commands and functionality to spec-kit
+Handles installation, removal, and management of LCS extensions.
+Extensions are modular packages that add commands and functionality to LCS
 without bloating the core framework.
 """
 
+import os
 import json
 import hashlib
 import tempfile
@@ -100,8 +100,8 @@ class ExtensionManifest:
 
         # Validate requires section
         requires = self.data["requires"]
-        if "speckit_version" not in requires:
-            raise ValidationError("Missing requires.speckit_version")
+        if "lcs_version" not in requires:
+            raise ValidationError("Missing requires.lcs_version")
 
         # Validate provides section
         provides = self.data["provides"]
@@ -114,10 +114,10 @@ class ExtensionManifest:
                 raise ValidationError("Command missing 'name' or 'file'")
 
             # Validate command name format
-            if not re.match(r'^speckit\.[a-z0-9-]+\.[a-z0-9-]+$', cmd["name"]):
+            if not re.match(r'^lcs\.[a-z0-9-]+\.[a-z0-9-]+$', cmd["name"]):
                 raise ValidationError(
                     f"Invalid command name '{cmd['name']}': "
-                    "must follow pattern 'speckit.{extension}.{command}'"
+                    "must follow pattern 'lcs.{extension}.{command}'"
                 )
 
     @property
@@ -141,9 +141,9 @@ class ExtensionManifest:
         return self.data["extension"]["description"]
 
     @property
-    def requires_speckit_version(self) -> str:
-        """Get required spec-kit version range."""
-        return self.data["requires"]["speckit_version"]
+    def requires_lcs_version(self) -> str:
+        """Get required LCS version range."""
+        return self.data["requires"]["lcs_version"]
 
     @property
     def commands(self) -> List[Dict[str, Any]]:
@@ -171,7 +171,7 @@ class ExtensionRegistry:
         """Initialize registry.
 
         Args:
-            extensions_dir: Path to .specify/extensions/ directory
+            extensions_dir: Path to .lcs/extensions/ directory
         """
         self.extensions_dir = extensions_dir
         self.registry_path = extensions_dir / self.REGISTRY_FILE
@@ -265,19 +265,19 @@ class ExtensionManager:
             project_root: Path to project root directory
         """
         self.project_root = project_root
-        self.extensions_dir = project_root / ".specify" / "extensions"
+        self.extensions_dir = project_root / ".lcs" / "extensions"
         self.registry = ExtensionRegistry(self.extensions_dir)
 
     def check_compatibility(
         self,
         manifest: ExtensionManifest,
-        speckit_version: str
+        lcs_version: str
     ) -> bool:
-        """Check if extension is compatible with current spec-kit version.
+        """Check if extension is compatible with current LCS version.
 
         Args:
             manifest: Extension manifest
-            speckit_version: Current spec-kit version
+            lcs_version: Current LCS version
 
         Returns:
             True if compatible
@@ -285,17 +285,17 @@ class ExtensionManager:
         Raises:
             CompatibilityError: If extension is incompatible
         """
-        required = manifest.requires_speckit_version
-        current = pkg_version.Version(speckit_version)
+        required = manifest.requires_lcs_version
+        current = pkg_version.Version(lcs_version)
 
         # Parse version specifier (e.g., ">=0.1.0,<2.0.0")
         try:
             specifier = SpecifierSet(required)
             if current not in specifier:
                 raise CompatibilityError(
-                    f"Extension requires spec-kit {required}, "
-                    f"but {speckit_version} is installed.\n"
-                    f"Upgrade spec-kit with: uv tool install specify-cli --force"
+                    f"Extension requires LCS {required}, "
+                    f"but {lcs_version} is installed.\n"
+                    f"Upgrade LCS with: uv tool install lcs-cli --force"
                 )
         except InvalidSpecifier:
             raise CompatibilityError(f"Invalid version specifier: {required}")
@@ -305,14 +305,14 @@ class ExtensionManager:
     def install_from_directory(
         self,
         source_dir: Path,
-        speckit_version: str,
+        lcs_version: str,
         register_commands: bool = True
     ) -> ExtensionManifest:
         """Install extension from a local directory.
 
         Args:
             source_dir: Path to extension directory
-            speckit_version: Current spec-kit version
+            lcs_version: Current LCS version
             register_commands: If True, register commands with AI agents
 
         Returns:
@@ -327,13 +327,13 @@ class ExtensionManager:
         manifest = ExtensionManifest(manifest_path)
 
         # Check compatibility
-        self.check_compatibility(manifest, speckit_version)
+        self.check_compatibility(manifest, lcs_version)
 
         # Check if already installed
         if self.registry.is_installed(manifest.id):
             raise ExtensionError(
                 f"Extension '{manifest.id}' is already installed. "
-                f"Use 'specify extension remove {manifest.id}' first."
+                f"Use 'lcs extension remove {manifest.id}' first."
             )
 
         # Install extension
@@ -370,13 +370,13 @@ class ExtensionManager:
     def install_from_zip(
         self,
         zip_path: Path,
-        speckit_version: str
+        lcs_version: str
     ) -> ExtensionManifest:
         """Install extension from ZIP file.
 
         Args:
             zip_path: Path to extension ZIP file
-            speckit_version: Current spec-kit version
+            lcs_version: Current LCS version
 
         Returns:
             Installed extension manifest
@@ -419,7 +419,7 @@ class ExtensionManager:
                 raise ValidationError("No extension.yml found in ZIP file")
 
             # Install from extracted directory
-            return self.install_from_directory(extension_dir, speckit_version)
+            return self.install_from_directory(extension_dir, lcs_version)
 
     def remove(self, extension_id: str, keep_config: bool = False) -> bool:
         """Remove an installed extension.
@@ -736,7 +736,7 @@ class CommandRegistrar:
             for key in frontmatter["scripts"]:
                 script_path = frontmatter["scripts"][key]
                 if script_path.startswith("../../scripts/"):
-                    frontmatter["scripts"][key] = f".specify/scripts/{script_path[14:]}"
+                    frontmatter["scripts"][key] = f".lcs/scripts/{script_path[14:]}"
         return frontmatter
 
     def _render_markdown_command(
@@ -755,7 +755,7 @@ class CommandRegistrar:
         Returns:
             Formatted Markdown command file content
         """
-        context_note = f"\n<!-- Extension: {ext_id} -->\n<!-- Config: .specify/extensions/{ext_id}/ -->\n"
+        context_note = f"\n<!-- Extension: {ext_id} -->\n<!-- Config: .lcs/extensions/{ext_id}/ -->\n"
         return self.render_frontmatter(frontmatter) + "\n" + context_note + body
 
     def _render_toml_command(
@@ -786,7 +786,7 @@ class CommandRegistrar:
 
         # Add extension context as comments
         toml_lines.append(f"# Extension: {ext_id}")
-        toml_lines.append(f"# Config: .specify/extensions/{ext_id}/")
+        toml_lines.append(f"# Config: .lcs/extensions/{ext_id}/")
         toml_lines.append("")
 
         # Add prompt content
@@ -939,17 +939,20 @@ class CommandRegistrar:
 class ExtensionCatalog:
     """Manages extension catalog fetching, caching, and searching."""
 
-    DEFAULT_CATALOG_URL = "https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.json"
+    DEFAULT_CATALOG_URL = os.environ.get(
+        "LCS_DEFAULT_CATALOG_URL",
+        "https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.json",
+    )
     CACHE_DURATION = 3600  # 1 hour in seconds
 
     def __init__(self, project_root: Path):
         """Initialize extension catalog manager.
 
         Args:
-            project_root: Root directory of the spec-kit project
+            project_root: Root directory of the LCS project
         """
         self.project_root = project_root
-        self.extensions_dir = project_root / ".specify" / "extensions"
+        self.extensions_dir = project_root / ".lcs" / "extensions"
         self.cache_dir = self.extensions_dir / ".cache"
         self.cache_file = self.cache_dir / "catalog.json"
         self.cache_metadata_file = self.cache_dir / "catalog-metadata.json"
@@ -958,7 +961,7 @@ class ExtensionCatalog:
         """Get catalog URL from config or use default.
 
         Checks in order:
-        1. SPECKIT_CATALOG_URL environment variable
+        1. LCS_CATALOG_URL environment variable
         2. Default catalog URL
 
         Returns:
@@ -972,7 +975,7 @@ class ExtensionCatalog:
         from urllib.parse import urlparse
 
         # Environment variable override (useful for testing)
-        if env_value := os.environ.get("SPECKIT_CATALOG_URL"):
+        if env_value := os.environ.get("LCS_CATALOG_URL"):
             catalog_url = env_value.strip()
             parsed = urlparse(catalog_url)
 
@@ -981,13 +984,13 @@ class ExtensionCatalog:
             is_localhost = parsed.hostname in ("localhost", "127.0.0.1", "::1")
             if parsed.scheme != "https" and not (parsed.scheme == "http" and is_localhost):
                 raise ValidationError(
-                    f"Invalid SPECKIT_CATALOG_URL: must use HTTPS (got {parsed.scheme}://). "
+                    f"Invalid LCS_CATALOG_URL: must use HTTPS (got {parsed.scheme}://). "
                     "HTTP is only allowed for localhost."
                 )
 
             if not parsed.netloc:
                 raise ValidationError(
-                    "Invalid SPECKIT_CATALOG_URL: must be a valid URL with a host."
+                    "Invalid LCS_CATALOG_URL: must be a valid URL with a host."
                 )
 
             # Warn users when using a non-default catalog (once per instance)
@@ -1002,7 +1005,7 @@ class ExtensionCatalog:
 
             return catalog_url
 
-        # TODO: Support custom catalogs from .specify/extension-catalogs.yml
+        # TODO: Support custom catalogs from .lcs/extension-catalogs.yml
         return self.DEFAULT_CATALOG_URL
 
     def is_cache_valid(self) -> bool:
@@ -1212,21 +1215,21 @@ class ConfigManager:
 
     Configuration layers (in order of precedence from lowest to highest):
     1. Defaults (from extension.yml)
-    2. Project config (.specify/extensions/{ext-id}/{ext-id}-config.yml)
-    3. Local config (.specify/extensions/{ext-id}/local-config.yml) - gitignored
-    4. Environment variables (SPECKIT_{EXT_ID}_{KEY})
+    2. Project config (.lcs/extensions/{ext-id}/{ext-id}-config.yml)
+    3. Local config (.lcs/extensions/{ext-id}/local-config.yml) - gitignored
+    4. Environment variables (LCS_{EXT_ID}_{KEY})
     """
 
     def __init__(self, project_root: Path, extension_id: str):
         """Initialize config manager for an extension.
 
         Args:
-            project_root: Root directory of the spec-kit project
+            project_root: Root directory of the LCS project
             extension_id: ID of the extension
         """
         self.project_root = project_root
         self.extension_id = extension_id
-        self.extension_dir = project_root / ".specify" / "extensions" / extension_id
+        self.extension_dir = project_root / ".lcs" / "extensions" / extension_id
 
     def _load_yaml_config(self, file_path: Path) -> Dict[str, Any]:
         """Load configuration from YAML file.
@@ -1280,11 +1283,11 @@ class ConfigManager:
         """Get configuration from environment variables.
 
         Environment variables follow the pattern:
-        SPECKIT_{EXT_ID}_{SECTION}_{KEY}
+        LCS_{EXT_ID}_{SECTION}_{KEY}
 
         For example:
-        - SPECKIT_JIRA_CONNECTION_URL
-        - SPECKIT_JIRA_PROJECT_KEY
+        - LCS_JIRA_CONNECTION_URL
+        - LCS_JIRA_PROJECT_KEY
 
         Returns:
             Configuration dictionary from environment variables
@@ -1293,7 +1296,7 @@ class ConfigManager:
 
         env_config = {}
         ext_id_upper = self.extension_id.replace("-", "_").upper()
-        prefix = f"SPECKIT_{ext_id_upper}_"
+        prefix = f"LCS_{ext_id_upper}_"
 
         for key, value in os.environ.items():
             if not key.startswith(prefix):
@@ -1413,11 +1416,11 @@ class HookExecutor:
         """Initialize hook executor.
 
         Args:
-            project_root: Root directory of the spec-kit project
+            project_root: Root directory of the LCS project
         """
         self.project_root = project_root
-        self.extensions_dir = project_root / ".specify" / "extensions"
-        self.config_file = project_root / ".specify" / "extensions.yml"
+        self.extensions_dir = project_root / ".lcs" / "extensions"
+        self.config_file = project_root / ".lcs" / "extensions.yml"
 
     def get_project_config(self) -> Dict[str, Any]:
         """Load project-level extension configuration.

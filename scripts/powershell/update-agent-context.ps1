@@ -115,7 +115,7 @@ function Validate-Environment {
     }
     if (-not (Test-Path $TEMPLATE_FILE)) {
         Write-Err "Template file not found at $TEMPLATE_FILE"
-        Write-Info 'Run specify init to scaffold .specify/templates, or add agent-file-template.md there.'
+        Write-Info 'Run lcs init to scaffold .specify/templates, or add agent-file-template.md there.'
         exit 1
     }
 }

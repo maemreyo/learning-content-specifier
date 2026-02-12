@@ -15,7 +15,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime, timezone
 
-from specify_cli.extensions import (
+from lcs_cli.extensions import (
     ExtensionManifest,
     ExtensionRegistry,
     ExtensionManager,
@@ -53,13 +53,13 @@ def valid_manifest_data():
             "license": "MIT",
         },
         "requires": {
-            "speckit_version": ">=0.1.0",
-            "commands": ["speckit.tasks"],
+            "lcs_version": ">=0.1.0",
+            "commands": ["lcs.tasks"],
         },
         "provides": {
             "commands": [
                 {
-                    "name": "speckit.test.hello",
+                    "name": "lcs.test.hello",
                     "file": "commands/hello.md",
                     "description": "Test command",
                 }
@@ -67,7 +67,7 @@ def valid_manifest_data():
         },
         "hooks": {
             "after_tasks": {
-                "command": "speckit.test.hello",
+                "command": "lcs.test.hello",
                 "optional": True,
                 "prompt": "Run test?",
             }
@@ -108,13 +108,13 @@ $ARGUMENTS
 
 @pytest.fixture
 def project_dir(temp_dir):
-    """Create a mock spec-kit project directory."""
+    """Create a mock LCS project directory."""
     proj_dir = temp_dir / "project"
     proj_dir.mkdir()
 
-    # Create .specify directory
-    specify_dir = proj_dir / ".specify"
-    specify_dir.mkdir()
+    # Create .lcs directory
+    lcs_dir = proj_dir / ".lcs"
+    lcs_dir.mkdir()
 
     return proj_dir
 
@@ -134,7 +134,7 @@ class TestExtensionManifest:
         assert manifest.version == "1.0.0"
         assert manifest.description == "A test extension"
         assert len(manifest.commands) == 1
-        assert manifest.commands[0]["name"] == "speckit.test.hello"
+        assert manifest.commands[0]["name"] == "lcs.test.hello"
 
     def test_missing_required_field(self, temp_dir):
         """Test manifest missing required field."""
@@ -296,7 +296,7 @@ class TestExtensionManager:
         manifest = ExtensionManifest(extension_dir / "extension.yml")
 
         # Requires >=0.1.0, but we have 0.0.1
-        with pytest.raises(CompatibilityError, match="Extension requires spec-kit"):
+        with pytest.raises(CompatibilityError, match="Extension requires LCS"):
             manager.check_compatibility(manifest, "0.0.1")
 
     def test_install_from_directory(self, extension_dir, project_dir):
@@ -313,7 +313,7 @@ class TestExtensionManager:
         assert manager.registry.is_installed("test-ext")
 
         # Check extension directory was copied
-        ext_dir = project_dir / ".specify" / "extensions" / "test-ext"
+        ext_dir = project_dir / ".lcs" / "extensions" / "test-ext"
         assert ext_dir.exists()
         assert (ext_dir / "extension.yml").exists()
         assert (ext_dir / "commands" / "hello.md").exists()
@@ -336,7 +336,7 @@ class TestExtensionManager:
         # Install extension
         manager.install_from_directory(extension_dir, "0.1.0", register_commands=False)
 
-        ext_dir = project_dir / ".specify" / "extensions" / "test-ext"
+        ext_dir = project_dir / ".lcs" / "extensions" / "test-ext"
         assert ext_dir.exists()
 
         # Remove extension
@@ -380,7 +380,7 @@ class TestExtensionManager:
         manager.install_from_directory(extension_dir, "0.1.0", register_commands=False)
 
         # Create a config file
-        ext_dir = project_dir / ".specify" / "extensions" / "test-ext"
+        ext_dir = project_dir / ".lcs" / "extensions" / "test-ext"
         config_file = ext_dir / "test-ext-config.yml"
         config_file.write_text("test: config")
 
@@ -388,7 +388,7 @@ class TestExtensionManager:
         manager.remove("test-ext", keep_config=False)
 
         # Check backup was created (now in subdirectory per extension)
-        backup_dir = project_dir / ".specify" / "extensions" / ".backup" / "test-ext"
+        backup_dir = project_dir / ".lcs" / "extensions" / ".backup" / "test-ext"
         backup_file = backup_dir / "test-ext-config.yml"
         assert backup_file.exists()
         assert backup_file.read_text() == "test: config"
@@ -460,16 +460,16 @@ $ARGUMENTS
         )
 
         assert len(registered) == 1
-        assert "speckit.test.hello" in registered
+        assert "lcs.test.hello" in registered
 
         # Check command file was created
-        cmd_file = claude_dir / "speckit.test.hello.md"
+        cmd_file = claude_dir / "lcs.test.hello.md"
         assert cmd_file.exists()
 
         content = cmd_file.read_text()
         assert "description: Test hello command" in content
         assert "<!-- Extension: test-ext -->" in content
-        assert "<!-- Config: .specify/extensions/test-ext/ -->" in content
+        assert "<!-- Config: .lcs/extensions/test-ext/ -->" in content
 
     def test_command_with_aliases(self, project_dir, temp_dir):
         """Test registering a command with aliases."""
@@ -488,14 +488,14 @@ $ARGUMENTS
                 "description": "Test",
             },
             "requires": {
-                "speckit_version": ">=0.1.0",
+                "lcs_version": ">=0.1.0",
             },
             "provides": {
                 "commands": [
                     {
-                        "name": "speckit.alias.cmd",
+                        "name": "lcs.alias.cmd",
                         "file": "commands/cmd.md",
-                        "aliases": ["speckit.shortcut"],
+                        "aliases": ["lcs.shortcut"],
                     }
                 ]
             },
@@ -515,10 +515,10 @@ $ARGUMENTS
         registered = registrar.register_commands_for_claude(manifest, ext_dir, project_dir)
 
         assert len(registered) == 2
-        assert "speckit.alias.cmd" in registered
-        assert "speckit.shortcut" in registered
-        assert (claude_dir / "speckit.alias.cmd.md").exists()
-        assert (claude_dir / "speckit.shortcut.md").exists()
+        assert "lcs.alias.cmd" in registered
+        assert "lcs.shortcut" in registered
+        assert (claude_dir / "lcs.alias.cmd.md").exists()
+        assert (claude_dir / "lcs.shortcut.md").exists()
 
 
 # ===== Utility Function Tests =====
@@ -575,7 +575,7 @@ class TestIntegration:
         assert installed[0]["id"] == "test-ext"
 
         # Verify command registered
-        cmd_file = project_dir / ".claude" / "commands" / "speckit.test.hello.md"
+        cmd_file = project_dir / ".claude" / "commands" / "lcs.test.hello.md"
         assert cmd_file.exists()
 
         # Verify registry has registered commands (now a dict keyed by agent)
@@ -583,7 +583,7 @@ class TestIntegration:
         registered_commands = metadata["registered_commands"]
         # Check that the command is registered for at least one agent
         assert any(
-            "speckit.test.hello" in cmds
+            "lcs.test.hello" in cmds
             for cmds in registered_commands.values()
         )
 
@@ -613,11 +613,11 @@ class TestIntegration:
                     "version": "1.0.0",
                     "description": f"Extension {i}",
                 },
-                "requires": {"speckit_version": ">=0.1.0"},
+                "requires": {"lcs_version": ">=0.1.0"},
                 "provides": {
                     "commands": [
                         {
-                            "name": f"speckit.ext{i}.cmd",
+                            "name": f"lcs.ext{i}.cmd",
                             "file": "commands/cmd.md",
                         }
                     ]
@@ -660,18 +660,18 @@ class TestExtensionCatalog:
         """Test catalog initialization."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
         assert catalog.project_root == project_dir
-        assert catalog.cache_dir == project_dir / ".specify" / "extensions" / ".cache"
+        assert catalog.cache_dir == project_dir / ".lcs" / "extensions" / ".cache"
 
     def test_cache_directory_creation(self, temp_dir):
         """Test catalog cache directory is created when fetching."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -708,7 +708,7 @@ class TestExtensionCatalog:
         """Test that expired cache is not used."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -736,7 +736,7 @@ class TestExtensionCatalog:
         """Test searching all extensions without filters."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -785,7 +785,7 @@ class TestExtensionCatalog:
         """Test searching by query text."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -830,7 +830,7 @@ class TestExtensionCatalog:
         """Test searching by tag."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -882,7 +882,7 @@ class TestExtensionCatalog:
         """Test searching verified extensions only."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -927,7 +927,7 @@ class TestExtensionCatalog:
         """Test getting specific extension info."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 
@@ -970,7 +970,7 @@ class TestExtensionCatalog:
         """Test clearing catalog cache."""
         project_dir = temp_dir / "project"
         project_dir.mkdir()
-        (project_dir / ".specify").mkdir()
+        (project_dir / ".lcs").mkdir()
 
         catalog = ExtensionCatalog(project_dir)
 

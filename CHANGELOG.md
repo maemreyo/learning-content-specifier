@@ -2,10 +2,18 @@
 
 <!-- markdownlint-disable MD024 -->
 
-All notable changes to the Specify CLI and templates are documented here.
+All notable changes to the LCS CLI and templates are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.1] - 2026-02-12
+
+### Changed
+
+- Rebranded CLI and templates from Spec Kit/Specify to LCS.
+- Updated CLI entrypoint to `lcs` and aligned user-facing messages.
+- Updated project runtime paths for extensions to use `.lcs/`.
 
 ## [0.1.0] - 2026-01-28
 
@@ -17,11 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Extension registry (`.specify/extensions/.registry`) for tracking installed extensions
   - Extension manager module (`src/specify_cli/extensions.py`) for installation/removal
   - New CLI commands:
-    - `specify extension list` - List installed extensions
-    - `specify extension add` - Install extension from local directory or URL
-    - `specify extension remove` - Uninstall extension
-    - `specify extension search` - Search extension catalog
-    - `specify extension info` - Show detailed extension information
+    - `lcs extension list` - List installed extensions
+    - `lcs extension add` - Install extension from local directory or URL
+    - `lcs extension remove` - Uninstall extension
+    - `lcs extension search` - Search extension catalog
+    - `lcs extension info` - Show detailed extension information
   - Semantic versioning compatibility checks
   - Support for extension configuration files
   - Command registration system for AI agents (Claude support initially)
@@ -42,9 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Extension ID: `jira`
   - Version: 1.0.0
   - Commands:
-    - `/speckit.jira.specstoissues` - Create Jira hierarchy from spec and tasks
-    - `/speckit.jira.discover-fields` - Discover Jira custom fields
-    - `/speckit.jira.sync-status` - Sync task completion status
+    - `/lcs.jira.specstoissues` - Create Jira hierarchy from spec and tasks
+    - `/lcs.jira.discover-fields` - Discover Jira custom fields
+    - `/lcs.jira.sync-status` - Sync task completion status
   - Comprehensive documentation (README, usage guide, examples)
   - MIT licensed
 
@@ -58,9 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Condition support for conditional hook execution (placeholder)
 
 - **Extension Management**: Advanced extension management commands
-  - `specify extension update` - Check and update extensions to latest version
-  - `specify extension enable` - Enable a disabled extension
-  - `specify extension disable` - Disable extension without removing it
+  - `lcs extension update` - Check and update extensions to latest version
+  - `lcs extension enable` - Enable a disabled extension
+  - `lcs extension disable` - Disable extension without removing it
   - Version comparison with catalog
   - Update notifications
   - Preserve configuration during updates
@@ -165,7 +173,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for CodeBuddy (thank you to [@lispking](https://github.com/lispking) for the contribution).
-- You can now see Git-sourced errors in the Specify CLI.
+- You can now see Git-sourced errors in the LCS CLI.
 
 ### Changed
 
@@ -177,15 +185,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for using `.` as a shorthand for current directory in `specify init .` command, equivalent to `--here` flag but more intuitive for users.
-- Use the `/speckit.` command prefix to easily discover Spec Kit-related commands.
+- Support for using `.` as a shorthand for current directory in `lcs init .` command, equivalent to `--here` flag but more intuitive for users.
+- Use the `/lcs.` command prefix to easily discover Spec Kit-related commands.
 - Refactor the prompts and templates to simplify their capabilities and how they are tracked. No more polluting things with tests when they are not needed.
 - Ensure that tasks are created per user story (simplifies testing and validation).
 - Add support for Visual Studio Code prompt shortcuts and automatic script execution.
 
 ### Changed
 
-- All command files now prefixed with `speckit.` (e.g., `speckit.specify.md`, `speckit.plan.md`) for better discoverability and differentiation in IDE/CLI command palettes and file explorers
+- All command files now prefixed with `lcs.` (e.g., `lcs.specify.md`, `lcs.plan.md`) for better discoverability and differentiation in IDE/CLI command palettes and file explorers
 
 ## [0.0.17] - 2025-09-22
 

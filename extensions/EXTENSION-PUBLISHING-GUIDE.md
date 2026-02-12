@@ -1,6 +1,6 @@
 # Extension Publishing Guide
 
-This guide explains how to publish your extension to the Spec Kit extension catalog, making it discoverable by `specify extension search`.
+This guide explains how to publish your extension to the Spec Kit extension catalog, making it discoverable by `lcs extension search`.
 
 ## Table of Contents
 
@@ -73,7 +73,7 @@ requires:
 
 provides:
   commands:                       # List all commands
-    - name: "speckit.your-extension.command"
+    - name: "lcs.your-extension.command"
       file: "commands/command.md"
       description: "Command description"
 
@@ -119,10 +119,10 @@ Test that users can install from your release:
 
 ```bash
 # Test dev installation
-specify extension add --dev /path/to/your-extension
+lcs extension add --dev /path/to/your-extension
 
 # Test from GitHub archive
-specify extension add --from https://github.com/your-org/spec-kit-your-extension/archive/refs/tags/v1.0.0.zip
+lcs extension add --from https://github.com/your-org/spec-kit-your-extension/archive/refs/tags/v1.0.0.zip
 ```
 
 ---
@@ -273,7 +273,7 @@ Any additional context or notes for reviewers.
 
 3. **Verification**:
    - If approved, `verified: true` is set
-   - Extension appears in `specify extension search --verified`
+   - Extension appears in `lcs extension search --verified`
 
 ### Verification Criteria
 
@@ -439,7 +439,7 @@ When releasing a new version:
 A: The main catalog is for public extensions only. For private extensions:
 
 - Host your own catalog.json file
-- Users add your catalog: `specify extension add-catalog https://your-domain.com/catalog.json`
+- Users add your catalog: `lcs extension add-catalog https://your-domain.com/catalog.json`
 - Not yet implemented - coming in Phase 4
 
 ### Q: How long does verification take?

@@ -9,19 +9,18 @@
 #     "httpx",
 # ]
 # ///
-"""
-Specify CLI - Setup tool for Specify projects
+"""LCS CLI - Setup tool for LCS projects.
 
 Usage:
-    uvx specify-cli.py init <project-name>
-    uvx specify-cli.py init .
-    uvx specify-cli.py init --here
+    uvx lcs-cli.py init <project-name>
+    uvx lcs-cli.py init .
+    uvx lcs-cli.py init --here
 
 Or install globally:
-    uv tool install --from specify-cli.py specify-cli
-    specify init <project-name>
-    specify init .
-    specify init --here
+    uv tool install --from lcs-cli.py lcs-cli
+    lcs init <project-name>
+    lcs init .
+    lcs init --here
 """
 
 import os
@@ -241,7 +240,11 @@ BANNER = """
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝╚═╝╚═╝        ╚═╝   
 """
 
-TAGLINE = "GitHub Spec Kit - Spec-Driven Development Toolkit"
+TAGLINE = "LCS - Learning Content Specifier"
+
+DEFAULT_TEMPLATE_REPO_OWNER = os.getenv("LCS_TEMPLATE_REPO_OWNER", "github")
+DEFAULT_TEMPLATE_REPO_NAME = os.getenv("LCS_TEMPLATE_REPO_NAME", "spec-kit")
+DEFAULT_TEMPLATE_ASSET_PREFIX = os.getenv("LCS_TEMPLATE_ASSET_PREFIX", "lcs-template")
 class StepTracker:
     """Track and render hierarchical steps without emojis, similar to Claude Code tree output.
     Supports live auto-refresh via an attached refresh callback.
@@ -434,8 +437,8 @@ class BannerGroup(TyperGroup):
 
 
 app = typer.Typer(
-    name="specify",
-    help="Setup tool for Specify spec-driven development projects",
+    name="lcs",
+    help="Setup tool for LCS spec-driven development projects",
     add_completion=False,
     invoke_without_command=True,
     cls=BannerGroup,
@@ -460,7 +463,7 @@ def callback(ctx: typer.Context):
     """Show banner when no subcommand is provided."""
     if ctx.invoked_subcommand is None and "--help" not in sys.argv and "-h" not in sys.argv:
         show_banner()
-        console.print(Align.center("[dim]Run 'specify --help' for usage information[/dim]"))
+        console.print(Align.center("[dim]Run 'lcs --help' for usage information[/dim]"))
         console.print()
 
 def run_command(cmd: list[str], check_return: bool = True, capture: bool = False, shell: bool = False) -> Optional[str]:
@@ -549,7 +552,7 @@ def init_git_repo(project_path: Path, quiet: bool = False) -> Tuple[bool, Option
             console.print("[cyan]Initializing git repository...[/cyan]")
         subprocess.run(["git", "init"], check=True, capture_output=True, text=True)
         subprocess.run(["git", "add", "."], check=True, capture_output=True, text=True)
-        subprocess.run(["git", "commit", "-m", "Initial commit from Specify template"], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", "Initial commit from LCS template"], check=True, capture_output=True, text=True)
         if not quiet:
             console.print("[green]✓[/green] Git repository initialized")
         return True, None
@@ -635,8 +638,8 @@ def merge_json_files(existing_path: Path, new_content: dict, verbose: bool = Fal
     return merged
 
 def download_template_from_github(ai_assistant: str, download_dir: Path, *, script_type: str = "sh", verbose: bool = True, show_progress: bool = True, client: httpx.Client = None, debug: bool = False, github_token: str = None) -> Tuple[Path, dict]:
-    repo_owner = "github"
-    repo_name = "spec-kit"
+    repo_owner = DEFAULT_TEMPLATE_REPO_OWNER
+    repo_name = DEFAULT_TEMPLATE_REPO_NAME
     if client is None:
         client = httpx.Client(verify=ssl_context)
 
@@ -668,7 +671,7 @@ def download_template_from_github(ai_assistant: str, download_dir: Path, *, scri
         raise typer.Exit(1)
 
     assets = release_data.get("assets", [])
-    pattern = f"spec-kit-template-{ai_assistant}-{script_type}"
+    pattern = f"{DEFAULT_TEMPLATE_ASSET_PREFIX}-{ai_assistant}-{script_type}"
     matching_assets = [
         asset for asset in assets
         if pattern in asset["name"] and asset["name"].endswith(".zip")
@@ -899,10 +902,10 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
 
 
 def ensure_executable_scripts(project_path: Path, tracker: StepTracker | None = None) -> None:
-    """Ensure POSIX .sh scripts under .specify/scripts (recursively) have execute bits (no-op on Windows)."""
+    """Ensure POSIX .sh scripts under .lcs/scripts (recursively) have execute bits (no-op on Windows)."""
     if os.name == "nt":
         return  # Windows: skip silently
-    scripts_root = project_path / ".specify" / "scripts"
+    scripts_root = project_path / ".lcs" / "scripts"
     if not scripts_root.is_dir():
         return
     failures: list[str] = []
@@ -944,8 +947,8 @@ def ensure_executable_scripts(project_path: Path, tracker: StepTracker | None = 
 
 def ensure_constitution_from_template(project_path: Path, tracker: StepTracker | None = None) -> None:
     """Copy constitution template to memory if it doesn't exist (preserves existing constitution on reinitialization)."""
-    memory_constitution = project_path / ".specify" / "memory" / "constitution.md"
-    template_constitution = project_path / ".specify" / "templates" / "constitution-template.md"
+    memory_constitution = project_path / ".lcs" / "memory" / "constitution.md"
+    template_constitution = project_path / ".lcs" / "templates" / "constitution-template.md"
 
     # If constitution already exists in memory, preserve it
     if memory_constitution.exists():
@@ -991,7 +994,7 @@ def init(
     github_token: str = typer.Option(None, "--github-token", help="GitHub token to use for API requests (or set GH_TOKEN or GITHUB_TOKEN environment variable)"),
 ):
     """
-    Initialize a new Specify project from the latest template.
+    Initialize a new LCS project from the latest template.
     
     This command will:
     1. Check that required tools are installed (git is optional)
@@ -1002,17 +1005,17 @@ def init(
     6. Optionally set up AI assistant commands
     
     Examples:
-        specify init my-project
-        specify init my-project --ai claude
-        specify init my-project --ai copilot --no-git
-        specify init --ignore-agent-tools my-project
-        specify init . --ai claude         # Initialize in current directory
-        specify init .                     # Initialize in current directory (interactive AI selection)
-        specify init --here --ai claude    # Alternative syntax for current directory
-        specify init --here --ai codex
-        specify init --here --ai codebuddy
-        specify init --here
-        specify init --here --force  # Skip confirmation when current directory not empty
+        lcs init my-project
+        lcs init my-project --ai claude
+        lcs init my-project --ai copilot --no-git
+        lcs init --ignore-agent-tools my-project
+        lcs init . --ai claude         # Initialize in current directory
+        lcs init .                     # Initialize in current directory (interactive AI selection)
+        lcs init --here --ai claude    # Alternative syntax for current directory
+        lcs init --here --ai codex
+        lcs init --here --ai codebuddy
+        lcs init --here
+        lcs init --here --force  # Skip confirmation when current directory not empty
     """
 
     show_banner()
@@ -1061,7 +1064,7 @@ def init(
     current_dir = Path.cwd()
 
     setup_lines = [
-        "[cyan]Specify Project Setup[/cyan]",
+        "[cyan]LCS Project Setup[/cyan]",
         "",
         f"{'Project':<15} [green]{project_path.name}[/green]",
         f"{'Working Path':<15} [dim]{current_dir}[/dim]",
@@ -1126,9 +1129,9 @@ def init(
     console.print(f"[cyan]Selected AI assistant:[/cyan] {selected_ai}")
     console.print(f"[cyan]Selected script type:[/cyan] {selected_script}")
 
-    tracker = StepTracker("Initialize Specify Project")
+    tracker = StepTracker("Initialize LCS Project")
 
-    sys._specify_tracker_active = True
+    sys._lcs_tracker_active = True
 
     tracker.add("precheck", "Check required tools")
     tracker.complete("precheck", "ok")
@@ -1257,11 +1260,11 @@ def init(
 
     steps_lines.append(f"{step_num}. Start using slash commands with your AI agent:")
 
-    steps_lines.append("   2.1 [cyan]/speckit.constitution[/] - Establish project principles")
-    steps_lines.append("   2.2 [cyan]/speckit.specify[/] - Create baseline specification")
-    steps_lines.append("   2.3 [cyan]/speckit.plan[/] - Create implementation plan")
-    steps_lines.append("   2.4 [cyan]/speckit.tasks[/] - Generate actionable tasks")
-    steps_lines.append("   2.5 [cyan]/speckit.implement[/] - Execute implementation")
+    steps_lines.append("   2.1 [cyan]/lcs.constitution[/] - Establish project principles")
+    steps_lines.append("   2.2 [cyan]/lcs.specify[/] - Create baseline specification")
+    steps_lines.append("   2.3 [cyan]/lcs.plan[/] - Create implementation plan")
+    steps_lines.append("   2.4 [cyan]/lcs.tasks[/] - Generate actionable tasks")
+    steps_lines.append("   2.5 [cyan]/lcs.implement[/] - Execute implementation")
 
     steps_panel = Panel("\n".join(steps_lines), title="Next Steps", border_style="cyan", padding=(1,2))
     console.print()
@@ -1270,9 +1273,9 @@ def init(
     enhancement_lines = [
         "Optional commands that you can use for your specs [bright_black](improve quality & confidence)[/bright_black]",
         "",
-        f"○ [cyan]/speckit.clarify[/] [bright_black](optional)[/bright_black] - Ask structured questions to de-risk ambiguous areas before planning (run before [cyan]/speckit.plan[/] if used)",
-        f"○ [cyan]/speckit.analyze[/] [bright_black](optional)[/bright_black] - Cross-artifact consistency & alignment report (after [cyan]/speckit.tasks[/], before [cyan]/speckit.implement[/])",
-        f"○ [cyan]/speckit.checklist[/] [bright_black](optional)[/bright_black] - Generate quality checklists to validate requirements completeness, clarity, and consistency (after [cyan]/speckit.plan[/])"
+        f"○ [cyan]/lcs.clarify[/] [bright_black](optional)[/bright_black] - Ask structured questions to de-risk ambiguous areas before planning (run before [cyan]/lcs.plan[/] if used)",
+        f"○ [cyan]/lcs.analyze[/] [bright_black](optional)[/bright_black] - Cross-artifact consistency & alignment report (after [cyan]/lcs.tasks[/], before [cyan]/lcs.implement[/])",
+        f"○ [cyan]/lcs.checklist[/] [bright_black](optional)[/bright_black] - Generate quality checklists to validate requirements completeness, clarity, and consistency (after [cyan]/lcs.plan[/])"
     ]
     enhancements_panel = Panel("\n".join(enhancement_lines), title="Enhancement Commands", border_style="cyan", padding=(1,2))
     console.print()
@@ -1312,7 +1315,7 @@ def check():
 
     console.print(tracker.render())
 
-    console.print("\n[bold green]Specify CLI is ready to use![/bold green]")
+    console.print("\n[bold green]LCS CLI is ready to use![/bold green]")
 
     if not git_ok:
         console.print("[dim]Tip: Install git for repository management[/dim]")
@@ -1331,7 +1334,7 @@ def version():
     # Get CLI version from package metadata
     cli_version = "unknown"
     try:
-        cli_version = importlib.metadata.version("specify-cli")
+        cli_version = importlib.metadata.version("lcs-cli")
     except Exception:
         # Fallback: try reading from pyproject.toml if running from source
         try:
@@ -1345,8 +1348,8 @@ def version():
             pass
     
     # Fetch latest template release version
-    repo_owner = "github"
-    repo_name = "spec-kit"
+    repo_owner = DEFAULT_TEMPLATE_REPO_OWNER
+    repo_name = DEFAULT_TEMPLATE_REPO_NAME
     api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
     
     template_version = "unknown"
@@ -1391,7 +1394,7 @@ def version():
 
     panel = Panel(
         info_table,
-        title="[bold cyan]Specify CLI Information[/bold cyan]",
+        title="[bold cyan]LCS CLI Information[/bold cyan]",
         border_style="cyan",
         padding=(1, 2)
     )
@@ -1404,17 +1407,17 @@ def version():
 
 extension_app = typer.Typer(
     name="extension",
-    help="Manage spec-kit extensions",
+    help="Manage LCS extensions",
     add_completion=False,
 )
 app.add_typer(extension_app, name="extension")
 
 
-def get_speckit_version() -> str:
-    """Get current spec-kit version."""
+def get_lcs_version() -> str:
+    """Get current LCS version."""
     import importlib.metadata
     try:
-        return importlib.metadata.version("specify-cli")
+        return importlib.metadata.version("lcs-cli")
     except Exception:
         # Fallback: try reading from pyproject.toml
         try:
@@ -1441,11 +1444,11 @@ def extension_list(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     manager = ExtensionManager(project_root)
@@ -1454,7 +1457,7 @@ def extension_list(
     if not installed and not (available or all_extensions):
         console.print("[yellow]No extensions installed.[/yellow]")
         console.print("\nInstall an extension with:")
-        console.print("  specify extension add <extension-name>")
+        console.print("  lcs extension add <extension-name>")
         return
 
     if installed:
@@ -1471,7 +1474,7 @@ def extension_list(
 
     if available or all_extensions:
         console.print("\nInstall an extension:")
-        console.print("  [cyan]specify extension add <name>[/cyan]")
+        console.print("  [cyan]lcs extension add <name>[/cyan]")
 
 
 @extension_app.command("add")
@@ -1485,15 +1488,15 @@ def extension_add(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     manager = ExtensionManager(project_root)
-    speckit_version = get_speckit_version()
+    lcs_version = get_lcs_version()
 
     try:
         with console.status(f"[cyan]Installing extension: {extension}[/cyan]"):
@@ -1508,7 +1511,7 @@ def extension_add(
                     console.print(f"[red]Error:[/red] No extension.yml found in {source_path}")
                     raise typer.Exit(1)
 
-                manifest = manager.install_from_directory(source_path, speckit_version)
+                manifest = manager.install_from_directory(source_path, lcs_version)
 
             elif from_url:
                 # Install from URL (ZIP file)
@@ -1531,7 +1534,7 @@ def extension_add(
                 console.print(f"Downloading from {from_url}...")
 
                 # Download ZIP to temp location
-                download_dir = project_root / ".specify" / "extensions" / ".cache" / "downloads"
+                download_dir = project_root / ".lcs" / "extensions" / ".cache" / "downloads"
                 download_dir.mkdir(parents=True, exist_ok=True)
                 zip_path = download_dir / f"{extension}-url-download.zip"
 
@@ -1541,7 +1544,7 @@ def extension_add(
                     zip_path.write_bytes(zip_data)
 
                     # Install from downloaded ZIP
-                    manifest = manager.install_from_zip(zip_path, speckit_version)
+                    manifest = manager.install_from_zip(zip_path, lcs_version)
                 except urllib.error.URLError as e:
                     console.print(f"[red]Error:[/red] Failed to download from {from_url}: {e}")
                     raise typer.Exit(1)
@@ -1559,7 +1562,7 @@ def extension_add(
                 if not ext_info:
                     console.print(f"[red]Error:[/red] Extension '{extension}' not found in catalog")
                     console.print("\nSearch available extensions:")
-                    console.print("  specify extension search")
+                    console.print("  lcs extension search")
                     raise typer.Exit(1)
 
                 # Download extension ZIP
@@ -1568,7 +1571,7 @@ def extension_add(
 
                 try:
                     # Install from downloaded ZIP
-                    manifest = manager.install_from_zip(zip_path, speckit_version)
+                    manifest = manager.install_from_zip(zip_path, lcs_version)
                 finally:
                     # Clean up downloaded ZIP
                     if zip_path.exists():
@@ -1582,7 +1585,7 @@ def extension_add(
             console.print(f"  • {cmd['name']} - {cmd.get('description', '')}")
 
         console.print(f"\n[yellow]⚠[/yellow]  Configuration may be required")
-        console.print(f"   Check: .specify/extensions/{manifest.id}/")
+        console.print(f"   Check: .lcs/extensions/{manifest.id}/")
 
     except ValidationError as e:
         console.print(f"\n[red]Validation Error:[/red] {e}")
@@ -1606,11 +1609,11 @@ def extension_remove(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     manager = ExtensionManager(project_root)
@@ -1633,7 +1636,7 @@ def extension_remove(
     if not force:
         console.print(f"\n[yellow]⚠  This will remove:[/yellow]")
         console.print(f"   • {cmd_count} commands from AI agent")
-        console.print(f"   • Extension directory: .specify/extensions/{extension}/")
+        console.print(f"   • Extension directory: .lcs/extensions/{extension}/")
         if not keep_config:
             console.print(f"   • Config files (will be backed up)")
         console.print()
@@ -1649,10 +1652,10 @@ def extension_remove(
     if success:
         console.print(f"\n[green]✓[/green] Extension '{ext_name}' removed successfully")
         if keep_config:
-            console.print(f"\nConfig files preserved in .specify/extensions/{extension}/")
+            console.print(f"\nConfig files preserved in .lcs/extensions/{extension}/")
         else:
-            console.print(f"\nConfig files backed up to .specify/extensions/.backup/{extension}/")
-        console.print(f"\nTo reinstall: specify extension add {extension}")
+            console.print(f"\nConfig files backed up to .lcs/extensions/.backup/{extension}/")
+        console.print(f"\nTo reinstall: lcs extension add {extension}")
     else:
         console.print(f"[red]Error:[/red] Failed to remove extension")
         raise typer.Exit(1)
@@ -1670,11 +1673,11 @@ def extension_search(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     catalog = ExtensionCatalog(project_root)
@@ -1689,7 +1692,7 @@ def extension_search(
                 console.print("\nTry:")
                 console.print("  • Broader search terms")
                 console.print("  • Remove filters")
-                console.print("  • specify extension search (show all)")
+                console.print("  • lcs extension search (show all)")
             raise typer.Exit(0)
 
         console.print(f"\n[green]Found {len(results)} extension(s):[/green]\n")
@@ -1720,7 +1723,7 @@ def extension_search(
                 console.print(f"  [dim]Repository:[/dim] {ext['repository']}")
 
             # Install command
-            console.print(f"\n  [cyan]Install:[/cyan] specify extension add {ext['id']}")
+            console.print(f"\n  [cyan]Install:[/cyan] lcs extension add {ext['id']}")
             console.print()
 
     except ExtensionError as e:
@@ -1738,11 +1741,11 @@ def extension_info(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     catalog = ExtensionCatalog(project_root)
@@ -1753,7 +1756,7 @@ def extension_info(
 
         if not ext_info:
             console.print(f"[red]Error:[/red] Extension '{extension}' not found in catalog")
-            console.print("\nTry: specify extension search")
+            console.print("\nTry: lcs extension search")
             raise typer.Exit(1)
 
         # Header
@@ -1775,8 +1778,8 @@ def extension_info(
         if ext_info.get('requires'):
             console.print("[bold]Requirements:[/bold]")
             reqs = ext_info['requires']
-            if reqs.get('speckit_version'):
-                console.print(f"  • Spec Kit: {reqs['speckit_version']}")
+            if reqs.get('lcs_version'):
+                console.print(f"  • LCS: {reqs['lcs_version']}")
             if reqs.get('tools'):
                 for tool in reqs['tools']:
                     tool_name = tool['name']
@@ -1827,10 +1830,10 @@ def extension_info(
         is_installed = manager.registry.is_installed(ext_info['id'])
         if is_installed:
             console.print("[green]✓ Installed[/green]")
-            console.print(f"\nTo remove: specify extension remove {ext_info['id']}")
+            console.print(f"\nTo remove: lcs extension remove {ext_info['id']}")
         else:
             console.print("[yellow]Not installed[/yellow]")
-            console.print(f"\n[cyan]Install:[/cyan] specify extension add {ext_info['id']}")
+            console.print(f"\n[cyan]Install:[/cyan] lcs extension add {ext_info['id']}")
 
     except ExtensionError as e:
         console.print(f"\n[red]Error:[/red] {e}")
@@ -1847,11 +1850,11 @@ def extension_update(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     manager = ExtensionManager(project_root)
@@ -1932,8 +1935,8 @@ def extension_update(
                 f"[yellow]Note:[/yellow] Automatic update not yet implemented. "
                 f"Please update manually:"
             )
-            console.print(f"  specify extension remove {ext_id} --keep-config")
-            console.print(f"  specify extension add {ext_id}")
+            console.print(f"  lcs extension remove {ext_id} --keep-config")
+            console.print(f"  lcs extension add {ext_id}")
 
         console.print(
             "\n[cyan]Tip:[/cyan] Automatic updates will be available in a future version"
@@ -1953,11 +1956,11 @@ def extension_enable(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     manager = ExtensionManager(project_root)
@@ -1997,11 +2000,11 @@ def extension_disable(
 
     project_root = Path.cwd()
 
-    # Check if we're in a spec-kit project
-    specify_dir = project_root / ".specify"
-    if not specify_dir.exists():
-        console.print("[red]Error:[/red] Not a spec-kit project (no .specify/ directory)")
-        console.print("Run this command from a spec-kit project root")
+    # Check if we're in a LCS project
+    lcs_dir = project_root / ".lcs"
+    if not lcs_dir.exists():
+        console.print("[red]Error:[/red] Not a LCS project (no .lcs/ directory)")
+        console.print("Run this command from a LCS project root")
         raise typer.Exit(1)
 
     manager = ExtensionManager(project_root)
@@ -2031,7 +2034,7 @@ def extension_disable(
 
     console.print(f"[green]✓[/green] Extension '{extension}' disabled")
     console.print(f"\nCommands will no longer be available. Hooks will not execute.")
-    console.print(f"To re-enable: specify extension enable {extension}")
+    console.print(f"To re-enable: lcs extension enable {extension}")
 
 
 def main():

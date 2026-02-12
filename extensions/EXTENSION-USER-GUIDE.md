@@ -56,20 +56,20 @@ Let's install the Jira extension as an example:
 
 ```bash
 # 1. Search for the extension
-specify extension search jira
+lcs extension search jira
 
 # 2. Get detailed information
-specify extension info jira
+lcs extension info jira
 
 # 3. Install it
-specify extension add jira
+lcs extension add jira
 
 # 4. Configure it
 vim .specify/extensions/jira/jira-config.yml
 
 # 5. Use it
 # (Commands are now available in Claude Code)
-/speckit.jira.specstoissues
+/lcs.jira.specstoissues
 ```
 
 ---
@@ -79,7 +79,7 @@ vim .specify/extensions/jira/jira-config.yml
 ### Browse All Extensions
 
 ```bash
-specify extension search
+lcs extension search
 ```
 
 Shows all available extensions in the catalog.
@@ -88,41 +88,41 @@ Shows all available extensions in the catalog.
 
 ```bash
 # Search for "jira"
-specify extension search jira
+lcs extension search jira
 
 # Search for "issue tracking"
-specify extension search issue
+lcs extension search issue
 ```
 
 ### Filter by Tag
 
 ```bash
 # Find all issue-tracking extensions
-specify extension search --tag issue-tracking
+lcs extension search --tag issue-tracking
 
 # Find all Atlassian tools
-specify extension search --tag atlassian
+lcs extension search --tag atlassian
 ```
 
 ### Filter by Author
 
 ```bash
 # Extensions by Stats Perform
-specify extension search --author "Stats Perform"
+lcs extension search --author "Stats Perform"
 ```
 
 ### Show Verified Only
 
 ```bash
 # Only show verified extensions
-specify extension search --verified
+lcs extension search --verified
 ```
 
 ### Get Extension Details
 
 ```bash
 # Detailed information
-specify extension info jira
+lcs extension info jira
 ```
 
 Shows:
@@ -142,7 +142,7 @@ Shows:
 
 ```bash
 # By name (from catalog)
-specify extension add jira
+lcs extension add jira
 ```
 
 This will:
@@ -158,14 +158,14 @@ This will:
 
 ```bash
 # From GitHub release
-specify extension add --from https://github.com/org/spec-kit-ext/archive/refs/tags/v1.0.0.zip
+lcs extension add --from https://github.com/org/spec-kit-ext/archive/refs/tags/v1.0.0.zip
 ```
 
 ### Install from Local Directory (Development)
 
 ```bash
 # For testing or development
-specify extension add --dev /path/to/extension
+lcs extension add --dev /path/to/extension
 ```
 
 ### Installation Output
@@ -177,9 +177,9 @@ Jira Integration (v1.0.0)
   Create Jira Epics, Stories, and Issues from spec-kit artifacts
 
 Provided commands:
-  • speckit.jira.specstoissues - Create Jira hierarchy from spec and tasks
-  • speckit.jira.discover-fields - Discover Jira custom fields for configuration
-  • speckit.jira.sync-status - Sync task completion status to Jira
+  • lcs.jira.specstoissues - Create Jira hierarchy from spec and tasks
+  • lcs.jira.discover-fields - Discover Jira custom fields for configuration
+  • lcs.jira.sync-status - Sync task completion status to Jira
 
 ⚠  Configuration may be required
    Check: .specify/extensions/jira/
@@ -195,10 +195,10 @@ Extensions add commands that appear in your AI agent (Claude Code):
 
 ```text
 # In Claude Code
-> /speckit.jira.specstoissues
+> /lcs.jira.specstoissues
 
 # Or use short alias (if provided)
-> /speckit.specstoissues
+> /lcs.specstoissues
 ```
 
 ### Extension Configuration
@@ -224,21 +224,21 @@ vim .specify/extensions/jira/jira-config.yml
 
 Some extensions provide hooks that execute after core commands:
 
-**Example**: Jira extension hooks into `/speckit.tasks`
+**Example**: Jira extension hooks into `/lcs.tasks`
 
 ```text
 # Run core command
-> /speckit.tasks
+> /lcs.tasks
 
 # Output includes:
 ## Extension Hooks
 
 **Optional Hook**: jira
-Command: `/speckit.jira.specstoissues`
+Command: `/lcs.jira.specstoissues`
 Description: Automatically create Jira hierarchy after task generation
 
 Prompt: Create Jira issues from tasks?
-To execute: `/speckit.jira.specstoissues`
+To execute: `/lcs.jira.specstoissues`
 ```
 
 You can then choose to run the hook or skip it.
@@ -250,7 +250,7 @@ You can then choose to run the hook or skip it.
 ### List Installed Extensions
 
 ```bash
-specify extension list
+lcs extension list
 ```
 
 Output:
@@ -267,10 +267,10 @@ Installed Extensions:
 
 ```bash
 # Check for updates (all extensions)
-specify extension update
+lcs extension update
 
 # Update specific extension
-specify extension update jira
+lcs extension update jira
 ```
 
 Output:
@@ -289,18 +289,18 @@ Update these extensions? [y/N]:
 
 ```bash
 # Disable without removing
-specify extension disable jira
+lcs extension disable jira
 
 ✓ Extension 'jira' disabled
 
 Commands will no longer be available. Hooks will not execute.
-To re-enable: specify extension enable jira
+To re-enable: lcs extension enable jira
 ```
 
 ### Re-enable Extension
 
 ```bash
-specify extension enable jira
+lcs extension enable jira
 
 ✓ Extension 'jira' enabled
 ```
@@ -309,13 +309,13 @@ specify extension enable jira
 
 ```bash
 # Remove extension (with confirmation)
-specify extension remove jira
+lcs extension remove jira
 
 # Keep configuration when removing
-specify extension remove jira --keep-config
+lcs extension remove jira --keep-config
 
 # Force removal (no confirmation)
-specify extension remove jira --force
+lcs extension remove jira --force
 ```
 
 ---
@@ -388,7 +388,7 @@ settings:
 hooks:
   after_tasks:
     - extension: jira
-      command: speckit.jira.specstoissues
+      command: lcs.jira.specstoissues
       enabled: true
       optional: true
       prompt: "Create Jira issues from tasks?"
@@ -509,17 +509,17 @@ export SPECKIT_CATALOG_URL="https://your-org.com/spec-kit/catalog.json"
 Create `.env` or set in your shell before running spec-kit commands:
 
 ```bash
-SPECKIT_CATALOG_URL="https://your-org.com/spec-kit/catalog.json" specify extension search
+SPECKIT_CATALOG_URL="https://your-org.com/spec-kit/catalog.json" lcs extension search
 ```
 
 #### 4. Verify Configuration
 
 ```bash
 # Search should now show your catalog's extensions
-specify extension search
+lcs extension search
 
 # Install from your catalog
-specify extension add jira
+lcs extension add jira
 ```
 
 ### Catalog JSON Schema
@@ -572,7 +572,7 @@ Limit which extensions your team can install:
 }
 ```
 
-Only `jira` and `github` will appear in `specify extension search`.
+Only `jira` and `github` will appear in `lcs extension search`.
 
 #### Air-Gapped Environments
 
@@ -602,7 +602,7 @@ python -m http.server 8000 --directory ./my-catalog/
 export SPECKIT_CATALOG_URL="http://localhost:8000/catalog.json"
 
 # Test installation
-specify extension add my-new-extension
+lcs extension add my-new-extension
 ```
 
 ### Combining with Direct Installation
@@ -611,13 +611,13 @@ You can still install extensions not in your catalog using `--from`:
 
 ```bash
 # From catalog
-specify extension add jira
+lcs extension add jira
 
 # Direct URL (bypasses catalog)
-specify extension add --from https://github.com/someone/spec-kit-ext/archive/v1.0.0.zip
+lcs extension add --from https://github.com/someone/spec-kit-ext/archive/v1.0.0.zip
 
 # Local development
-specify extension add --dev /path/to/extension
+lcs extension add --dev /path/to/extension
 ```
 
 **Note**: Direct URL installation shows a security warning since the extension isn't from your configured catalog.
@@ -632,8 +632,8 @@ specify extension add --dev /path/to/extension
 
 **Solutions**:
 
-1. Check spelling: `specify extension search jira`
-2. Refresh catalog: `specify extension search --help`
+1. Check spelling: `lcs extension search jira`
+2. Refresh catalog: `lcs extension search --help`
 3. Check internet connection
 4. Extension may not be published yet
 
@@ -643,7 +643,7 @@ specify extension add --dev /path/to/extension
 
 **Solutions**:
 
-1. Check if extension is installed: `specify extension list`
+1. Check if extension is installed: `lcs extension list`
 2. Create config from template:
 
    ```bash
@@ -651,7 +651,7 @@ specify extension add --dev /path/to/extension
       .specify/extensions/jira/jira-config.yml
    ```
 
-3. Reinstall extension: `specify extension remove jira && specify extension add jira`
+3. Reinstall extension: `lcs extension remove jira && lcs extension add jira`
 
 ### Command Not Available
 
@@ -659,12 +659,12 @@ specify extension add --dev /path/to/extension
 
 **Solutions**:
 
-1. Check extension is enabled: `specify extension list`
+1. Check extension is enabled: `lcs extension list`
 2. Restart AI agent (Claude Code)
 3. Check command file exists:
 
    ```bash
-   ls .claude/commands/speckit.jira.*.md
+   ls .claude/commands/lcs.jira.*.md
    ```
 
 4. Reinstall extension
@@ -678,13 +678,13 @@ specify extension add --dev /path/to/extension
 1. Upgrade spec-kit:
 
    ```bash
-   uv tool upgrade specify-cli
+   uv tool upgrade lcs-cli
    ```
 
 2. Install older version of extension:
 
    ```bash
-   specify extension add --from https://github.com/org/ext/archive/v1.0.0.zip
+   lcs extension add --from https://github.com/org/ext/archive/v1.0.0.zip
    ```
 
 ### MCP Tool Not Available
@@ -696,7 +696,7 @@ specify extension add --dev /path/to/extension
 1. Check MCP server is installed
 2. Check AI agent MCP configuration
 3. Restart AI agent
-4. Check extension requirements: `specify extension info jira`
+4. Check extension requirements: `lcs extension info jira`
 
 ### Permission Denied
 
@@ -754,7 +754,7 @@ This project uses:
   - Config: `.specify/extensions/jira/jira-config.yml`
   - Requires: jira-mcp-server
 
-To install: `specify extension add jira`
+To install: `lcs extension add jira`
 ```
 
 ### 3. Local Development
@@ -782,7 +782,7 @@ env:
   SPECKIT_JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT }}
 
 - name: Create Jira Issues
-  run: specify extension add jira && ...
+  run: lcs extension add jira && ...
 ```
 
 ### 5. Extension Updates
@@ -791,7 +791,7 @@ env:
 
 ```bash
 # Weekly or before major releases
-specify extension update
+lcs extension update
 ```
 
 **Pin versions for stability**:
@@ -821,9 +821,9 @@ Document extension usage in your project:
 ## Working with Jira
 
 After creating tasks, sync to Jira:
-1. Run `/speckit.tasks` to generate tasks
-2. Run `/speckit.jira.specstoissues` to create Jira issues
-3. Run `/speckit.jira.sync-status` to update status
+1. Run `/lcs.tasks` to generate tasks
+2. Run `/lcs.jira.specstoissues` to create Jira issues
+3. Run `/lcs.jira.sync-status` to update status
 ```
 
 ---
@@ -852,15 +852,15 @@ After creating tasks, sync to Jira:
 
 ### Q: What happens if two extensions have the same command name?
 
-**A**: Extensions use namespaced commands (`speckit.{extension}.{command}`), so conflicts are very rare. The extension system will warn you if conflicts occur.
+**A**: Extensions use namespaced commands (`lcs.{extension}.{command}`), so conflicts are very rare. The extension system will warn you if conflicts occur.
 
 ### Q: Can I contribute to existing extensions?
 
-**A**: Yes! Most extensions are open source. Check the repository link in `specify extension info {extension}`.
+**A**: Yes! Most extensions are open source. Check the repository link in `lcs extension info {extension}`.
 
 ### Q: How do I report extension bugs?
 
-**A**: Go to the extension's repository (shown in `specify extension info`) and create an issue.
+**A**: Go to the extension's repository (shown in `lcs extension info`) and create an issue.
 
 ### Q: Can extensions work offline?
 
@@ -874,7 +874,7 @@ After creating tasks, sync to Jira:
 
 ## Support
 
-- **Extension Issues**: Report to extension repository (see `specify extension info`)
+- **Extension Issues**: Report to extension repository (see `lcs extension info`)
 - **Spec Kit Issues**: <https://github.com/statsperform/spec-kit/issues>
 - **Extension Catalog**: <https://github.com/statsperform/spec-kit/tree/main/extensions>
 - **Documentation**: See EXTENSION-DEVELOPMENT-GUIDE.md and EXTENSION-PUBLISHING-GUIDE.md

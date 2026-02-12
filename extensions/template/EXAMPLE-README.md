@@ -23,10 +23,10 @@ Brief description of what your extension does and why it's useful.
 
 ```bash
 # Install from catalog
-specify extension add my-extension
+lcs extension add my-extension
 
 # Or install from local development directory
-specify extension add --dev /path/to/my-extension
+lcs extension add --dev /path/to/my-extension
 ```
 
 ## Configuration
@@ -65,7 +65,7 @@ Description of what this command does.
 
 ```bash
 # In Claude Code
-> /speckit.my-extension.example
+> /lcs.my-extension.example
 ```
 
 **Prerequisites**:
@@ -114,13 +114,13 @@ export SPECKIT_MY_EXTENSION_CONNECTION_API_KEY="custom-key"
 
 ```bash
 # Step 1: Create specification
-> /speckit.spec
+> /lcs.spec
 
 # Step 2: Generate tasks
-> /speckit.tasks
+> /lcs.tasks
 
 # Step 3: Use extension
-> /speckit.my-extension.example
+> /lcs.my-extension.example
 ```
 
 ## Troubleshooting
@@ -135,7 +135,7 @@ export SPECKIT_MY_EXTENSION_CONNECTION_API_KEY="custom-key"
 
 **Solutions**:
 
-1. Check extension is installed: `specify extension list`
+1. Check extension is installed: `lcs extension list`
 2. Restart AI agent
 3. Reinstall extension
 

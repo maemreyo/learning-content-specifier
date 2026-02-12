@@ -40,7 +40,7 @@ config_file=".specify/extensions/my-extension/my-extension-config.yml"
 
 if [ ! -f "$config_file" ]; then
   echo "❌ Error: Configuration not found at $config_file"
-  echo "Run 'specify extension add my-extension' to install and configure"
+  echo "Run 'lcs extension add my-extension' to install and configure"
   exit 1
 fi
 
@@ -151,7 +151,7 @@ export SPECKIT_MY_EXTENSION_KEY="override-value"
 
 **Solution**: Install the extension and create configuration:
 ``bash
-specify extension add my-extension
+lcs extension add my-extension
 cp .specify/extensions/my-extension/config-template.yml \
    .specify/extensions/my-extension/my-extension-config.yml
 ``
@@ -182,7 +182,7 @@ cp .specify/extensions/my-extension/config-template.yml \
 
 # Run with default configuration
 >
-> /speckit.my-extension.example
+> /lcs.my-extension.example
 ``
 
 ### Example 2: With Environment Override
@@ -192,7 +192,7 @@ cp .specify/extensions/my-extension/config-template.yml \
 # Override configuration with environment variable
 
 export SPECKIT_MY_EXTENSION_KEY="custom-value"
-> /speckit.my-extension.example
+> /lcs.my-extension.example
 ``
 
 ### Example 3: After Core Command
@@ -201,10 +201,10 @@ export SPECKIT_MY_EXTENSION_KEY="custom-value"
 
 # Use as part of a workflow
 >
-> /speckit.tasks
-> /speckit.my-extension.example
+> /lcs.tasks
+> /lcs.my-extension.example
 ``
 
 ---
 
-*For more information, see the extension README or run `specify extension info my-extension`*
+*For more information, see the extension README or run `lcs extension info my-extension`*

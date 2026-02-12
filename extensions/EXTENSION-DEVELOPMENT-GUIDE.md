@@ -34,14 +34,14 @@ requires:
       required: true
       version: ">=1.0.0"
   commands:                             # Optional: Core commands needed
-    - "speckit.tasks"
+    - "lcs.tasks"
 
 provides:
   commands:
-    - name: "speckit.my-ext.hello"      # Must follow pattern: speckit.{ext-id}.{cmd}
+    - name: "lcs.my-ext.hello"      # Must follow pattern: lcs.{ext-id}.{cmd}
       file: "commands/hello.md"
       description: "Say hello"
-      aliases: ["speckit.hello"]        # Optional aliases
+      aliases: ["lcs.hello"]        # Optional aliases
 
   config:                               # Optional: Config files
     - name: "my-ext-config.yml"
@@ -51,7 +51,7 @@ provides:
 
 hooks:                                  # Optional: Integration hooks
   after_tasks:
-    command: "speckit.my-ext.hello"
+    command: "lcs.my-ext.hello"
     optional: true
     prompt: "Run hello command?"
 
@@ -106,13 +106,13 @@ Load extension config from `.specify/extensions/my-ext/my-ext-config.yml`.
 
 ```bash
 cd /path/to/spec-kit-project
-specify extension add --dev /path/to/my-extension
+lcs extension add --dev /path/to/my-extension
 ```
 
 ### 6. Verify Installation
 
 ```bash
-specify extension list
+lcs extension list
 
 # Should show:
 #  ✓ My Extension (v1.0.0)
@@ -126,10 +126,10 @@ If using Claude:
 
 ```bash
 claude
-> /speckit.my-ext.hello world
+> /lcs.my-ext.hello world
 ```
 
-The command will be available in `.claude/commands/speckit.my-ext.hello.md`.
+The command will be available in `.claude/commands/lcs.my-ext.hello.md`.
 
 ---
 
@@ -183,7 +183,7 @@ What the extension provides.
 
 **Command object**:
 
-- `name`: Command name (must match `speckit.{ext-id}.{command}`)
+- `name`: Command name (must match `lcs.{ext-id}.{command}`)
 - `file`: Path to command file (relative to extension root)
 - `description`: Command description (optional)
 - `aliases`: Alternative command names (optional, array)
@@ -196,8 +196,8 @@ Integration hooks for automatic execution.
 
 Available hook points:
 
-- `after_tasks`: After `/speckit.tasks` completes
-- `after_implement`: After `/speckit.implement` completes (future)
+- `after_tasks`: After `/lcs.tasks` completes
+- `after_implement`: After `/lcs.implement` completes (future)
 
 Hook object:
 
@@ -349,8 +349,8 @@ echo "$config"
 ### Command Name
 
 - **Pattern**: `^speckit\.[a-z0-9-]+\.[a-z0-9-]+$`
-- **Valid**: `speckit.my-ext.hello`, `speckit.tool.cmd`
-- **Invalid**: `my-ext.hello` (missing prefix), `speckit.hello` (no extension namespace)
+- **Valid**: `lcs.my-ext.hello`, `lcs.tool.cmd`
+- **Invalid**: `my-ext.hello` (missing prefix), `lcs.hello` (no extension namespace)
 
 ### Command File Path
 
@@ -368,26 +368,26 @@ echo "$config"
 2. **Install locally**:
 
    ```bash
-   specify extension add --dev /path/to/extension
+   lcs extension add --dev /path/to/extension
    ```
 
 3. **Verify installation**:
 
    ```bash
-   specify extension list
+   lcs extension list
    ```
 
 4. **Test commands** with your AI agent
 5. **Check command registration**:
 
    ```bash
-   ls .claude/commands/speckit.my-ext.*
+   ls .claude/commands/lcs.my-ext.*
    ```
 
 6. **Remove extension**:
 
    ```bash
-   specify extension remove my-ext
+   lcs extension remove my-ext
    ```
 
 ### Automated Testing
@@ -439,7 +439,7 @@ def test_command_files_exist():
 
    ```bash
    git clone https://github.com/you/spec-kit-my-ext
-   specify extension add --dev spec-kit-my-ext/
+   lcs extension add --dev spec-kit-my-ext/
    ```
 
 ### Option 2: ZIP Archive (Future)
@@ -453,7 +453,7 @@ zip -r spec-kit-my-ext-1.0.0.zip extension.yml commands/ scripts/ docs/
 Users install with:
 
 ```bash
-specify extension add --from https://github.com/.../spec-kit-my-ext-1.0.0.zip
+lcs extension add --from https://github.com/.../spec-kit-my-ext-1.0.0.zip
 ```
 
 ### Option 3: Extension Catalog (Future)
@@ -466,7 +466,7 @@ Submit to official catalog:
 4. **After merge**, users can install with:
 
    ```bash
-   specify extension add my-ext  # No URL needed!
+   lcs extension add my-ext  # No URL needed!
    ```
 
 ---
@@ -525,7 +525,7 @@ requires:
   speckit_version: ">=0.1.0"
 provides:
   commands:
-    - name: "speckit.minimal.hello"
+    - name: "lcs.minimal.hello"
       file: "commands/hello.md"
 ```
 
@@ -582,7 +582,7 @@ Extension that runs automatically:
 # extension.yml
 hooks:
   after_tasks:
-    command: "speckit.auto.analyze"
+    command: "lcs.auto.analyze"
     optional: false  # Always run
     description: "Analyze tasks after generation"
 ```
@@ -599,7 +599,7 @@ hooks:
 
 **Error**: `Extension requires spec-kit >=0.2.0`
 
-- **Fix**: Update spec-kit with `uv tool install specify-cli --force`
+- **Fix**: Update spec-kit with `uv tool install lcs-cli --force`
 
 **Error**: `Command file not found`
 

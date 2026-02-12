@@ -101,9 +101,9 @@ defaults:                # Optional, default configuration values
 - **Type**: string
 - **Pattern**: `^speckit\.[a-z0-9-]+\.[a-z0-9-]+$`
 - **Description**: Namespaced command name
-- **Format**:  `speckit.{extension-id}.{command-name}`
-- **Examples**: `speckit.jira.specstoissues`, `speckit.linear.sync`
-- **Invalid**: `jira.specstoissues`, `speckit.command`, `speckit.jira.CreateIssues`
+- **Format**:  `lcs.{extension-id}.{command-name}`
+- **Examples**: `lcs.jira.specstoissues`, `lcs.linear.sync`
+- **Invalid**: `jira.specstoissues`, `lcs.command`, `lcs.jira.CreateIssues`
 
 #### `hooks`
 
@@ -191,7 +191,7 @@ is_installed = registry.is_installed(extension_id: str)  # bool
       "source": "catalog",
       "manifest_hash": "sha256...",
       "enabled": true,
-      "registered_commands": ["speckit.jira.specstoissues", ...],
+      "registered_commands": ["lcs.jira.specstoissues", ...],
       "installed_at": "2026-01-28T..."
     }
   }
@@ -475,7 +475,7 @@ Examples:
 ```yaml
 hooks:
   after_tasks:
-    command: "speckit.jira.specstoissues"
+    command: "lcs.jira.specstoissues"
     optional: true
     prompt: "Create Jira issues from tasks?"
     description: "Automatically create Jira hierarchy"
@@ -499,7 +499,7 @@ Standard events (defined by core):
 hooks:
   after_tasks:
     - extension: jira
-      command: speckit.jira.specstoissues
+      command: lcs.jira.specstoissues
       enabled: true
       optional: true
       prompt: "Create Jira issues from tasks?"
@@ -534,7 +534,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension list
 
-**Usage**: `specify extension list [OPTIONS]`
+**Usage**: `lcs extension list [OPTIONS]`
 
 **Options**:
 
@@ -545,7 +545,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension add
 
-**Usage**: `specify extension add EXTENSION [OPTIONS]`
+**Usage**: `lcs extension add EXTENSION [OPTIONS]`
 
 **Options**:
 
@@ -560,7 +560,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension remove
 
-**Usage**: `specify extension remove EXTENSION [OPTIONS]`
+**Usage**: `lcs extension remove EXTENSION [OPTIONS]`
 
 **Options**:
 
@@ -573,7 +573,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension search
 
-**Usage**: `specify extension search [QUERY] [OPTIONS]`
+**Usage**: `lcs extension search [QUERY] [OPTIONS]`
 
 **Options**:
 
@@ -587,7 +587,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension info
 
-**Usage**: `specify extension info EXTENSION`
+**Usage**: `lcs extension info EXTENSION`
 
 **Arguments**:
 
@@ -595,7 +595,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension update
 
-**Usage**: `specify extension update [EXTENSION]`
+**Usage**: `lcs extension update [EXTENSION]`
 
 **Arguments**:
 
@@ -603,7 +603,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension enable
 
-**Usage**: `specify extension enable EXTENSION`
+**Usage**: `lcs extension enable EXTENSION`
 
 **Arguments**:
 
@@ -611,7 +611,7 @@ EXECUTE_COMMAND: {command}
 
 ### extension disable
 
-**Usage**: `specify extension disable EXTENSION`
+**Usage**: `lcs extension disable EXTENSION`
 
 **Arguments**:
 
@@ -704,7 +704,7 @@ satisfied = version_satisfies("1.2.3", ">=1.0.0,<2.0.0")  # bool
 
 .claude/
 └── commands/
-    └── speckit.{ext}.{cmd}.md  # Registered commands
+    └── lcs.{ext}.{cmd}.md  # Registered commands
 ```
 
 ---
