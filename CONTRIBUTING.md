@@ -58,8 +58,8 @@ Here are a few things you can do that will increase the likelihood of your pull 
 When working on learning-content-specifier:
 
 1. Test changes with the `lcs` CLI commands (`/lcs.define`, `/lcs.design`, `/lcs.sequence`) in your coding agent of choice
-2. Verify templates are working correctly in `templates/` directory
-3. Test script functionality in the `scripts/` directory
+2. Verify templates are working correctly in `factory/templates/` directory
+3. Test script functionality in the `factory/scripts/` directory
 4. Ensure memory files (`memory/charter.md`) are updated if major process changes are made
 
 ### Testing template and command changes locally
@@ -72,7 +72,7 @@ To test your templates, commands, and other changes locally, follow these steps:
    Run the following command to generate the local packages:
 
    ```bash
-   ./.github/workflows/scripts/create-release-packages.sh v1.0.0
+   ./tooling/ci/create-release-packages.sh v1.0.0
    ```
 
 2. **Copy the relevant package to your test project**

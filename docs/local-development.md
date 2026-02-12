@@ -164,7 +164,7 @@ rm -rf .venv dist build *.egg-info
 | Symptom | Fix |
 |---------|-----|
 | `ModuleNotFoundError: typer` | Run `uv pip install -e .` |
-| Scripts not executable (Linux) | Re-run init or `chmod +x scripts/*.sh` |
+| Scripts not executable (Linux) | Re-run init or `chmod +x factory/scripts/bash/*.sh` |
 | Git step skipped | You passed `--no-git` or Git not installed |
 | Wrong script type downloaded | Pass `--script sh` or `--script ps` explicitly |
 | TLS errors on corporate network | Try `--skip-tls` (not for production) |

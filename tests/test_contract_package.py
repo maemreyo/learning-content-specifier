@@ -38,7 +38,7 @@ def test_contract_index_manifest_first_policy_is_enabled():
 
 
 def test_contract_package_verify_script_passes():
-    cmd = ["uv", "run", "python", str(ROOT / "scripts/build_contract_package.py"), "--verify"]
+    cmd = ["uv", "run", "python", str(ROOT / "factory/scripts/python/build_contract_package.py"), "--verify"]
     result = subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True, text=True)
     assert "Contract index verification passed" in result.stdout
 
@@ -49,7 +49,7 @@ def test_contract_package_build_zip_contains_required_entries(tmp_path: Path):
         "uv",
         "run",
         "python",
-        str(ROOT / "scripts/build_contract_package.py"),
+        str(ROOT / "factory/scripts/python/build_contract_package.py"),
         "--verify",
         "--package-version",
         version,
@@ -65,6 +65,6 @@ def test_contract_package_build_zip_contains_required_entries(tmp_path: Path):
         names = set(archive.namelist())
 
     assert "contracts/index.json" in names
-    assert "schemas/manifest.schema.json" in names
-    assert "docs/contract/CONSUMER-API-V1.md" in names
-    assert "fixtures/contracts/golden_path_snapshot.json" in names
+    assert "contracts/schemas/manifest.schema.json" in names
+    assert "contracts/docs/CONSUMER-API-V1.md" in names
+    assert "contracts/fixtures/golden_path_snapshot.json" in names

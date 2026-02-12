@@ -15,11 +15,11 @@ def _run_setup_design(env: dict[str, str]) -> None:
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/setup-design.ps1"),
+            str(ROOT / "factory/scripts/powershell/setup-design.ps1"),
             "-Json",
         ]
     else:
-        cmd = ["bash", str(ROOT / "scripts/bash/setup-design.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json"]
     subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 
 
@@ -30,11 +30,11 @@ def _run_gate_validator(env: dict[str, str], check: bool = True) -> subprocess.C
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/validate-author-gates.ps1"),
+            str(ROOT / "factory/scripts/powershell/validate-author-gates.ps1"),
             "-Json",
         ]
     else:
-        cmd = ["bash", str(ROOT / "scripts/bash/validate-author-gates.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/validate-author-gates.sh"), "--json"]
     return subprocess.run(cmd, cwd=ROOT, env=env, check=check, capture_output=True, text=True)
 
 

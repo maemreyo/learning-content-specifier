@@ -15,11 +15,11 @@ def _run_setup_design(env: dict[str, str]) -> None:
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/setup-design.ps1"),
+            str(ROOT / "factory/scripts/powershell/setup-design.ps1"),
             "-Json",
         ]
     else:
-        cmd = ["bash", str(ROOT / "scripts/bash/setup-design.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json"]
     subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 
 
@@ -30,7 +30,7 @@ def _run_contract_validator(unit_dir: Path, env: dict[str, str], check: bool = T
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/validate-artifact-contracts.ps1"),
+            str(ROOT / "factory/scripts/powershell/validate-artifact-contracts.ps1"),
             "-Json",
             "-UnitDir",
             str(unit_dir),
@@ -38,7 +38,7 @@ def _run_contract_validator(unit_dir: Path, env: dict[str, str], check: bool = T
     else:
         cmd = [
             "bash",
-            str(ROOT / "scripts/bash/validate-artifact-contracts.sh"),
+            str(ROOT / "factory/scripts/bash/validate-artifact-contracts.sh"),
             "--json",
             "--unit-dir",
             str(unit_dir),

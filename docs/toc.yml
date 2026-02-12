@@ -21,10 +21,10 @@
 - name: Consumer Contract Sync
   items:
     - name: Contract Sync Overview
-      href: contract/README.md
+      href: ../contracts/docs/README.md
     - name: Consumer API v1
-      href: contract/CONSUMER-API-V1.md
+      href: ../contracts/docs/CONSUMER-API-V1.md
     - name: Compatibility Matrix
-      href: contract/COMPATIBILITY-MATRIX.md
+      href: ../contracts/docs/COMPATIBILITY-MATRIX.md
     - name: Standalone Consumer Blueprint
       href: system/architect/lcs-output-consumer-standalone-blueprint.md

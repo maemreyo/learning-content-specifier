@@ -93,12 +93,12 @@ Governance artifact:
 
 ## Key File References
 
-- `templates/commands/audit.md`
-- `templates/commands/author.md`
-- `templates/commands/design.md`
-- `templates/commands/sequence.md`
-- `scripts/bash/check-workflow-prereqs.sh`
-- `scripts/bash/create-new-unit.sh`
-- `scripts/bash/setup-design.sh`
-- `scripts/bash/update-agent-context.sh`
+- `factory/templates/commands/audit.md`
+- `factory/templates/commands/author.md`
+- `factory/templates/commands/design.md`
+- `factory/templates/commands/sequence.md`
+- `factory/scripts/bash/check-workflow-prereqs.sh`
+- `factory/scripts/bash/create-new-unit.sh`
+- `factory/scripts/bash/setup-design.sh`
+- `factory/scripts/bash/update-agent-context.sh`
 - `docs/system/codemaps/LCS_Commands/diagram.md`

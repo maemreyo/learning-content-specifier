@@ -106,7 +106,7 @@ Update the **Supported AI Agents** section in `README.md` to include the new age
 
 #### 4. Update Release Package Script
 
-Modify `.github/workflows/scripts/create-release-packages.sh`:
+Modify `tooling/ci/create-release-packages.sh`:
 
 ##### Add to ALL_AGENTS array
 
@@ -127,7 +127,7 @@ esac
 
 #### 4. Update GitHub Release Script
 
-Modify `.github/workflows/scripts/create-github-release.sh` to include the new agent's packages:
+Modify `tooling/ci/create-github-release.sh` to include the new agent's packages:
 
 ```bash
 gh release create "$VERSION" \
@@ -139,7 +139,7 @@ gh release create "$VERSION" \
 
 #### 5. Update Agent Context Scripts
 
-##### Bash script (`scripts/bash/update-agent-context.sh`)
+##### Bash script (`factory/scripts/bash/update-agent-context.sh`)
 
 Add file variable:
 
@@ -161,7 +161,7 @@ case "$AGENT_TYPE" in
 esac
 ```
 
-##### PowerShell script (`scripts/powershell/update-agent-context.ps1`)
+##### PowerShell script (`factory/scripts/powershell/update-agent-context.ps1`)
 
 Add file variable:
 

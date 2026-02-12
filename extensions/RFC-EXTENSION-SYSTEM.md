@@ -110,7 +110,7 @@ Introduce an extension system to LCS that allows modular integration with extern
 project/
 ├── .lcs/
 │   ├── scripts/                 # Core scripts (unchanged)
-│   ├── templates/               # Core templates (unchanged)
+│   ├── factory/templates/               # Core templates (unchanged)
 │   ├── memory/                  # Session memory
 │   ├── extensions/              # Extensions directory (NEW)
 │   │   ├── .registry            # Installed extensions metadata (NEW)
@@ -443,8 +443,8 @@ tools:
   - 'jira-mcp-server/epic_create'
   - 'jira-mcp-server/story_create'
 scripts:
-  sh: ../../scripts/bash/check-workflow-prereqs.sh --json
-  ps: ../../scripts/powershell/check-workflow-prereqs.ps1 -Json
+  sh: ../../factory/scripts/bash/check-workflow-prereqs.sh --json
+  ps: ../../factory/scripts/powershell/check-workflow-prereqs.ps1 -Json
 ---
 
 # Command implementation
@@ -756,7 +756,7 @@ hooks:
 
 ### Hook Execution
 
-**In core command** (e.g., `templates/commands/sequence.md`):
+**In core command** (e.g., `factory/templates/commands/sequence.md`):
 
 Add at end of command:
 

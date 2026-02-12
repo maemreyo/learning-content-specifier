@@ -763,7 +763,9 @@ class CommandRegistrar:
         if "scripts" in frontmatter:
             for key in frontmatter["scripts"]:
                 script_path = frontmatter["scripts"][key]
-                if script_path.startswith("../../scripts/"):
+                if script_path.startswith("../../factory/scripts/"):
+                    frontmatter["scripts"][key] = f".lcs/scripts/{script_path[20:]}"
+                elif script_path.startswith("../../scripts/"):
                     frontmatter["scripts"][key] = f".lcs/scripts/{script_path[14:]}"
         return frontmatter
 
@@ -1812,4 +1814,3 @@ class HookExecutor:
                     hook["enabled"] = False
 
         self.save_project_config(config)
-

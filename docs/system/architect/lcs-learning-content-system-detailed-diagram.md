@@ -156,11 +156,11 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph SRC["Source of Truth"]
-        T0["templates/commands/*.md"]
-        T1["templates/*-template.md"]
-        T2["scripts/bash/*"]
-        T3["scripts/powershell/*"]
-        T4["schemas/*.schema.json"]
+        T0["factory/templates/commands/*.md"]
+        T1["factory/templates/*-template.md"]
+        T2["factory/scripts/bash/*"]
+        T3["factory/scripts/powershell/*"]
+        T4["contracts/schemas/*.schema.json"]
         T5["src/lcs_cli/*"]
     end
 

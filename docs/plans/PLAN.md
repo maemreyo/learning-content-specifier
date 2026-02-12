@@ -10,10 +10,10 @@ Bạn đã chốt:
 4. Agent path source-of-truth: `AGENTS.md`.
 
 ## Hiện trạng cần xử lý ngay (blocking)
-1. `/lcs.charter` đang có thể fail trên branch `main` vì `check-workflow-prereqs` bắt buộc unit-branch (`scripts/bash/check-workflow-prereqs.sh:39`, `templates/commands/charter.md:8`).
-2. Release packaging đang rewrite path lỗi thành `.lcs.lcs/...` (`.github/workflows/scripts/create-release-packages.sh:33-39`; đã tái hiện trong package output).
-3. `templates/vscode-settings.json` và `.devcontainer/devcontainer.json` vẫn gợi ý command cũ (`templates/vscode-settings.json:3-7`, `.devcontainer/devcontainer.json:64-68`).
-4. Agent command directories đang lệch chuẩn giữa runtime/docs/release cho `codex`, `kilocode`, `auggie`, `roo` (`.github/workflows/scripts/create-release-packages.sh:199-209`, `src/lcs_cli/extensions.py:620-640`, `AGENTS.md`).
+1. `/lcs.charter` đang có thể fail trên branch `main` vì `check-workflow-prereqs` bắt buộc unit-branch (`factory/scripts/bash/check-workflow-prereqs.sh:39`, `factory/templates/commands/charter.md:8`).
+2. Release packaging đang rewrite path lỗi thành `.lcs.lcs/...` (`tooling/ci/create-release-packages.sh:33-39`; đã tái hiện trong package output).
+3. `factory/templates/vscode-settings.json` và `.devcontainer/devcontainer.json` vẫn gợi ý command cũ (`factory/templates/vscode-settings.json:3-7`, `.devcontainer/devcontainer.json:64-68`).
+4. Agent command directories đang lệch chuẩn giữa runtime/docs/release cho `codex`, `kilocode`, `auggie`, `roo` (`tooling/ci/create-release-packages.sh:199-209`, `src/lcs_cli/extensions.py:620-640`, `AGENTS.md`).
 5. Extension docs/template còn drift nặng (`speckit_version`, `after_tasks`, `after_implement`) và không khớp validator hiện tại (`extensions/template/extension.yml:33,69,77`; `src/lcs_cli/extensions.py:103-105`).
 6. Workflow docs chính vẫn software-first hoặc sai semantic học tập (`README.md`, `spec-driven.md`, `docs/quickstart.md`, `docs/index.md`, `docs/installation.md`, `docs/upgrade.md`).
 7. Link docs bị hỏng: `delivery-guide.md` được tham chiếu nhưng file không tồn tại (`docs/index.md:14`, `docs/README.md:30`).
@@ -50,7 +50,7 @@ Bạn đã chốt:
 **Acceptance:** Có file matrix + glossary; mọi phase sau bám matrix, không quyết định ad-hoc.
 
 ## Phase 1 — Rewrite chuẩn cho Workflow Templates
-1. Rewrite toàn bộ `templates/commands/*.md` theo skeleton bắt buộc: `Intent`, `Inputs`, `Mandatory Rules (YOU MUST / MUST NOT)`, `Execution Steps`, `Hard Gates`, `Failure Modes`, `Output Contract`, `Examples`.
+1. Rewrite toàn bộ `factory/templates/commands/*.md` theo skeleton bắt buộc: `Intent`, `Inputs`, `Mandatory Rules (YOU MUST / MUST NOT)`, `Execution Steps`, `Hard Gates`, `Failure Modes`, `Output Contract`, `Examples`.
 2. Bổ sung explicit stop conditions cho từng command, đặc biệt `/lcs.author`, `/lcs.audit`, `/lcs.rubric`.
 3. Chuẩn hóa handoff chain thành: `charter → define → refine → design → sequence → rubric → audit → author → issueize`.
 4. Bổ sung ví dụ success/fail tối thiểu cho mỗi command.
@@ -102,7 +102,7 @@ Bạn đã chốt:
 1. Chuẩn hóa format `rubrics/*.md` để parse machine-friendly (gate id, status, evidence).
 2. Chuẩn hóa format `audit-report.md` (severity summary + gate decision PASS/BLOCK).
 3. Thêm script gate validator trước `/lcs.author` để chặn runtime nếu unresolved `CRITICAL/HIGH` hoặc rubric còn unchecked.
-4. Cập nhật `templates/commands/author.md` để bắt buộc đọc gate validator output thay vì suy luận tự do.
+4. Cập nhật `factory/templates/commands/author.md` để bắt buộc đọc gate validator output thay vì suy luận tự do.
 
 **Acceptance:** `/lcs.author` bị block deterministically khi gate fail, independent với prompt variance.
 

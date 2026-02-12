@@ -15,9 +15,9 @@ Build a standalone, headless integration backbone that consumes LCS artifacts de
 Use versioned contract package emitted by LCS:
 
 - `contracts/index.json`
-- `schemas/*.schema.json`
-- `docs/contract/*.md`
-- `fixtures/contracts/*.json`
+- `contracts/schemas/*.schema.json`
+- `contracts/docs/*.md`
+- `contracts/fixtures/*.json`
 
 Release artifact:
 
@@ -85,5 +85,5 @@ Query:
 ## Bootstrap command (from LCS core repo)
 
 ```bash
-uv run python scripts/scaffold_output_consumer.py --target ../lcs-output-consumer
+uv run python factory/scripts/python/bootstrap_consumer.py --consumer-version v0.1.0 --target ../lcs-output-consumer
 ```

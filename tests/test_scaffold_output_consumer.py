@@ -1,43 +1,94 @@
-import subprocess
-import sys
+import json
+import importlib.util
+import zipfile
 from pathlib import Path
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts/scaffold_output_consumer.py"
+SCRIPT_PATH = ROOT / "factory/scripts/python/bootstrap_consumer.py"
+spec = importlib.util.spec_from_file_location("bootstrap_consumer", SCRIPT_PATH)
+bootstrap_consumer = importlib.util.module_from_spec(spec)
+assert spec is not None and spec.loader is not None
+spec.loader.exec_module(bootstrap_consumer)
 
 
-def test_scaffold_creates_repo_with_contract_assets(tmp_path: Path):
-    target = tmp_path / "lcs-output-consumer"
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--target", str(target)],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
+def test_extract_first_sha256_parses_hash():
+    raw = "sha256  0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  file.zip"
+    actual = bootstrap_consumer.extract_first_sha256(raw)
+    assert actual == "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+
+def test_extract_first_sha256_returns_none_when_missing():
+    assert bootstrap_consumer.extract_first_sha256("no checksum here") is None
+
+
+def test_verify_contract_index_passes_for_valid_fixture_tree(tmp_path: Path):
+    root = tmp_path / "consumer"
+    root.mkdir(parents=True)
+
+    (root / "contracts").mkdir()
+    (root / "contracts/schemas").mkdir(parents=True)
+    (root / "contracts/docs").mkdir(parents=True)
+    (root / "contracts/fixtures").mkdir(parents=True)
+
+    schema_file = root / "contracts/schemas/manifest.schema.json"
+    schema_file.write_text("{}", encoding="utf-8")
+    doc_file = root / "contracts/docs/README.md"
+    doc_file.write_text("# doc", encoding="utf-8")
+    fixture_file = root / "contracts/fixtures/golden.json"
+    fixture_file.write_text("{}", encoding="utf-8")
+
+    index_payload = {
+        "entries": {
+            "schemas": [
+                {"path": "contracts/schemas/manifest.schema.json", "sha256": bootstrap_consumer.sha256_file(schema_file)}
+            ],
+            "docs_digest": [
+                {"path": "contracts/docs/README.md", "sha256": bootstrap_consumer.sha256_file(doc_file)}
+            ],
+            "fixtures": [
+                {"path": "contracts/fixtures/golden.json", "sha256": bootstrap_consumer.sha256_file(fixture_file)}
+            ],
+        }
+    }
+    (root / "contracts/index.json").write_text(json.dumps(index_payload), encoding="utf-8")
+
+    bootstrap_consumer.verify_contract_index(root)
+
+
+def test_verify_contract_index_raises_when_checksum_mismatch(tmp_path: Path):
+    root = tmp_path / "consumer"
+    (root / "contracts/schemas").mkdir(parents=True)
+    (root / "contracts/docs").mkdir(parents=True)
+    (root / "contracts/fixtures").mkdir(parents=True)
+
+    schema_file = root / "contracts/schemas/manifest.schema.json"
+    schema_file.write_text("{}", encoding="utf-8")
+    (root / "contracts/index.json").write_text(
+        json.dumps(
+            {
+                "entries": {
+                    "schemas": [{"path": "contracts/schemas/manifest.schema.json", "sha256": "0" * 64}],
+                    "docs_digest": [],
+                    "fixtures": [],
+                }
+            }
+        ),
+        encoding="utf-8",
     )
 
-    assert "Scaffold created at" in result.stdout
-    assert (target / "pyproject.toml").is_file()
-    assert (target / "lcs_output_consumer/main.py").is_file()
+    with pytest.raises(bootstrap_consumer.BootstrapError):
+        bootstrap_consumer.verify_contract_index(root)
+
+
+def test_extract_zip_unpacks_archive(tmp_path: Path):
+    zip_path = tmp_path / "sample.zip"
+    target = tmp_path / "out"
+    target.mkdir()
+
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("contracts/index.json", "{}")
+
+    bootstrap_consumer._extract_zip(zip_path, target)
     assert (target / "contracts/index.json").is_file()
-    assert (target / "schemas/manifest.schema.json").is_file()
-    assert (target / "docs/contract/CONSUMER-API-V1.md").is_file()
-    assert (target / "fixtures/contracts/golden_path_snapshot.json").is_file()
-
-
-def test_scaffold_requires_force_for_existing_non_empty_target(tmp_path: Path):
-    target = tmp_path / "lcs-output-consumer"
-    target.mkdir(parents=True)
-    (target / "keep.txt").write_text("existing", encoding="utf-8")
-
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--target", str(target)],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-
-    assert result.returncode != 0
-    assert "Use --force to overwrite" in result.stderr

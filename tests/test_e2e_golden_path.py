@@ -17,11 +17,11 @@ def _run_setup_design(env: dict[str, str]) -> None:
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/setup-design.ps1"),
+            str(ROOT / "factory/scripts/powershell/setup-design.ps1"),
             "-Json",
         ]
     else:
-        cmd = ["bash", str(ROOT / "scripts/bash/setup-design.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json"]
     subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 
 
@@ -32,14 +32,14 @@ def _run_prereqs(env: dict[str, str]) -> dict:
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/check-workflow-prereqs.ps1"),
+            str(ROOT / "factory/scripts/powershell/check-workflow-prereqs.ps1"),
             "-Json",
             "-IncludeSequence",
         ]
     else:
         cmd = [
             "bash",
-            str(ROOT / "scripts/bash/check-workflow-prereqs.sh"),
+            str(ROOT / "factory/scripts/bash/check-workflow-prereqs.sh"),
             "--json",
             "--include-sequence",
         ]
@@ -55,7 +55,7 @@ def _run_contract_validator(unit_dir: Path, env: dict[str, str]) -> dict:
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/validate-artifact-contracts.ps1"),
+            str(ROOT / "factory/scripts/powershell/validate-artifact-contracts.ps1"),
             "-Json",
             "-UnitDir",
             str(unit_dir),
@@ -63,7 +63,7 @@ def _run_contract_validator(unit_dir: Path, env: dict[str, str]) -> dict:
     else:
         cmd = [
             "bash",
-            str(ROOT / "scripts/bash/validate-artifact-contracts.sh"),
+            str(ROOT / "factory/scripts/bash/validate-artifact-contracts.sh"),
             "--json",
             "--unit-dir",
             str(unit_dir),
@@ -80,11 +80,11 @@ def _run_gate_validator(env: dict[str, str]) -> dict:
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROOT / "scripts/powershell/validate-author-gates.ps1"),
+            str(ROOT / "factory/scripts/powershell/validate-author-gates.ps1"),
             "-Json",
         ]
     else:
-        cmd = ["bash", str(ROOT / "scripts/bash/validate-author-gates.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/validate-author-gates.sh"), "--json"]
 
     result = subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
     return json.loads(result.stdout.strip())

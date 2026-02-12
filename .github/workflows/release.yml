@@ -37,34 +37,40 @@ jobs:
 
       - name: Strict release validation
         run: |
-          chmod +x .github/workflows/scripts/validate-release-version.sh
-          .github/workflows/scripts/validate-release-version.sh "${{ steps.resolve_version.outputs.version }}"
+          chmod +x tooling/ci/validate-release-version.sh
+          tooling/ci/validate-release-version.sh "${{ steps.resolve_version.outputs.version }}"
 
       - name: Check if release already exists
         id: check_release
         run: |
-          chmod +x .github/workflows/scripts/check-release-exists.sh
-          .github/workflows/scripts/check-release-exists.sh "${{ steps.resolve_version.outputs.version }}"
+          chmod +x tooling/ci/check-release-exists.sh
+          tooling/ci/check-release-exists.sh "${{ steps.resolve_version.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release package variants
         if: steps.check_release.outputs.exists == 'false'
         run: |
-          chmod +x .github/workflows/scripts/create-release-packages.sh
-          .github/workflows/scripts/create-release-packages.sh "${{ steps.resolve_version.outputs.version }}"
+          chmod +x tooling/ci/create-release-packages.sh
+          tooling/ci/create-release-packages.sh "${{ steps.resolve_version.outputs.version }}"
 
       - name: Release packaging smoke
         if: steps.check_release.outputs.exists == 'false'
         run: |
-          chmod +x .github/workflows/scripts/smoke-release-packages.sh
-          .github/workflows/scripts/smoke-release-packages.sh "${{ steps.resolve_version.outputs.version }}"
+          chmod +x tooling/ci/smoke-release-packages.sh
+          tooling/ci/smoke-release-packages.sh "${{ steps.resolve_version.outputs.version }}"
+
+      - name: Consumer/Core contract compatibility
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          chmod +x tooling/ci/check-consumer-contract-compat.sh
+          tooling/ci/check-consumer-contract-compat.sh
 
       - name: Generate release notes
         if: steps.check_release.outputs.exists == 'false'
         run: |
-          chmod +x .github/workflows/scripts/generate-release-notes.sh
-          .github/workflows/scripts/generate-release-notes.sh "${{ steps.resolve_version.outputs.version }}"
+          chmod +x tooling/ci/generate-release-notes.sh
+          tooling/ci/generate-release-notes.sh "${{ steps.resolve_version.outputs.version }}"
 
       - name: Upload .genreleases artifact
         if: steps.check_release.outputs.exists == 'false'
@@ -117,8 +123,7 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          chmod +x .github/workflows/scripts/create-github-release.sh
-          .github/workflows/scripts/create-github-release.sh "${{ steps.resolve_version.outputs.version }}"
+          chmod +x tooling/ci/create-github-release.sh
+          tooling/ci/create-github-release.sh "${{ steps.resolve_version.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

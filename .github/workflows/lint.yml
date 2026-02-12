@@ -43,29 +43,34 @@ jobs:
 
       - name: Script contract smoke
         run: |
-          chmod +x .github/workflows/scripts/test-script-contracts.sh
-          .github/workflows/scripts/test-script-contracts.sh
+          chmod +x tooling/ci/test-script-contracts.sh
+          tooling/ci/test-script-contracts.sh
 
       - name: Release packaging smoke
         run: |
-          chmod +x .github/workflows/scripts/create-release-packages.sh
-          chmod +x .github/workflows/scripts/smoke-release-packages.sh
-          .github/workflows/scripts/smoke-release-packages.sh v9.9.9
+          chmod +x tooling/ci/create-release-packages.sh
+          chmod +x tooling/ci/smoke-release-packages.sh
+          tooling/ci/smoke-release-packages.sh v9.9.9
 
       - name: Docs link check
         run: |
-          chmod +x .github/workflows/scripts/check-doc-links.sh
-          .github/workflows/scripts/check-doc-links.sh
+          chmod +x tooling/ci/check-doc-links.sh
+          tooling/ci/check-doc-links.sh
 
       - name: Contract sync check
         run: |
-          chmod +x .github/workflows/scripts/verify-contract-sync.sh
-          .github/workflows/scripts/verify-contract-sync.sh
+          chmod +x tooling/ci/verify-contract-sync.sh
+          tooling/ci/verify-contract-sync.sh
+
+      - name: Consumer/Core contract compatibility
+        run: |
+          chmod +x tooling/ci/check-consumer-contract-compat.sh
+          tooling/ci/check-consumer-contract-compat.sh
 
       - name: Legacy token guard
         run: |
-          chmod +x .github/workflows/scripts/legacy-token-guard.sh
-          .github/workflows/scripts/legacy-token-guard.sh
+          chmod +x tooling/ci/legacy-token-guard.sh
+          tooling/ci/legacy-token-guard.sh
 
   powershell-contracts:
     runs-on: windows-latest
@@ -89,4 +94,4 @@ jobs:
 
       - name: Run PowerShell script contracts
         shell: pwsh
-        run: .github/workflows/scripts/test-script-contracts.ps1
+        run: tooling/ci/test-script-contracts.ps1

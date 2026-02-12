@@ -19,7 +19,7 @@ Artifacts are generated under `specs/<###-slug>/` with markdown + json contracts
 
 ## Consumer Contract Sync
 
-- [Contract Sync Overview](contract/README.md)
-- [Consumer API v1](contract/CONSUMER-API-V1.md)
-- [Compatibility Matrix](contract/COMPATIBILITY-MATRIX.md)
+- [Contract Sync Overview](../contracts/docs/README.md)
+- [Consumer API v1](../contracts/docs/CONSUMER-API-V1.md)
+- [Compatibility Matrix](../contracts/docs/COMPATIBILITY-MATRIX.md)
 - [Standalone Consumer Blueprint](system/architect/lcs-output-consumer-standalone-blueprint.md)

@@ -21,29 +21,29 @@
   "entries": {
     "docs_digest": [
       {
-        "path": "docs/contract/COMPATIBILITY-MATRIX.md",
+        "path": "contracts/docs/COMPATIBILITY-MATRIX.md",
         "sha256": "ad1e74f3b8f9806aeafd24cf0584dc202f9ddbecc1cea317909af956c6c7836e",
         "size_bytes": 951
       },
       {
-        "path": "docs/contract/CONSUMER-API-V1.md",
+        "path": "contracts/docs/CONSUMER-API-V1.md",
         "sha256": "accdefbde8c3df7eb9f3ade69fbb47dbc3af05168f1342ce5baed41a215ad9f9",
         "size_bytes": 2042
       },
       {
-        "path": "docs/contract/README.md",
-        "sha256": "a7ce2c07dc482d2e22288e8574e411a397006f9ed97c65fb14c8e2d6ca5d5ef0",
-        "size_bytes": 713
+        "path": "contracts/docs/README.md",
+        "sha256": "fefcbf20ea605e1b4aa42854b8d735ca44bd20d3816adef0cddaf86d86575f21",
+        "size_bytes": 739
       },
       {
         "path": "contracts/README.md",
-        "sha256": "1a3257183d3a7aee403d50c179c768452529322bb331521145c9a78d076a3b77",
-        "size_bytes": 885
+        "sha256": "67b48966de1242e495a89107064e74d96b52f3b70398a16a6f07303f33c9fd50",
+        "size_bytes": 935
       }
     ],
     "fixtures": [
       {
-        "path": "fixtures/contracts/golden_path_snapshot.json",
+        "path": "contracts/fixtures/golden_path_snapshot.json",
         "sha256": "7fffe4f2b3ccbd0808afb2f90b5606fced6fd70fa16245dfe3a7aac6b7d25a93",
         "size_bytes": 1187
       }
@@ -51,31 +51,31 @@
     "schemas": [
       {
         "id": "lcs.artifact.audit-report.v1",
-        "path": "schemas/audit-report.schema.json",
+        "path": "contracts/schemas/audit-report.schema.json",
         "sha256": "1b63c84490bff1d9bb6454e7ed1815b001b8bd671570c8d65e704b808e4cd7fb",
         "size_bytes": 1636
       },
       {
         "id": "lcs.artifact.brief.v1",
-        "path": "schemas/brief.schema.json",
+        "path": "contracts/schemas/brief.schema.json",
         "sha256": "c67f9be171c944b430a6422df398be2e5eee6b8746393f130edb5e8a34918558",
         "size_bytes": 2633
       },
       {
         "id": "lcs.artifact.design.v1",
-        "path": "schemas/design.schema.json",
+        "path": "contracts/schemas/design.schema.json",
         "sha256": "8091cc3867456bee5fd310799e86b66baaaec9c494772f9235039cec7d51dce8",
         "size_bytes": 4804
       },
       {
         "id": "lcs.artifact.manifest.v1",
-        "path": "schemas/manifest.schema.json",
+        "path": "contracts/schemas/manifest.schema.json",
         "sha256": "5497c01e46d3fe4cc948ced9e8373da6eed9fbfccdd59cb4b8bdcb2a39903807",
         "size_bytes": 4335
       },
       {
         "id": "lcs.artifact.sequence.v1",
-        "path": "schemas/sequence.schema.json",
+        "path": "contracts/schemas/sequence.schema.json",
         "sha256": "7f732a8c8736af089141079cf64b610ea3ee66e39995538c0d13e8a975494e44",
         "size_bytes": 1418
       }

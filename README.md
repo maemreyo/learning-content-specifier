@@ -79,15 +79,15 @@ Governance source: `.lcs/memory/charter.md`.
 LCS publishes a context-safe contract package for external consumer platforms:
 
 - `contracts/index.json` (checksums + compatibility policy)
-- `schemas/*.schema.json`
-- `docs/contract/*.md`
-- `fixtures/contracts/*.json`
+- `contracts/schemas/*.schema.json`
+- `contracts/docs/*.md`
+- `contracts/fixtures/*.json`
 
 Build/verify locally:
 
 ```bash
-uv run python scripts/build_contract_package.py --verify
-uv run python scripts/build_contract_package.py --sync --verify --package-version v0.0.0
+uv run python factory/scripts/python/build_contract_package.py --verify
+uv run python factory/scripts/python/build_contract_package.py --sync --verify --package-version v0.0.0
 ```
 
 Release artifact name:
@@ -97,12 +97,8 @@ Release artifact name:
 Bootstrap standalone consumer repo from this LCS core repo:
 
 ```bash
-uv run python scripts/scaffold_output_consumer.py --target ../lcs-output-consumer
+uv run python factory/scripts/python/bootstrap_consumer.py --consumer-version v0.1.0 --target ../lcs-output-consumer
 ```
-
-Template source lives in:
-
-- `scaffolds/lcs-output-consumer/`
 
 ## Hard Gates
 
@@ -136,6 +132,6 @@ See `AGENTS.md` for the canonical matrix, conventions, and folder mappings.
 - `docs/installation.md`
 - `docs/quickstart.md`
 - `docs/upgrade.md`
-- `docs/contract/README.md`
+- `contracts/docs/README.md`
 - `docs/system/architect/lcs-output-consumer-standalone-blueprint.md`
 - `spec-driven.md`

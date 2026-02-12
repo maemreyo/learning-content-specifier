@@ -50,23 +50,23 @@ Plan này khóa toàn bộ quyết định còn mở:
 
 ## Slice 1 — Artifact JSON Contract Foundation (end-to-end)
 1. Thêm schema files:
-   - `schemas/brief.schema.json`
-   - `schemas/design.schema.json`
-   - `schemas/sequence.schema.json`
-   - `schemas/audit-report.schema.json`
-   - `schemas/manifest.schema.json`
+   - `contracts/schemas/brief.schema.json`
+   - `contracts/schemas/design.schema.json`
+   - `contracts/schemas/sequence.schema.json`
+   - `contracts/schemas/audit-report.schema.json`
+   - `contracts/schemas/manifest.schema.json`
 2. Thêm script validator dùng chung:
-   - `scripts/bash/validate-artifact-contracts.sh`
-   - `scripts/powershell/validate-artifact-contracts.ps1`
+   - `factory/scripts/bash/validate-artifact-contracts.sh`
+   - `factory/scripts/powershell/validate-artifact-contracts.ps1`
 3. Cập nhật template contracts:
-   - `templates/commands/design.md`
-   - `templates/commands/sequence.md`
-   - `templates/commands/audit.md`
-   - `templates/commands/author.md`
-   - `templates/sequence-template.md` đổi `package-manifest.json` -> `manifest.json`.
+   - `factory/templates/commands/design.md`
+   - `factory/templates/commands/sequence.md`
+   - `factory/templates/commands/audit.md`
+   - `factory/templates/commands/author.md`
+   - `factory/templates/sequence-template.md` đổi `package-manifest.json` -> `manifest.json`.
 4. Cập nhật script orchestration để đảm bảo create-if-missing file JSON bên cạnh markdown:
-   - `scripts/bash/setup-design.sh`
-   - `scripts/powershell/setup-design.ps1`
+   - `factory/scripts/bash/setup-design.sh`
+   - `factory/scripts/powershell/setup-design.ps1`
 5. Acceptance của slice:
    - Tạo unit mẫu có đủ 5 JSON bắt buộc.
    - `validate-artifact-contracts` pass với schema.
@@ -83,8 +83,8 @@ Plan này khóa toàn bộ quyết định còn mở:
    - Trigger khi time-sensitive, confidence thấp, conflict artifacts, user yêu cầu.
    - Persist evidence vào `specs/<unit>/research.md` + references trong `design-decisions.json`.
 4. Cập nhật command docs để deterministic:
-   - `templates/commands/design.md`
-   - `templates/commands/audit.md`
+   - `factory/templates/commands/design.md`
+   - `factory/templates/commands/audit.md`
 5. Acceptance của slice:
    - Có scoring log đầy đủ.
    - Có lý do chọn pedagogy có thể audit lại.
@@ -92,27 +92,27 @@ Plan này khóa toàn bộ quyết định còn mở:
 
 ## Slice 3 — Hard Gate Determinism for Author
 1. Cứng hóa rubric parsing format:
-   - Giữ format gate line trong `templates/rubric-template.md`.
+   - Giữ format gate line trong `factory/templates/rubric-template.md`.
    - Ràng buộc parser dùng regex ổn định, không phụ thuộc văn phong.
 2. Đồng bộ validator bash/ps:
-   - `scripts/bash/validate-author-gates.sh`
-   - `scripts/powershell/validate-author-gates.ps1`
+   - `factory/scripts/bash/validate-author-gates.sh`
+   - `factory/scripts/powershell/validate-author-gates.ps1`
    - Bắt buộc đọc cả `audit-report.md` và `audit-report.json` (json là source ưu tiên nếu có).
 3. Cập nhật author command contract:
-   - `templates/commands/author.md` chỉ cho author khi `STATUS=PASS`.
+   - `factory/templates/commands/author.md` chỉ cho author khi `STATUS=PASS`.
 4. Cập nhật audit command contract:
-   - `templates/commands/audit.md` bắt buộc xuất đồng thời markdown + json.
+   - `factory/templates/commands/audit.md` bắt buộc xuất đồng thời markdown + json.
 5. Acceptance của slice:
    - Fail path deterministic giữa bash/ps.
    - `/lcs.author` luôn block khi gate fail, không phụ thuộc prompt variance.
 
 ## Slice 4 — Packaging + Agent Consistency
 1. Kiểm tra và harden packaging script:
-   - `.github/workflows/scripts/create-release-packages.sh`
+   - `tooling/ci/create-release-packages.sh`
    - đảm bảo không sinh đường dẫn lỗi kiểu `.lcs.lcs`.
    - map agent folder đúng `AGENTS.md`.
 2. Đồng bộ GitHub release assets:
-   - `.github/workflows/scripts/create-github-release.sh`
+   - `tooling/ci/create-github-release.sh`
 3. Đồng bộ extension/runtime agent mapping:
    - `src/lcs_cli/__init__.py`
    - `src/lcs_cli/extensions.py`
@@ -127,7 +127,7 @@ Plan này khóa toàn bộ quyết định còn mở:
    - `README.md`
    - `spec-driven.md`
 2. Chuẩn hóa docs command contracts theo “YOU MUST / MUST NOT” + failure modes + examples:
-   - `templates/commands/*.md` đã có khung, bổ sung các phần còn thiếu deterministic details.
+   - `factory/templates/commands/*.md` đã có khung, bổ sung các phần còn thiếu deterministic details.
 3. Sửa link integrity và naming consistency:
    - đảm bảo không còn tham chiếu artifact cũ.
 4. Acceptance của slice:
@@ -140,9 +140,9 @@ Plan này khóa toàn bộ quyết định còn mở:
    - `tests/test_gate_determinism.py` cho author block conditions.
    - `tests/test_pedagogy_decisions.py` cho scoring + selection rules.
 2. Mở rộng smoke scripts nếu cần:
-   - `.github/workflows/scripts/test-script-contracts.sh`
-   - `.github/workflows/scripts/test-script-contracts.ps1`
-   - `.github/workflows/scripts/smoke-release-packages.sh`
+   - `tooling/ci/test-script-contracts.sh`
+   - `tooling/ci/test-script-contracts.ps1`
+   - `tooling/ci/smoke-release-packages.sh`
 3. CI workflow:
    - giữ `uv run pytest -q`.
    - giữ docs link check + legacy token guard.
