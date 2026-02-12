@@ -38,7 +38,10 @@ function Get-BranchName([string]$Description) {
 }
 
 function Find-RepositoryRoot([string]$StartDir) {
-    $current = Resolve-Path $StartDir
+    if (-not $StartDir) { return $null }
+    $resolved = Resolve-Path -LiteralPath $StartDir -ErrorAction SilentlyContinue
+    if (-not $resolved) { return $null }
+    $current = $resolved.Path
     while ($true) {
         if ((Test-Path (Join-Path $current '.git')) -or (Test-Path (Join-Path $current '.lcs'))) { return $current }
         $parent = Split-Path $current -Parent
@@ -77,13 +80,31 @@ function Get-HighestFromBranches() {
     return $highest
 }
 
-$fallbackRoot = Find-RepositoryRoot -StartDir $PSScriptRoot
+$scriptBase = $PSScriptRoot
+if (-not $scriptBase -and $MyInvocation.MyCommand.Path) {
+    $scriptBase = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+if (-not $scriptBase) {
+    $scriptBase = (Get-Location).Path
+}
+
+$fallbackRoot = Find-RepositoryRoot -StartDir $scriptBase
+if (-not $fallbackRoot) {
+    $fallbackRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptBase '../..'))
+}
 if (-not $fallbackRoot) { Write-Error 'Could not determine repository root.'; exit 1 }
 
+$repoRoot = $null
+$hasGit = $false
 try {
-    $repoRoot = git rev-parse --show-toplevel 2>$null
-    $hasGit = ($LASTEXITCODE -eq 0)
-} catch {
+    $gitRoot = (git rev-parse --show-toplevel 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $gitRoot) {
+        $repoRoot = (@($gitRoot) | Where-Object { $_ -and "$_".Trim() } | Select-Object -First 1)
+        $hasGit = $true
+    }
+} catch {}
+
+if (-not $repoRoot) {
     $repoRoot = $fallbackRoot
     $hasGit = $false
 }
