@@ -17,3 +17,14 @@
   items:
     - name: Local Development
       href: local-development.md
+
+- name: Consumer Contract Sync
+  items:
+    - name: Contract Sync Overview
+      href: contract/README.md
+    - name: Consumer API v1
+      href: contract/CONSUMER-API-V1.md
+    - name: Compatibility Matrix
+      href: contract/COMPATIBILITY-MATRIX.md
+    - name: Standalone Consumer Blueprint
+      href: system/architect/lcs-output-consumer-standalone-blueprint.md

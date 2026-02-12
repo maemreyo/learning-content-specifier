@@ -208,3 +208,4 @@ flowchart TB
 - `docs/system/codemaps/LCS_Commands/LCS_Analysis_Command_Workflow_Cross-Artifact_Consistency_Validation_System.md`
 - `docs/proposals/lcs-flow-improvements/LCS-Flow-Improvements-Proposal.md`
 - `docs/proposals/lcs-flow-improvements/PLAN.md`
+- `docs/system/architect/lcs-output-consumer-standalone-blueprint.md`

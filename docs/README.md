@@ -18,3 +18,5 @@ Open `http://localhost:8080`.
 - `quickstart.md`
 - `upgrade.md`
 - `toc.yml`
+- `contract/README.md`
+- `system/architect/lcs-output-consumer-standalone-blueprint.md`

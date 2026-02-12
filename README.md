@@ -74,6 +74,26 @@ For each unit under `specs/<###-slug>/`:
 
 Governance source: `.lcs/memory/charter.md`.
 
+## Contract Package For Standalone Consumer
+
+LCS publishes a context-safe contract package for external consumer platforms:
+
+- `contracts/index.json` (checksums + compatibility policy)
+- `schemas/*.schema.json`
+- `docs/contract/*.md`
+- `fixtures/contracts/*.json`
+
+Build/verify locally:
+
+```bash
+uv run python scripts/build_contract_package.py --verify
+uv run python scripts/build_contract_package.py --sync --verify --package-version v0.0.0
+```
+
+Release artifact name:
+
+- `.genreleases/lcs-contracts-vX.Y.Z.zip`
+
 ## Hard Gates
 
 Before `/lcs.author`:
@@ -106,4 +126,6 @@ See `AGENTS.md` for the canonical matrix, conventions, and folder mappings.
 - `docs/installation.md`
 - `docs/quickstart.md`
 - `docs/upgrade.md`
+- `docs/contract/README.md`
+- `docs/system/architect/lcs-output-consumer-standalone-blueprint.md`
 - `spec-driven.md`

@@ -1,0 +1,61 @@
+{
+  "available_docs": [
+    "assessment-map.md",
+    "content-model.md",
+    "delivery-guide.md",
+    "sequence.md"
+  ],
+  "contract_status": "PASS",
+  "gate_status": "PASS",
+  "audit_decision": "PASS",
+  "required_files": [
+    "assessment-map.md",
+    "audit-report.json",
+    "audit-report.md",
+    "brief.json",
+    "brief.md",
+    "content-model.json",
+    "content-model.md",
+    "delivery-guide.md",
+    "design-decisions.json",
+    "design.json",
+    "design.md",
+    "outputs/manifest.json",
+    "rubrics/default.md",
+    "sequence.json",
+    "sequence.md"
+  ],
+  "manifest_summary": {
+    "decision": "PASS",
+    "open_critical": 0,
+    "open_high": 0,
+    "artifact_ids": [
+      "brief-md",
+      "lesson-01-md"
+    ],
+    "xapi_activity_count": 1,
+    "xapi_template_count": 1
+  },
+  "brief_summary": {
+    "lo_ids": [
+      "LO1"
+    ],
+    "priorities": [
+      "P1"
+    ],
+    "all_acceptance_gwt": true
+  },
+  "design_summary": {
+    "profile": "corporate-lnd-v1",
+    "confidence_threshold": 0.7,
+    "max_secondary_methods": 2,
+    "score_delta_threshold": 0.4
+  },
+  "sequence_summary": {
+    "task_count": 2,
+    "task_ids": [
+      "S001",
+      "S013"
+    ]
+  }
+}

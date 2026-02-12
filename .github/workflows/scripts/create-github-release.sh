@@ -50,5 +50,6 @@ gh release create "$VERSION" \
   .genreleases/learning-content-specifier-template-q-ps-"$VERSION".zip \
   .genreleases/learning-content-specifier-template-bob-sh-"$VERSION".zip \
   .genreleases/learning-content-specifier-template-bob-ps-"$VERSION".zip \
+  .genreleases/lcs-contracts-"$VERSION".zip \
   --title "LCS Templates - $VERSION_NO_V" \
   --notes-file release_notes.md

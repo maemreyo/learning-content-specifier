@@ -29,4 +29,11 @@ for agent in claude codex copilot kilocode auggie roo; do
   fi
 done
 
+contract_zip=".genreleases/lcs-contracts-${VERSION}.zip"
+[[ -f "$contract_zip" ]] || { echo "Missing contract package: $contract_zip"; exit 1; }
+check_zip_path "$contract_zip" "contracts/index.json"
+check_zip_path "$contract_zip" "schemas/manifest.schema.json"
+check_zip_path "$contract_zip" "docs/contract/CONSUMER-API-V1.md"
+check_zip_path "$contract_zip" "fixtures/contracts/golden_path_snapshot.json"
+
 echo "Release packaging smoke checks passed"

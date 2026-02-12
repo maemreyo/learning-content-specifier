@@ -57,6 +57,11 @@ jobs:
           chmod +x .github/workflows/scripts/check-doc-links.sh
           .github/workflows/scripts/check-doc-links.sh
 
+      - name: Contract sync check
+        run: |
+          chmod +x .github/workflows/scripts/verify-contract-sync.sh
+          .github/workflows/scripts/verify-contract-sync.sh
+
       - name: Legacy token guard
         run: |
           chmod +x .github/workflows/scripts/legacy-token-guard.sh

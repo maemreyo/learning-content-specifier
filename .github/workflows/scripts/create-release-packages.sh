@@ -300,5 +300,16 @@ for agent in "${AGENT_LIST[@]}"; do
   done
 done
 
+if command -v uv >/dev/null 2>&1; then
+  uv run python scripts/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
+else
+  PYTHON_BIN="python3"
+  if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  fi
+  "$PYTHON_BIN" scripts/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
+fi
+
 echo "Archives in $GENRELEASES_DIR:"
 ls -1 "$GENRELEASES_DIR"/learning-content-specifier-template-*-"${NEW_VERSION}".zip
+ls -1 "$GENRELEASES_DIR"/lcs-contracts-"${NEW_VERSION}".zip
