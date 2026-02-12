@@ -17,3 +17,9 @@ Build or verify with:
 uv run python scripts/build_contract_package.py --verify
 uv run python scripts/build_contract_package.py --sync --verify --package-version v0.0.0
 ```
+
+Scaffold a standalone consumer repo with these contract assets pre-synced:
+
+```bash
+uv run python scripts/scaffold_output_consumer.py --target ../lcs-output-consumer
+```

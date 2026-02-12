@@ -81,3 +81,9 @@ Query:
 3. Query API and filtering.
 4. Adapter framework with `xapi_adapter`.
 5. Drift checks in CI between consumer and contract package.
+
+## Bootstrap command (from LCS core repo)
+
+```bash
+uv run python scripts/scaffold_output_consumer.py --target ../lcs-output-consumer
+```

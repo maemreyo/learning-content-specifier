@@ -94,6 +94,16 @@ Release artifact name:
 
 - `.genreleases/lcs-contracts-vX.Y.Z.zip`
 
+Bootstrap standalone consumer repo from this LCS core repo:
+
+```bash
+uv run python scripts/scaffold_output_consumer.py --target ../lcs-output-consumer
+```
+
+Template source lives in:
+
+- `scaffolds/lcs-output-consumer/`
+
 ## Hard Gates
 
 Before `/lcs.author`:
