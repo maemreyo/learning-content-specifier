@@ -5,37 +5,44 @@ param(
     [switch]$RequireSequence,
     [switch]$IncludeSequence,
     [switch]$PathsOnly,
+    [switch]$SkipBranchCheck,
     [switch]$Help
 )
 $ErrorActionPreference = 'Stop'
 
 if ($Help) {
-    Write-Output 'Usage: ./check-workflow-prereqs.ps1 [-Json] [-RequireSequence] [-IncludeSequence] [-PathsOnly]'
+    Write-Output 'Usage: ./check-workflow-prereqs.ps1 [-Json] [-RequireSequence] [-IncludeSequence] [-PathsOnly] [-SkipBranchCheck]'
     exit 0
 }
 
 . "$PSScriptRoot/common.ps1"
 $paths = Get-UnitPathsEnv
 
-if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
+if (-not $SkipBranchCheck) {
+    if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
+}
 
 if ($PathsOnly) {
     if ($Json) {
         [PSCustomObject]@{
-            REPO_ROOT = $paths.REPO_ROOT
-            BRANCH = $paths.CURRENT_BRANCH
+            UNIT_REPO_ROOT = $paths.REPO_ROOT
+            UNIT_BRANCH = $paths.CURRENT_BRANCH
+            UNIT_HAS_GIT = $paths.HAS_GIT
             UNIT_DIR = $paths.UNIT_DIR
-            BRIEF_FILE = $paths.BRIEF_FILE
-            DESIGN_FILE = $paths.DESIGN_FILE
-            SEQUENCE_FILE = $paths.SEQUENCE_FILE
+            UNIT_BRIEF_FILE = $paths.BRIEF_FILE
+            UNIT_DESIGN_FILE = $paths.DESIGN_FILE
+            UNIT_SEQUENCE_FILE = $paths.SEQUENCE_FILE
+            UNIT_CHARTER_FILE = $paths.CHARTER_FILE
         } | ConvertTo-Json -Compress
     } else {
-        Write-Output "REPO_ROOT: $($paths.REPO_ROOT)"
-        Write-Output "BRANCH: $($paths.CURRENT_BRANCH)"
+        Write-Output "UNIT_REPO_ROOT: $($paths.REPO_ROOT)"
+        Write-Output "UNIT_BRANCH: $($paths.CURRENT_BRANCH)"
+        Write-Output "UNIT_HAS_GIT: $($paths.HAS_GIT)"
         Write-Output "UNIT_DIR: $($paths.UNIT_DIR)"
-        Write-Output "BRIEF_FILE: $($paths.BRIEF_FILE)"
-        Write-Output "DESIGN_FILE: $($paths.DESIGN_FILE)"
-        Write-Output "SEQUENCE_FILE: $($paths.SEQUENCE_FILE)"
+        Write-Output "UNIT_BRIEF_FILE: $($paths.BRIEF_FILE)"
+        Write-Output "UNIT_DESIGN_FILE: $($paths.DESIGN_FILE)"
+        Write-Output "UNIT_SEQUENCE_FILE: $($paths.SEQUENCE_FILE)"
+        Write-Output "UNIT_CHARTER_FILE: $($paths.CHARTER_FILE)"
     }
     exit 0
 }

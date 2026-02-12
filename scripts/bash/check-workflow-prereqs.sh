@@ -6,6 +6,7 @@ JSON_MODE=false
 REQUIRE_SEQUENCE=false
 INCLUDE_SEQUENCE=false
 PATHS_ONLY=false
+SKIP_BRANCH_CHECK=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -13,6 +14,7 @@ for arg in "$@"; do
         --require-sequence) REQUIRE_SEQUENCE=true ;;
         --include-sequence) INCLUDE_SEQUENCE=true ;;
         --paths-only) PATHS_ONLY=true ;;
+        --skip-branch-check) SKIP_BRANCH_CHECK=true ;;
         --help|-h)
             cat <<HELP
 Usage: check-workflow-prereqs.sh [OPTIONS]
@@ -22,6 +24,7 @@ OPTIONS:
   --require-sequence
   --include-sequence
   --paths-only
+  --skip-branch-check
 HELP
             exit 0
             ;;
@@ -36,19 +39,23 @@ SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 eval "$(get_unit_paths)"
-check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
+if [[ "$SKIP_BRANCH_CHECK" != "true" ]]; then
+    check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
+fi
 
 if $PATHS_ONLY; then
     if $JSON_MODE; then
-        printf '{"REPO_ROOT":"%s","BRANCH":"%s","UNIT_DIR":"%s","BRIEF_FILE":"%s","DESIGN_FILE":"%s","SEQUENCE_FILE":"%s"}\n' \
-            "$REPO_ROOT" "$CURRENT_BRANCH" "$UNIT_DIR" "$BRIEF_FILE" "$DESIGN_FILE" "$SEQUENCE_FILE"
+        printf '{"UNIT_REPO_ROOT":"%s","UNIT_BRANCH":"%s","UNIT_HAS_GIT":%s,"UNIT_DIR":"%s","UNIT_BRIEF_FILE":"%s","UNIT_DESIGN_FILE":"%s","UNIT_SEQUENCE_FILE":"%s","UNIT_CHARTER_FILE":"%s"}\n' \
+            "$REPO_ROOT" "$CURRENT_BRANCH" "$HAS_GIT" "$UNIT_DIR" "$BRIEF_FILE" "$DESIGN_FILE" "$SEQUENCE_FILE" "$CHARTER_FILE"
     else
-        echo "REPO_ROOT: $REPO_ROOT"
-        echo "BRANCH: $CURRENT_BRANCH"
+        echo "UNIT_REPO_ROOT: $REPO_ROOT"
+        echo "UNIT_BRANCH: $CURRENT_BRANCH"
+        echo "UNIT_HAS_GIT: $HAS_GIT"
         echo "UNIT_DIR: $UNIT_DIR"
-        echo "BRIEF_FILE: $BRIEF_FILE"
-        echo "DESIGN_FILE: $DESIGN_FILE"
-        echo "SEQUENCE_FILE: $SEQUENCE_FILE"
+        echo "UNIT_BRIEF_FILE: $BRIEF_FILE"
+        echo "UNIT_DESIGN_FILE: $DESIGN_FILE"
+        echo "UNIT_SEQUENCE_FILE: $SEQUENCE_FILE"
+        echo "UNIT_CHARTER_FILE: $CHARTER_FILE"
     fi
     exit 0
 fi

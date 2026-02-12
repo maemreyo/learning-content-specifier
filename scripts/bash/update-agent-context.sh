@@ -30,18 +30,39 @@ BOB_FILE="$REPO_ROOT/AGENTS.md"
 
 TEMPLATE_FILE="$REPO_ROOT/.lcs/templates/agent-file-template.md"
 
-extract_design_field() {
-    local field_pattern="$1"
-    grep "^\*\*${field_pattern}\*\*: " "$DESIGN_FILE" 2>/dev/null | head -1 | sed "s|^\*\*${field_pattern}\*\*: ||" | sed 's/^[ \t]*//;s/[ \t]*$//'
+extract_field_from_file() {
+    local file="$1"
+    local field_name="$2"
+    local escaped
+
+    [[ -f "$file" ]] || return 0
+
+    escaped="$(printf '%s' "$field_name" | sed -e 's/[][(){}.^$*+?|\\/]/\\&/g')"
+    grep -Eim1 "^[[:space:]]*-?[[:space:]]*(\\*\\*${escaped}\\*\\*|${escaped})[[:space:]]*:[[:space:]]*" "$file" 2>/dev/null \
+        | sed -E "s/^[[:space:]]*-?[[:space:]]*(\\*\\*${escaped}\\*\\*|${escaped})[[:space:]]*:[[:space:]]*//I" \
+        | sed 's/^[ \t]*//;s/[ \t]*$//'
 }
 
-AUDIENCE="$(extract_design_field "Audience Profile")"
-DURATION="$(extract_design_field "Duration Budget")"
-MODALITY="$(extract_design_field "Modality Mix")"
-DELIVERY_MODE="$(extract_design_field "Delivery Mode")"
+extract_learning_field() {
+    local field_name="$1"
+    local value
 
-TECH_LINE="- Audience: ${AUDIENCE:-unknown} | Duration: ${DURATION:-unknown} | Modality: ${MODALITY:-unknown} | Mode: ${DELIVERY_MODE:-unknown} (${CURRENT_BRANCH})"
-RECENT_LINE="- ${CURRENT_BRANCH}: Updated learning profile (${MODALITY:-unknown})"
+    value="$(extract_field_from_file "$DESIGN_FILE" "$field_name")"
+    if [[ -z "$value" ]]; then
+        value="$(extract_field_from_file "$BRIEF_FILE" "$field_name")"
+    fi
+
+    echo "$value"
+}
+
+AUDIENCE="$(extract_learning_field "Audience Profile")"
+DURATION="$(extract_learning_field "Duration Budget")"
+MODALITY="$(extract_learning_field "Modality Mix")"
+DELIVERY_MODE="$(extract_learning_field "Delivery Mode")"
+LEVEL="$(extract_learning_field "Entry Level")"
+
+TECH_LINE="- Audience: ${AUDIENCE:-unknown} | Level: ${LEVEL:-unknown} | Duration: ${DURATION:-unknown} | Modality: ${MODALITY:-unknown} | Mode: ${DELIVERY_MODE:-unknown} (${CURRENT_BRANCH})"
+RECENT_LINE="- ${CURRENT_BRANCH}: Updated unit learning profile (${MODALITY:-unknown})"
 
 create_from_template() {
     local target_file="$1" project_name
@@ -52,7 +73,7 @@ create_from_template() {
         -e "s|\[DATE\]|$(date +%Y-%m-%d)|g" \
         -e "s|\[EXTRACTED FROM ALL DESIGN.MD FILES\]|$TECH_LINE|g" \
         -e "s|\[ACTUAL STRUCTURE FROM PLANS\]|specs/\\n  outputs/|g" \
-        -e "s|\[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES\]|/lcs.define, /lcs.design, /lcs.sequence, /lcs.author|g" \
+        -e "s|\[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES\]|/lcs.define, /lcs.design, /lcs.sequence, /lcs.rubric, /lcs.audit, /lcs.author|g" \
         -e "s|\[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE\]|Use concise, learner-centered writing and consistent terminology.|g" \
         -e "s|\[LAST 3 FEATURES AND WHAT THEY ADDED\]|$RECENT_LINE|g" \
         "$TEMPLATE_FILE" > "$target_file"

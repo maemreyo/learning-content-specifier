@@ -88,8 +88,7 @@ function Find-UnitDirByPrefix {
         return (Join-Path $specsDir $matchesDirs[0])
     }
 
-    Write-Warning "Multiple unit directories found with prefix '$prefix': $($matchesDirs -join ', ')"
-    return (Join-Path $specsDir $Branch)
+    throw "Multiple unit directories found with prefix '$prefix': $($matchesDirs -join ', ')"
 }
 
 function Get-UnitPathsEnv {

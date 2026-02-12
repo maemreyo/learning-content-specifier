@@ -17,11 +17,6 @@ get_current_branch() {
         return
     fi
 
-    if [[ -n "${LCS_FEATURE:-}" ]]; then
-        echo "$LCS_FEATURE"
-        return
-    fi
-
     if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
         git rev-parse --abbrev-ref HEAD
         return
@@ -76,7 +71,7 @@ find_unit_dir_by_prefix() {
 
     if [[ ! "$branch_name" =~ ^([0-9]{3})- ]]; then
         echo "$specs_dir/$branch_name"
-        return
+        return 0
     fi
 
     prefix="${BASH_REMATCH[1]}"
@@ -94,7 +89,7 @@ find_unit_dir_by_prefix() {
         echo "$specs_dir/${matches[0]}"
     else
         echo "ERROR: Multiple unit directories found with prefix '$prefix': ${matches[*]}" >&2
-        echo "$specs_dir/$branch_name"
+        return 1
     fi
 }
 
@@ -107,7 +102,9 @@ get_unit_paths() {
         has_git_repo="true"
     fi
 
-    unit_dir="$(find_unit_dir_by_prefix "$repo_root" "$current_branch")"
+    if ! unit_dir="$(find_unit_dir_by_prefix "$repo_root" "$current_branch")"; then
+        return 1
+    fi
 
     cat <<PATHS
 REPO_ROOT='$repo_root'

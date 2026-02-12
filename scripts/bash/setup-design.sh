@@ -3,11 +3,13 @@
 set -euo pipefail
 
 JSON_MODE=false
+FORCE_RESET=false
 for arg in "$@"; do
     case "$arg" in
         --json) JSON_MODE=true ;;
+        --force-reset) FORCE_RESET=true ;;
         --help|-h)
-            echo "Usage: $0 [--json]"
+            echo "Usage: $0 [--json] [--force-reset]"
             exit 0
             ;;
     esac
@@ -22,10 +24,12 @@ check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 mkdir -p "$UNIT_DIR" "$RUBRICS_DIR" "$OUTPUTS_DIR"
 
 TEMPLATE="$REPO_ROOT/.lcs/templates/design-template.md"
-if [[ -f "$TEMPLATE" ]]; then
-    cp "$TEMPLATE" "$DESIGN_FILE"
-else
-    touch "$DESIGN_FILE"
+if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_FILE" ]]; then
+    if [[ -f "$TEMPLATE" ]]; then
+        cp "$TEMPLATE" "$DESIGN_FILE"
+    else
+        touch "$DESIGN_FILE"
+    fi
 fi
 
 [[ -f "$CONTENT_MODEL_FILE" ]] || touch "$CONTENT_MODEL_FILE"
@@ -33,7 +37,7 @@ fi
 [[ -f "$DELIVERY_GUIDE_FILE" ]] || touch "$DELIVERY_GUIDE_FILE"
 
 if $JSON_MODE; then
-    printf '{"BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":"%s"}\n' \
+    printf '{"BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":%s}\n' \
         "$BRIEF_FILE" "$DESIGN_FILE" "$UNIT_DIR" "$CURRENT_BRANCH" "$HAS_GIT"
 else
     echo "BRIEF_FILE: $BRIEF_FILE"

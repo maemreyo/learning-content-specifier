@@ -30,22 +30,25 @@ $BOB_FILE = Join-Path $paths.REPO_ROOT 'AGENTS.md'
 $template = Join-Path $paths.REPO_ROOT '.lcs/templates/agent-file-template.md'
 if (-not (Test-Path $template)) { Write-Error "Missing template: $template"; exit 1 }
 
-function Extract-DesignField([string]$Field) {
-    if (-not (Test-Path $paths.DESIGN_FILE)) { return '' }
-    $pattern = '^\*\*' + [Regex]::Escape($Field) + '\*\*: (.+)$'
-    foreach ($line in Get-Content -Path $paths.DESIGN_FILE -Encoding utf8) {
-        if ($line -match $pattern) { return $matches[1].Trim() }
+function Extract-LearningField([string]$Field) {
+    $pattern = '^\s*-?\s*(\*\*' + [Regex]::Escape($Field) + '\*\*|' + [Regex]::Escape($Field) + ')\s*:\s*(.+)$'
+    foreach ($sourceFile in @($paths.DESIGN_FILE, $paths.BRIEF_FILE)) {
+        if (-not (Test-Path $sourceFile)) { continue }
+        foreach ($line in Get-Content -Path $sourceFile -Encoding utf8) {
+            if ($line -match $pattern) { return $matches[2].Trim() }
+        }
     }
     return ''
 }
 
-$audience = Extract-DesignField 'Audience Profile'
-$duration = Extract-DesignField 'Duration Budget'
-$modality = Extract-DesignField 'Modality Mix'
-$mode = Extract-DesignField 'Delivery Mode'
+$audience = Extract-LearningField 'Audience Profile'
+$level = Extract-LearningField 'Entry Level'
+$duration = Extract-LearningField 'Duration Budget'
+$modality = Extract-LearningField 'Modality Mix'
+$mode = Extract-LearningField 'Delivery Mode'
 
-$techLine = "- Audience: $($audience ? $audience : 'unknown') | Duration: $($duration ? $duration : 'unknown') | Modality: $($modality ? $modality : 'unknown') | Mode: $($mode ? $mode : 'unknown') ($($paths.CURRENT_BRANCH))"
-$recentLine = "- $($paths.CURRENT_BRANCH): Updated learning profile ($($modality ? $modality : 'unknown'))"
+$techLine = "- Audience: $($audience ? $audience : 'unknown') | Level: $($level ? $level : 'unknown') | Duration: $($duration ? $duration : 'unknown') | Modality: $($modality ? $modality : 'unknown') | Mode: $($mode ? $mode : 'unknown') ($($paths.CURRENT_BRANCH))"
+$recentLine = "- $($paths.CURRENT_BRANCH): Updated unit learning profile ($($modality ? $modality : 'unknown'))"
 
 function New-AgentFile([string]$TargetFile) {
     $content = Get-Content -Path $template -Raw -Encoding utf8
@@ -53,7 +56,7 @@ function New-AgentFile([string]$TargetFile) {
     $content = $content.Replace('[DATE]', (Get-Date -Format 'yyyy-MM-dd'))
     $content = $content.Replace('[EXTRACTED FROM ALL DESIGN.MD FILES]', $techLine)
     $content = $content.Replace('[ACTUAL STRUCTURE FROM PLANS]', 'specs/' + [Environment]::NewLine + '  outputs/')
-    $content = $content.Replace('[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]', '/lcs.define, /lcs.design, /lcs.sequence, /lcs.author')
+    $content = $content.Replace('[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]', '/lcs.define, /lcs.design, /lcs.sequence, /lcs.rubric, /lcs.audit, /lcs.author')
     $content = $content.Replace('[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE]', 'Use concise, learner-centered writing and consistent terminology.')
     $content = $content.Replace('[LAST 3 FEATURES AND WHAT THEY ADDED]', $recentLine)
     $parent = Split-Path -Parent $TargetFile
