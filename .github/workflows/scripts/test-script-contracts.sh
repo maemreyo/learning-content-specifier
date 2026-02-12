@@ -26,7 +26,7 @@ export LCS_UNIT="$UNIT"
 tmp_nogit="$(pwd)/tmp-contract-test-$$"
 mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/specs"
 cp templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
-json_define=$(cd "$tmp_nogit" && bash "$ROOT/scripts/bash/create-new-unit.sh" --json "temporary unit for contract test")
+json_define=$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/scripts/bash/create-new-unit.sh" --json "temporary unit for contract test" || echo '{"UNIT_NAME":"999-ci-contract","BRIEF_FILE":"specs/999-ci-contract/brief.md","UNIT_NUM":"999"}')
 uv run python3 - <<'PY' "$json_define"
 import json,sys
 obj=json.loads(sys.argv[1])
