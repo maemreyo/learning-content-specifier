@@ -149,7 +149,7 @@ PY
 
 scripts/bash/validate-author-gates.sh --json >/dev/null
 
-if command -v pwsh >/dev/null 2>&1; then
+if command -v pwsh >/dev/null 2>&1 && [[ "${RUNNER_OS:-}" == "Windows" ]]; then
   pjson_setup_raw="$(pwsh -NoLogo -NoProfile -File scripts/powershell/setup-design.ps1 -Json 2>&1 || true)"
   pjson_setup="$(normalize_json "$pjson_setup_raw" || true)"
   if [[ -z "$pjson_setup" ]]; then
@@ -207,7 +207,7 @@ obj=json.loads(sys.argv[1])
 assert obj["STATUS"] == "PASS"
 PY
 else
-  echo "pwsh not found; skipping PowerShell contract checks" >&2
+  echo "Skipping PowerShell contract checks in bash smoke script" >&2
 fi
 
 echo "Script contract checks passed"

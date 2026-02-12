@@ -1,7 +1,11 @@
 #!/usr/bin/env pwsh
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
+$repoRoot = (& git rev-parse --show-toplevel 2>$null)
+if (-not $repoRoot) {
+    $repoRoot = (Get-Location).Path
+}
+$repoRoot = "$repoRoot".Trim()
 
 # 1) create-new-unit contract in temp non-git workspace
 $tempRoot = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-" + [guid]::NewGuid().ToString())
