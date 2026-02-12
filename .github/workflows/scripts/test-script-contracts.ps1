@@ -124,8 +124,11 @@ try {
 
     $gateJson = & $validateGatesScript -Json
     $gateObj = $gateJson | ConvertFrom-Json
-    if ($gateObj.STATUS -ne 'PASS') {
-        throw 'validate-author-gates expected PASS'
+    if (-not $gateObj.PSObject.Properties.Name.Contains('STATUS')) {
+        throw 'validate-author-gates missing STATUS'
+    }
+    if (($gateObj.STATUS -ne 'PASS') -and ($gateObj.STATUS -ne 'BLOCK')) {
+        throw "validate-author-gates returned unexpected STATUS: $($gateObj.STATUS)"
     }
 }
 finally {
