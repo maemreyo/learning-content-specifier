@@ -37,8 +37,8 @@
       },
       {
         "path": "contracts/README.md",
-        "sha256": "67b48966de1242e495a89107064e74d96b52f3b70398a16a6f07303f33c9fd50",
-        "size_bytes": 935
+        "sha256": "06dd3b54faa83a4d92b1451e724dce5f08a45e8d730e75daedb5641061f626bc",
+        "size_bytes": 1046
       }
     ],
     "fixtures": [

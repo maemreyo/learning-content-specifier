@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+missing=0
+
+require_file() {
+  local path="$1"
+  if [[ ! -f "$path" ]]; then
+    echo "Missing required file: $path" >&2
+    missing=1
+  fi
+}
+
+forbid_path() {
+  local path="$1"
+  if [[ -e "$path" ]]; then
+    echo "Forbidden path exists in core repo: $path" >&2
+    missing=1
+  fi
+}
+
+# Core/consumer boundary invariants.
+forbid_path "scaffolds/lcs-output-consumer"
+forbid_path "scripts/scaffold_output_consumer.py"
+require_file "factory/scripts/python/bootstrap_consumer.py"
+require_file "contracts/index.json"
+require_file "contracts/consumer-contract-version.txt"
+
+if [[ "$missing" -ne 0 ]]; then
+  exit 1
+fi
+
+echo "Core boundary checks passed"

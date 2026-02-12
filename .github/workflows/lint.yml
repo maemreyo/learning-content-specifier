@@ -67,6 +67,11 @@ jobs:
           chmod +x tooling/ci/check-consumer-contract-compat.sh
           tooling/ci/check-consumer-contract-compat.sh
 
+      - name: Core boundary checks
+        run: |
+          chmod +x tooling/ci/check-core-boundaries.sh
+          tooling/ci/check-core-boundaries.sh
+
       - name: Legacy token guard
         run: |
           chmod +x tooling/ci/legacy-token-guard.sh

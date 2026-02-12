@@ -79,6 +79,7 @@ Governance source: `.lcs/memory/charter.md`.
 LCS publishes a context-safe contract package for external consumer platforms:
 
 - `contracts/index.json` (checksums + compatibility policy)
+- `contracts/consumer-contract-version.txt` (pinned consumer-required contract semver)
 - `contracts/schemas/*.schema.json`
 - `contracts/docs/*.md`
 - `contracts/fixtures/*.json`
@@ -99,6 +100,8 @@ Bootstrap standalone consumer repo from this LCS core repo:
 ```bash
 uv run python factory/scripts/python/bootstrap_consumer.py --consumer-version v0.1.0 --target ../lcs-output-consumer
 ```
+
+The bootstrap flow enforces contract-major compatibility between downloaded `contracts/index.json` and the pinned requirement in `contracts/consumer-contract-version.txt` (or `--required-contract-version`).
 
 ## Hard Gates
 

@@ -19,6 +19,10 @@ import httpx
 
 CHECKSUM_SIDECAR_SUFFIXES = (".sha256", ".sha256sum", ".sha256.txt")
 SEMVER_TAG_PATTERN = re.compile(r"^v\d+\.\d+\.\d+$")
+SEMVER_VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
+DEFAULT_CONSUMER_CONTRACT_VERSION_FILE = (
+    Path(__file__).resolve().parents[3] / "contracts" / "consumer-contract-version.txt"
+)
 
 
 class BootstrapError(RuntimeError):
@@ -39,6 +43,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--consumer-sha256", help="Expected SHA256 for consumer asset")
     parser.add_argument("--contracts-sha256", help="Expected SHA256 for contracts asset")
     parser.add_argument("--allow-missing-checksum", action="store_true", help="Allow download when no checksum sidecar is found")
+    parser.add_argument(
+        "--required-contract-version",
+        default=os.getenv("LCS_REQUIRED_CONTRACT_VERSION"),
+        help="Required consumer contract semver (X.Y.Z); major must match downloaded contract index",
+    )
+    parser.add_argument(
+        "--required-contract-version-file",
+        default=str(DEFAULT_CONSUMER_CONTRACT_VERSION_FILE),
+        help="Fallback file for required consumer contract version when --required-contract-version is not provided",
+    )
     parser.add_argument("--force", action="store_true", help="Overwrite non-empty target directory")
     parser.add_argument("--github-token", default=os.getenv("GH_TOKEN") or os.getenv("GITHUB_TOKEN"))
     return parser.parse_args()
@@ -50,6 +64,10 @@ def main() -> int:
     _assert_tag(args.consumer_version)
     contracts_version = args.contracts_version or args.consumer_version
     _assert_tag(contracts_version)
+    required_contract_version = _resolve_required_contract_version(
+        args.required_contract_version,
+        args.required_contract_version_file,
+    )
 
     target = Path(args.target).expanduser().resolve()
     _prepare_target(target, force=args.force)
@@ -101,6 +119,7 @@ def main() -> int:
         _extract_zip(contracts_zip, target)
 
     verify_contract_index(target)
+    verify_contract_major_compatibility(target, required_contract_version)
 
     print(f"Bootstrap complete: {target}")
     print("Next steps:")
@@ -113,6 +132,25 @@ def main() -> int:
 def _assert_tag(tag: str) -> None:
     if not SEMVER_TAG_PATTERN.match(tag):
         raise BootstrapError(f"Invalid tag format '{tag}', expected vX.Y.Z")
+
+
+def _resolve_required_contract_version(explicit_value: str | None, fallback_file: str | None) -> str:
+    candidate = (explicit_value or "").strip()
+    if not candidate and fallback_file:
+        fallback_path = Path(fallback_file).expanduser().resolve()
+        if fallback_path.is_file():
+            candidate = fallback_path.read_text(encoding="utf-8").strip()
+
+    if not candidate:
+        raise BootstrapError(
+            "Missing required contract version. Provide --required-contract-version "
+            "or maintain contracts/consumer-contract-version.txt."
+        )
+
+    if not SEMVER_VERSION_PATTERN.match(candidate):
+        raise BootstrapError(f"Invalid required contract version '{candidate}', expected X.Y.Z")
+
+    return candidate
 
 
 def _prepare_target(target: Path, force: bool) -> None:
@@ -261,6 +299,28 @@ def verify_contract_index(target_root: Path) -> None:
             actual = sha256_file(file_path)
             if actual != sha:
                 raise BootstrapError(f"contract entry checksum mismatch: {rel}")
+
+
+def _semver_major(version: str) -> int:
+    if not SEMVER_VERSION_PATTERN.match(version):
+        raise BootstrapError(f"Invalid semver value '{version}', expected X.Y.Z")
+    return int(version.split(".", 1)[0])
+
+
+def verify_contract_major_compatibility(target_root: Path, required_contract_version: str) -> None:
+    index_path = target_root / "contracts/index.json"
+    payload = json.loads(index_path.read_text(encoding="utf-8"))
+    package_contract_version = payload.get("contract_version")
+    if not isinstance(package_contract_version, str):
+        raise BootstrapError("contracts/index.json missing contract_version")
+
+    required_major = _semver_major(required_contract_version)
+    package_major = _semver_major(package_contract_version)
+
+    if required_major != package_major:
+        raise BootstrapError(
+            f"Contract major mismatch: required={required_contract_version} package={package_contract_version}"
+        )
 
 
 if __name__ == "__main__":

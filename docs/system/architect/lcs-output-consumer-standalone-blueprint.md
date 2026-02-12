@@ -15,6 +15,7 @@ Build a standalone, headless integration backbone that consumes LCS artifacts de
 Use versioned contract package emitted by LCS:
 
 - `contracts/index.json`
+- `contracts/consumer-contract-version.txt` (required contract semver pin for major-compat checks)
 - `contracts/schemas/*.schema.json`
 - `contracts/docs/*.md`
 - `contracts/fixtures/*.json`
@@ -87,3 +88,5 @@ Query:
 ```bash
 uv run python factory/scripts/python/bootstrap_consumer.py --consumer-version v0.1.0 --target ../lcs-output-consumer
 ```
+
+Bootstrap blocks when downloaded `contracts/index.json::contract_version` has a different major from the pinned requirement in `contracts/consumer-contract-version.txt` (or explicit `--required-contract-version`).

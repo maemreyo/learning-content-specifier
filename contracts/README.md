@@ -3,6 +3,7 @@
 This directory is the source-of-truth metadata for the standalone consumer sync layer.
 
 - `contracts/index.json`: versioned contract index with checksums and compatibility policy.
+- `contracts/consumer-contract-version.txt`: pinned consumer-required contract semver for compatibility gates.
 - `contracts/schemas/*.schema.json`: machine contracts consumed by validators and downstream services.
 - `contracts/docs/*.md`: digest documentation for consumer teams.
 - `contracts/fixtures/*.json`: golden fixtures for smoke and integration tests.
