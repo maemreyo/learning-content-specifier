@@ -21,13 +21,20 @@ graph TB
 
     subgraph Artifacts["Learning Content Artifacts"]
         brief["brief.md"]
+        briefj["brief.json"]
         design["design.md"]
+        designj["design.json"]
         seq["sequence.md"]
+        seqj["sequence.json"]
         cmodel["content-model.md"]
+        cmodelj["content-model.json"]
+        decisions["design-decisions.json"]
         amap["assessment-map.md"]
         dguide["delivery-guide.md"]
         rubrics["rubrics/"]
         outputs["outputs/"]
+        manifest["outputs/manifest.json"]
+        auditj["audit-report.json"]
         charter["charter.md"]
     end
 
@@ -50,18 +57,23 @@ graph TB
     c0 --> t5 --> charter
 
     c1 --> s1 --> brief
+    c1 --> briefj
     t1 --> brief
 
     c2 --> s3 --> brief
 
     c3 --> s2 --> design
+    c3 --> designj
     c3 --> cmodel
+    c3 --> cmodelj
+    c3 --> decisions
     c3 --> amap
     c3 --> dguide
     c3 --> s4
     t2 --> design
 
     c4 --> s3 --> seq
+    c4 --> seqj
     t3 --> seq
 
     c5 --> s3 --> rubrics
@@ -71,6 +83,7 @@ graph TB
     c6 --> brief
     c6 --> design
     c6 --> seq
+    c6 --> auditj
     c6 --> g5
 
     charter -.-> g1
@@ -85,6 +98,7 @@ graph TB
     c7 --> g3
     c7 --> g4
     c7 --> outputs
+    c7 --> manifest
 
     c8 --> s3
     c8 --> seq

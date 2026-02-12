@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.artifact.brief.v1",
+  "title": "LCS Brief Artifact v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "unit_id",
+    "title",
+    "audience",
+    "duration_minutes",
+    "learning_outcomes"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
+    },
+    "unit_id": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}-[a-z0-9-]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audience": {
+      "type": "object",
+      "required": [
+        "primary",
+        "entry_level",
+        "delivery_context"
+      ],
+      "properties": {
+        "primary": {"type": "string", "minLength": 1},
+        "entry_level": {"type": "string", "minLength": 1},
+        "delivery_context": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "duration_minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "learning_outcomes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "lo_id",
+          "priority",
+          "statement",
+          "evidence",
+          "acceptance_criteria"
+        ],
+        "properties": {
+          "lo_id": {
+            "type": "string",
+            "pattern": "^(LO[0-9]+|[A-Za-z0-9_-]+)$"
+          },
+          "priority": {
+            "type": "string",
+            "pattern": "^P[1-9][0-9]*$"
+          },
+          "statement": {"type": "string", "minLength": 1},
+          "evidence": {"type": "string", "minLength": 1},
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "in_scope": {"type": "array", "items": {"type": "string"}},
+        "out_of_scope": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

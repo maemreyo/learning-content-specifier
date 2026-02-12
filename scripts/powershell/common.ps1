@@ -102,14 +102,22 @@ function Get-UnitPathsEnv {
         HAS_GIT = $hasGit
         UNIT_DIR = $unitDir
         BRIEF_FILE = Join-Path $unitDir 'brief.md'
+        BRIEF_JSON_FILE = Join-Path $unitDir 'brief.json'
         DESIGN_FILE = Join-Path $unitDir 'design.md'
+        DESIGN_JSON_FILE = Join-Path $unitDir 'design.json'
         SEQUENCE_FILE = Join-Path $unitDir 'sequence.md'
+        SEQUENCE_JSON_FILE = Join-Path $unitDir 'sequence.json'
         RESEARCH_FILE = Join-Path $unitDir 'research.md'
         CONTENT_MODEL_FILE = Join-Path $unitDir 'content-model.md'
+        CONTENT_MODEL_JSON_FILE = Join-Path $unitDir 'content-model.json'
         ASSESSMENT_MAP_FILE = Join-Path $unitDir 'assessment-map.md'
         DELIVERY_GUIDE_FILE = Join-Path $unitDir 'delivery-guide.md'
+        DESIGN_DECISIONS_FILE = Join-Path $unitDir 'design-decisions.json'
+        AUDIT_REPORT_FILE = Join-Path $unitDir 'audit-report.md'
+        AUDIT_REPORT_JSON_FILE = Join-Path $unitDir 'audit-report.json'
         RUBRICS_DIR = Join-Path $unitDir 'rubrics'
         OUTPUTS_DIR = Join-Path $unitDir 'outputs'
+        MANIFEST_FILE = Join-Path (Join-Path $unitDir 'outputs') 'manifest.json'
         CHARTER_FILE = Join-Path $repoRoot '.lcs/memory/charter.md'
     }
 }

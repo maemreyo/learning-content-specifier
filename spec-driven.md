@@ -12,7 +12,7 @@ LCS treats learning artifacts as executable contracts. Instead of jumping direct
 4. `/lcs.design`: produce design + content model + assessment map + delivery guide.
 5. `/lcs.sequence`: create dependency-ordered authoring sequence.
 6. `/lcs.rubric`: generate machine-parseable quality gates.
-7. `/lcs.audit`: generate `audit-report.md` with PASS/BLOCK decision.
+7. `/lcs.audit`: generate `audit-report.md` + `audit-report.json` with PASS/BLOCK decision.
 8. `/lcs.author`: produce local outputs only when gates pass.
 9. `/lcs.issueize`: publish sequence tasks as GitHub issues.
 
@@ -29,6 +29,8 @@ Hard gates enforce:
 ## Local-First Output Strategy
 
 All deliverables are produced under `specs/<unit>/outputs/` so downstream repositories or pipelines can consume deterministic artifacts.
+
+Machine-consumable contracts are versioned json sidecars validated by schema, with `outputs/manifest.json` as the downstream entrypoint.
 
 ## Extension Hooks (Clean Break)
 

@@ -6,6 +6,7 @@ description: "Production sequence template for learning unit authoring"
 
 **Input**: Design docs from `/specs/[###-unit-name]/`
 **Prerequisites**: design.md (required), brief.md (required), content-model.md, assessment-map.md, delivery-guide.md
+**Machine Contract**: Keep `sequence.json` synchronized with task IDs, dependencies, and file targets.
 
 **Quality mode**: Hard gates enabled. Rubric and audit checks are blocking before `/lcs.author`.
 
@@ -43,7 +44,7 @@ description: "Production sequence template for learning unit authoring"
 
 - [ ] S013 Run rubric checks and resolve all incomplete items in specs/[###-unit-name]/rubrics/
 - [ ] S014 Run `/lcs.audit` and resolve critical/high findings in specs/[###-unit-name]/audit-report.md
-- [ ] S015 Freeze publish-local package manifest in specs/[###-unit-name]/outputs/package-manifest.json
+- [ ] S015 Freeze publish-local package manifest in specs/[###-unit-name]/outputs/manifest.json
 
 ## Dependencies & Order
 

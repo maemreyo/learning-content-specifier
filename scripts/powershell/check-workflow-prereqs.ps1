@@ -30,8 +30,14 @@ if ($PathsOnly) {
             UNIT_HAS_GIT = $paths.HAS_GIT
             UNIT_DIR = $paths.UNIT_DIR
             UNIT_BRIEF_FILE = $paths.BRIEF_FILE
+            UNIT_BRIEF_JSON_FILE = $paths.BRIEF_JSON_FILE
             UNIT_DESIGN_FILE = $paths.DESIGN_FILE
+            UNIT_DESIGN_JSON_FILE = $paths.DESIGN_JSON_FILE
             UNIT_SEQUENCE_FILE = $paths.SEQUENCE_FILE
+            UNIT_SEQUENCE_JSON_FILE = $paths.SEQUENCE_JSON_FILE
+            UNIT_AUDIT_REPORT_FILE = $paths.AUDIT_REPORT_FILE
+            UNIT_AUDIT_REPORT_JSON_FILE = $paths.AUDIT_REPORT_JSON_FILE
+            UNIT_MANIFEST_FILE = $paths.MANIFEST_FILE
             UNIT_CHARTER_FILE = $paths.CHARTER_FILE
         } | ConvertTo-Json -Compress
     } else {
@@ -40,8 +46,14 @@ if ($PathsOnly) {
         Write-Output "UNIT_HAS_GIT: $($paths.HAS_GIT)"
         Write-Output "UNIT_DIR: $($paths.UNIT_DIR)"
         Write-Output "UNIT_BRIEF_FILE: $($paths.BRIEF_FILE)"
+        Write-Output "UNIT_BRIEF_JSON_FILE: $($paths.BRIEF_JSON_FILE)"
         Write-Output "UNIT_DESIGN_FILE: $($paths.DESIGN_FILE)"
+        Write-Output "UNIT_DESIGN_JSON_FILE: $($paths.DESIGN_JSON_FILE)"
         Write-Output "UNIT_SEQUENCE_FILE: $($paths.SEQUENCE_FILE)"
+        Write-Output "UNIT_SEQUENCE_JSON_FILE: $($paths.SEQUENCE_JSON_FILE)"
+        Write-Output "UNIT_AUDIT_REPORT_FILE: $($paths.AUDIT_REPORT_FILE)"
+        Write-Output "UNIT_AUDIT_REPORT_JSON_FILE: $($paths.AUDIT_REPORT_JSON_FILE)"
+        Write-Output "UNIT_MANIFEST_FILE: $($paths.MANIFEST_FILE)"
         Write-Output "UNIT_CHARTER_FILE: $($paths.CHARTER_FILE)"
     }
     exit 0

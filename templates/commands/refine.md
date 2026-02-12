@@ -23,6 +23,7 @@ $ARGUMENTS
 
 - YOU MUST ask only questions that materially affect design or gate outcomes.
 - YOU MUST persist accepted clarifications back into `brief.md` immediately.
+- YOU MUST keep `brief.json` consistent with accepted clarifications.
 - YOU MUST append clarification history with date.
 - YOU MUST NOT ask redundant or low-impact questions.
 
@@ -32,7 +33,8 @@ $ARGUMENTS
 2. Inspect ambiguity hotspots: outcome measurability, audience constraints, pedagogy assumptions, assessment evidence, accessibility requirements.
 3. Ask targeted clarifications and integrate accepted answers under `## Clarifications`.
 4. Reconcile contradictory wording in the main brief sections.
-5. Save and report readiness for `/lcs.design`.
+5. Update `brief.json` fields impacted by clarifications.
+6. Save and report readiness for `/lcs.design`.
 
 ## Hard Gates
 
@@ -47,6 +49,7 @@ $ARGUMENTS
 ## Output Contract
 
 - Updated `specs/<unit>/brief.md`.
+- Updated `specs/<unit>/brief.json`.
 - Report includes: clarification count, sections touched, unresolved blockers.
 
 ## Examples

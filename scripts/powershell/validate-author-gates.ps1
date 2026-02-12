@@ -19,21 +19,41 @@ if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT))
     exit 1
 }
 
-$auditFile = Join-Path $paths.UNIT_DIR 'audit-report.md'
+$auditFile = $paths.AUDIT_REPORT_FILE
+$auditJsonFile = $paths.AUDIT_REPORT_JSON_FILE
 $rubricUnchecked = 0
 $rubricBlockers = 0
 $auditDecision = 'MISSING'
 $auditOpenCritical = 0
 $auditOpenHigh = 0
+$contractStatus = 'BLOCK'
+$contractSummary = 'validation-not-run'
 $blockers = @()
+
+try {
+    $contractRaw = & (Join-Path $PSScriptRoot 'validate-artifact-contracts.ps1') -Json -UnitDir $paths.UNIT_DIR
+    $contractObj = $contractRaw | ConvertFrom-Json
+    $contractStatus = [string]$contractObj.STATUS
+    $missingCount = @($contractObj.MISSING_FILES).Count + @($contractObj.MISSING_SCHEMAS).Count
+    $errorCount = @($contractObj.ERRORS).Count
+    $contractSummary = "missing=$missingCount,errors=$errorCount"
+    if ($contractStatus -ne 'PASS') {
+        $blockers += "Artifact contract validation is BLOCK ($contractSummary)"
+    }
+}
+catch {
+    $blockers += 'Artifact contract validation failed to execute'
+}
 
 if (-not (Test-Path $paths.RUBRICS_DIR -PathType Container)) {
     $blockers += "Missing rubrics directory: $($paths.RUBRICS_DIR)"
-} else {
+}
+else {
     $rubricFiles = Get-ChildItem -Path $paths.RUBRICS_DIR -Filter '*.md' -File -ErrorAction SilentlyContinue
     if (-not $rubricFiles) {
         $blockers += "No rubric files found in $($paths.RUBRICS_DIR)"
-    } else {
+    }
+    else {
         foreach ($rubric in $rubricFiles) {
             $content = Get-Content -Path $rubric.FullName -Encoding utf8
             $rubricUnchecked += @($content | Where-Object { $_ -match '^\s*-\s*\[\s\]' }).Count
@@ -50,31 +70,60 @@ if ($rubricBlockers -gt 0) {
     $blockers += "Rubric has $rubricBlockers non-pass status item(s)"
 }
 
-if (-not (Test-Path $auditFile -PathType Leaf)) {
-    $blockers += "Missing audit report: $auditFile"
-} else {
+if (Test-Path $auditJsonFile -PathType Leaf) {
+    try {
+        $auditObj = Get-Content -Path $auditJsonFile -Encoding utf8 | ConvertFrom-Json
+        $decision = ([string]$auditObj.gate_decision).ToUpper()
+        if ($decision -notin @('PASS', 'BLOCK')) {
+            throw "missing-or-invalid-gate_decision"
+        }
+
+        $critical = [int]$auditObj.open_critical
+        $high = [int]$auditObj.open_high
+        if ($critical -lt 0) {
+            throw "missing-or-invalid-open_critical"
+        }
+        if ($high -lt 0) {
+            throw "missing-or-invalid-open_high"
+        }
+
+        $auditDecision = $decision
+        $auditOpenCritical = $critical
+        $auditOpenHigh = $high
+    }
+    catch {
+        $blockers += "Audit JSON invalid: $($_.Exception.Message)"
+    }
+}
+elseif (Test-Path $auditFile -PathType Leaf) {
     $auditLines = Get-Content -Path $auditFile -Encoding utf8
 
     $decisionLine = $auditLines | Where-Object { $_ -match '^Gate Decision:\s*(PASS|BLOCK)$' } | Select-Object -First 1
     if ($decisionLine) {
         $auditDecision = ($decisionLine -replace '^Gate Decision:\s*', '').Trim().ToUpper()
-    } else {
+    }
+    else {
         $blockers += "Audit report missing 'Gate Decision: PASS|BLOCK'"
     }
 
     $criticalLine = $auditLines | Where-Object { $_ -match '^Open Critical:\s*\d+' } | Select-Object -First 1
     if ($criticalLine) {
         $auditOpenCritical = [int](($criticalLine -replace '^Open Critical:\s*', '').Trim())
-    } else {
+    }
+    else {
         $blockers += "Audit report missing 'Open Critical: <number>'"
     }
 
     $highLine = $auditLines | Where-Object { $_ -match '^Open High:\s*\d+' } | Select-Object -First 1
     if ($highLine) {
         $auditOpenHigh = [int](($highLine -replace '^Open High:\s*', '').Trim())
-    } else {
+    }
+    else {
         $blockers += "Audit report missing 'Open High: <number>'"
     }
+}
+else {
+    $blockers += "Missing audit report: $auditFile"
 }
 
 if ($auditDecision -ne 'PASS') {
@@ -94,6 +143,8 @@ $status = if ($blockers.Count -gt 0) { 'BLOCK' } else { 'PASS' }
 $result = [PSCustomObject]@{
     STATUS = $status
     UNIT_DIR = $paths.UNIT_DIR
+    CONTRACT_STATUS = $contractStatus
+    CONTRACT_SUMMARY = $contractSummary
     RUBRIC_UNCHECKED = $rubricUnchecked
     RUBRIC_BLOCKERS = $rubricBlockers
     AUDIT_DECISION = $auditDecision
@@ -104,9 +155,12 @@ $result = [PSCustomObject]@{
 
 if ($Json) {
     $result | ConvertTo-Json -Compress
-} else {
+}
+else {
     Write-Output "STATUS: $($result.STATUS)"
     Write-Output "UNIT_DIR: $($result.UNIT_DIR)"
+    Write-Output "CONTRACT_STATUS: $($result.CONTRACT_STATUS)"
+    Write-Output "CONTRACT_SUMMARY: $($result.CONTRACT_SUMMARY)"
     Write-Output "RUBRIC_UNCHECKED: $($result.RUBRIC_UNCHECKED)"
     Write-Output "RUBRIC_BLOCKERS: $($result.RUBRIC_BLOCKERS)"
     Write-Output "AUDIT_DECISION: $($result.AUDIT_DECISION)"

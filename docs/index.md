@@ -15,4 +15,4 @@ LCS provides a hard-gated command chain for spec-driven learning content:
 
 `charter -> define -> refine -> design -> sequence -> rubric -> audit -> author -> issueize`
 
-Artifacts are generated under `specs/<###-slug>/` with local-first outputs in `outputs/`.
+Artifacts are generated under `specs/<###-slug>/` with markdown + json contracts and local-first outputs in `outputs/manifest.json`.

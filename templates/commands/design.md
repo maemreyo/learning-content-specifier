@@ -18,7 +18,7 @@ agent_scripts:
 
 ## Intent
 
-Produce complete learning design artifacts from brief + charter with gate-aware decisions.
+Produce complete learning design artifacts from brief + charter with deterministic pedagogy decisions and machine-readable contracts.
 
 ## Inputs
 
@@ -30,36 +30,51 @@ $ARGUMENTS
 
 - YOU MUST preserve existing `design.md` content unless an explicit reset is requested.
 - YOU MUST generate and maintain `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
-- YOU MUST encode objective-activity-assessment alignment in design choices.
+- YOU MUST generate or update `design.json`, `content-model.json`, `design-decisions.json`, and `outputs/manifest.json`.
+- YOU MUST apply Corporate L&D default pedagogy weights:
+  - `outcome_fit=0.30`
+  - `evidence_fit=0.25`
+  - `learner_fit=0.20`
+  - `delivery_fit=0.15`
+  - `accessibility_fit=0.10`
+- YOU MUST apply selection rule: max 2 secondary methods with `score_delta <= 0.40`.
+- YOU MUST mark research required when confidence `< 0.70`.
 - YOU MUST NOT bypass charter constraints.
 
 ## Execution Steps
 
 1. Run `{SCRIPT}` and parse `BRIEF_FILE`, `DESIGN_FILE`, `UNIT_DIR`, `BRANCH`, `HAS_GIT`.
 2. Load `BRIEF_FILE`, `.lcs/memory/charter.md`, and `.lcs/templates/design-template.md`.
-3. Create/update required design artifacts under `UNIT_DIR`.
-4. Ensure metadata is sufficient for `outputs/` local publishing contract.
-5. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
-6. Report artifacts and unresolved risks.
+3. Produce/update design artifacts under `UNIT_DIR`.
+4. Update decision contracts (`design.json`, `design-decisions.json`) with scored pedagogy rationale.
+5. If confidence `< 0.70` OR domain is time-sensitive OR artifacts conflict, add evidence references to `research.md` and `design-decisions.json`.
+6. Update `content-model.json` with module/lesson LO references and dependency graph cycle check.
+7. Ensure `outputs/manifest.json` remains valid and xAPI interop block exists.
+8. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
+9. Report artifacts and unresolved risks.
 
 ## Hard Gates
 
 - Gate G-DS-001: each LO has mapped activity and assessment strategy.
-- Gate G-DS-002: accessibility/readability controls are explicit.
-- Gate G-DS-003: metadata fields are complete for outputs.
+- Gate G-DS-002: pedagogy decision log includes method scores, selected primary, selected secondary, confidence.
+- Gate G-DS-003: accessibility/readability controls are explicit.
+- Gate G-DS-004: duration estimate is within tolerance (`-10%` to `+15%`) or explicitly blocked.
+- Gate G-DS-005: `design.json`, `content-model.json`, `design-decisions.json`, and `outputs/manifest.json` are present.
 
 ## Failure Modes
 
 - Missing brief: stop and require `/lcs.define`.
 - Charter conflict: stop and surface blocking policy mismatch.
+- Cyclic LO dependency graph: stop and request explicit decomposition fix.
 - Partial artifact generation: stop and list missing files.
 
 ## Output Contract
 
-- `design.md`, `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
-- Execution summary includes `HAS_GIT` state and gate risk list.
+- Markdown: `design.md`, `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
+- JSON: `design.json`, `content-model.json`, `design-decisions.json`, `outputs/manifest.json`.
+- Execution summary includes `HAS_GIT` state, confidence score, and research trigger decision.
 
 ## Examples
 
-- Success: design includes LO-to-assessment matrix and remediation strategy.
-- Fail: design omits accessibility baseline and cannot pass gate.
+- Success: design includes LO-to-assessment matrix, scored pedagogy rationale, and valid machine-readable contracts.
+- Fail: design omits decision scores or produces cyclic LO dependency graph.

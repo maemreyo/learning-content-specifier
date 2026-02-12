@@ -118,7 +118,37 @@ New-Item -ItemType Directory -Path $unitDir -Force | Out-Null
 
 $template = Join-Path $repoRoot '.lcs/templates/brief-template.md'
 $briefFile = Join-Path $unitDir 'brief.md'
+$briefJsonFile = Join-Path $unitDir 'brief.json'
 if (Test-Path $template) { Copy-Item $template $briefFile -Force } else { New-Item -ItemType File -Path $briefFile -Force | Out-Null }
+
+if (-not (Test-Path $briefJsonFile)) {
+@"
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$unitName",
+  "title": "$unitName",
+  "audience": {
+    "primary": "unspecified",
+    "entry_level": "unspecified",
+    "delivery_context": "unspecified"
+  },
+  "duration_minutes": 60,
+  "learning_outcomes": [
+    {
+      "lo_id": "LO1",
+      "priority": "P1",
+      "statement": "Populate from brief.md",
+      "evidence": "Populate from brief.md",
+      "acceptance_criteria": ["Populate from brief.md"]
+    }
+  ],
+  "scope": {
+    "in_scope": [],
+    "out_of_scope": []
+  }
+}
+"@ | Set-Content -Path $briefJsonFile -Encoding utf8
+}
 
 $env:LCS_UNIT = $unitName
 

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.artifact.audit-report.v1",
+  "title": "LCS Audit Report Artifact v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "unit_id",
+    "gate_decision",
+    "open_critical",
+    "open_high",
+    "findings",
+    "role_readiness"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
+    },
+    "unit_id": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}-[a-z0-9-]+$"
+    },
+    "gate_decision": {"type": "string", "enum": ["PASS", "BLOCK"]},
+    "open_critical": {"type": "integer", "minimum": 0},
+    "open_high": {"type": "integer", "minimum": 0},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "artifact", "issue", "remediation", "status"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]},
+          "artifact": {"type": "string", "minLength": 1},
+          "issue": {"type": "string", "minLength": 1},
+          "remediation": {"type": "string", "minLength": 1},
+          "status": {"type": "string", "enum": ["OPEN", "RESOLVED"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "role_readiness": {
+      "type": "object",
+      "required": ["teacher_ready", "creator_ready", "ops_ready"],
+      "properties": {
+        "teacher_ready": {"type": "boolean"},
+        "creator_ready": {"type": "boolean"},
+        "ops_ready": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

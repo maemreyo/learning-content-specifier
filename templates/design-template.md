@@ -34,13 +34,19 @@
 ```text
 specs/[###-unit]/
 |-- design.md                # This file (/lcs.design output)
+|-- design.json              # Machine-readable design contract
 |-- research.md              # Optional background decisions
 |-- content-model.md         # Content entities and mapping
+|-- content-model.json       # Machine-readable content model
+|-- design-decisions.json    # Pedagogy scoring + research triggers
 |-- assessment-map.md        # LO to assessment coverage matrix
 |-- delivery-guide.md        # Facilitation + learner runbook
 |-- sequence.md              # Production sequence (/lcs.sequence output)
+|-- sequence.json            # Machine-readable production sequence
+|-- audit-report.json        # Machine-readable audit decision
 |-- rubrics/                 # Quality gates (/lcs.rubric output)
-`-- outputs/                 # Local production assets (/lcs.author output)
+`-- outputs/
+    `-- manifest.json        # Publish-local entrypoint for downstream consumers
 ```
 
 ### Content Structure (Course -> Module -> Lesson)

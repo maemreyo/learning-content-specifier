@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.artifact.sequence.v1",
+  "title": "LCS Sequence Artifact v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "unit_id",
+    "tasks"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
+    },
+    "unit_id": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}-[a-z0-9-]+$"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "title", "target_path", "status", "lo_refs", "depends_on"],
+        "properties": {
+          "task_id": {"type": "string", "pattern": "^[A-Z][0-9]{3}$"},
+          "title": {"type": "string", "minLength": 1},
+          "target_path": {"type": "string", "minLength": 1},
+          "status": {"type": "string", "enum": ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"]},
+          "lo_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "depends_on": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z][0-9]{3}$"}}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

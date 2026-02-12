@@ -27,6 +27,7 @@ $ARGUMENTS
 
 - YOU MUST run `{SCRIPT}` exactly once.
 - YOU MUST populate all mandatory sections from `.lcs/templates/brief-template.md`.
+- YOU MUST create or update `brief.json` alongside `brief.md`.
 - YOU MUST express learning outcomes as observable, measurable outcomes.
 - YOU MUST keep content implementation-agnostic and learner-centric.
 - YOU MUST NOT leave ambiguous gaps without explicit assumptions.
@@ -36,8 +37,9 @@ $ARGUMENTS
 1. Run `{SCRIPT}` and parse `UNIT_NAME`, `BRIEF_FILE`, `UNIT_NUM`.
 2. Load `.lcs/templates/brief-template.md`.
 3. Write brief sections: audience/context, outcomes, scope boundaries, requirements, accessibility/readability, metrics, risks.
-4. Save to `BRIEF_FILE`.
-5. Return completion summary and next command options.
+4. Create/update `specs/<unit>/brief.json` with matching LO IDs and metadata.
+5. Save to `BRIEF_FILE`.
+6. Return completion summary and next command options.
 
 ## Hard Gates
 
@@ -54,6 +56,7 @@ $ARGUMENTS
 ## Output Contract
 
 - Artifact: `specs/<unit>/brief.md`.
+- Artifact: `specs/<unit>/brief.json`.
 - Completion report: `UNIT_NAME`, `BRIEF_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
 
 ## Examples

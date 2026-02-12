@@ -13,14 +13,21 @@ LCS is a spec-driven toolkit for producing learning content with deterministic q
 For each unit under `specs/<###-slug>/`:
 
 - `brief.md`
+- `brief.json`
 - `design.md`
+- `design.json`
 - `sequence.md`
+- `sequence.json`
 - `content-model.md`
+- `content-model.json`
+- `design-decisions.json`
 - `assessment-map.md`
 - `delivery-guide.md`
 - `rubrics/`
 - `audit-report.md`
+- `audit-report.json`
 - `outputs/`
+- `outputs/manifest.json`
 
 Governance source: `.lcs/memory/charter.md`.
 
@@ -29,7 +36,7 @@ Governance source: `.lcs/memory/charter.md`.
 Before `/lcs.author`:
 
 - Rubric gates are complete and evidence-backed.
-- Audit report exists with `Gate Decision: PASS`.
+- Audit report artifacts exist with `PASS` decision (`audit-report.md` and/or `audit-report.json`).
 - No unresolved `CRITICAL` or `HIGH` findings.
 
 ## Quick Start

@@ -9,7 +9,7 @@ flowchart LR
     G --> H[/lcs.author/]
     H --> I[/lcs.issueize/]
 
-    G --> J[audit-report.md\nGate Decision PASS|BLOCK]
+    G --> J[audit-report.md + audit-report.json\nGate Decision PASS|BLOCK]
     F --> K[rubrics/*.md\nGate fields: status/severity/evidence]
-    H --> L[outputs/]
+    H --> L[outputs/ + outputs/manifest.json]
 ```

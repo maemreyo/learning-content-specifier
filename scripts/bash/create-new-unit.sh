@@ -143,10 +143,40 @@ mkdir -p "$UNIT_DIR"
 
 TEMPLATE="$REPO_ROOT/.lcs/templates/brief-template.md"
 BRIEF_FILE="$UNIT_DIR/brief.md"
+BRIEF_JSON_FILE="$UNIT_DIR/brief.json"
 if [[ -f "$TEMPLATE" ]]; then
     cp "$TEMPLATE" "$BRIEF_FILE"
 else
     touch "$BRIEF_FILE"
+fi
+
+if [[ ! -f "$BRIEF_JSON_FILE" ]]; then
+    cat > "$BRIEF_JSON_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_NAME",
+  "title": "$UNIT_NAME",
+  "audience": {
+    "primary": "unspecified",
+    "entry_level": "unspecified",
+    "delivery_context": "unspecified"
+  },
+  "duration_minutes": 60,
+  "learning_outcomes": [
+    {
+      "lo_id": "LO1",
+      "priority": "P1",
+      "statement": "Populate from brief.md",
+      "evidence": "Populate from brief.md",
+      "acceptance_criteria": ["Populate from brief.md"]
+    }
+  ],
+  "scope": {
+    "in_scope": [],
+    "out_of_scope": []
+  }
+}
+EOF
 fi
 
 export LCS_UNIT="$UNIT_NAME"

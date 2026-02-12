@@ -35,6 +35,243 @@ fi
 [[ -f "$CONTENT_MODEL_FILE" ]] || touch "$CONTENT_MODEL_FILE"
 [[ -f "$ASSESSMENT_MAP_FILE" ]] || touch "$ASSESSMENT_MAP_FILE"
 [[ -f "$DELIVERY_GUIDE_FILE" ]] || touch "$DELIVERY_GUIDE_FILE"
+[[ -f "$SEQUENCE_FILE" ]] || touch "$SEQUENCE_FILE"
+[[ -f "$AUDIT_REPORT_FILE" ]] || touch "$AUDIT_REPORT_FILE"
+
+UNIT_ID="$(basename "$UNIT_DIR")"
+NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$BRIEF_JSON_FILE" ]]; then
+    cat > "$BRIEF_JSON_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_ID",
+  "title": "$UNIT_ID",
+  "audience": {
+    "primary": "unspecified",
+    "entry_level": "unspecified",
+    "delivery_context": "unspecified"
+  },
+  "duration_minutes": 60,
+  "learning_outcomes": [
+    {
+      "lo_id": "LO1",
+      "priority": "P1",
+      "statement": "Populate from brief.md",
+      "evidence": "Populate from brief.md",
+      "acceptance_criteria": ["Populate from brief.md"]
+    }
+  ],
+  "scope": {
+    "in_scope": [],
+    "out_of_scope": []
+  }
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_JSON_FILE" ]]; then
+    cat > "$DESIGN_JSON_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_ID",
+  "generated_at": "$NOW_UTC",
+  "instructional_strategy": {
+    "primary_method": "retrieval-practice",
+    "secondary_methods": ["worked-examples"],
+    "rationale": "Corporate L&D default; refine with design evidence."
+  },
+  "pedagogy_decisions": {
+    "profile": "corporate-lnd-v1",
+    "confidence_threshold": 0.7,
+    "confidence": 0.0,
+    "candidate_methods": [
+      "direct-instruction",
+      "worked-examples",
+      "retrieval-practice",
+      "problem-based-learning",
+      "project-based-learning",
+      "case-based-learning",
+      "peer-instruction",
+      "simulation-lab"
+    ],
+    "scores": {
+      "learner_fit": 0.0,
+      "outcome_fit": 0.0,
+      "evidence_fit": 0.0,
+      "delivery_fit": 0.0,
+      "accessibility_fit": 0.0
+    },
+    "selection_rules": {
+      "max_secondary_methods": 2,
+      "score_delta_threshold": 0.4
+    },
+    "research": {
+      "required": false,
+      "triggers": [],
+      "evidence_refs": []
+    }
+  },
+  "metadata": {
+    "audience": "unspecified",
+    "duration_minutes": 60,
+    "modality": "unspecified"
+  }
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$CONTENT_MODEL_JSON_FILE" ]]; then
+    cat > "$CONTENT_MODEL_JSON_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_ID",
+  "course": {
+    "id": "course-01",
+    "title": "Populate from design.md"
+  },
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Populate from design.md",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Populate from design.md",
+          "lo_refs": ["LO1"],
+          "estimated_minutes": 30
+        }
+      ]
+    }
+  ],
+  "dependency_graph": {
+    "nodes": ["LO1"],
+    "edges": [],
+    "cycle_check_passed": true
+  },
+  "duration_tolerance": {
+    "lower_percent": -10,
+    "upper_percent": 15
+  }
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_DECISIONS_FILE" ]]; then
+    cat > "$DESIGN_DECISIONS_FILE" <<EOF
+{
+  "unit_id": "$UNIT_ID",
+  "profile": "corporate-lnd-v1",
+  "weights": {
+    "outcome_fit": 0.3,
+    "evidence_fit": 0.25,
+    "learner_fit": 0.2,
+    "delivery_fit": 0.15,
+    "accessibility_fit": 0.1
+  },
+  "candidate_methods": [
+    "direct-instruction",
+    "worked-examples",
+    "retrieval-practice",
+    "problem-based-learning",
+    "project-based-learning",
+    "case-based-learning",
+    "peer-instruction",
+    "simulation-lab"
+  ],
+  "scores": {
+    "direct-instruction": 0.0,
+    "worked-examples": 0.0,
+    "retrieval-practice": 0.0,
+    "problem-based-learning": 0.0,
+    "project-based-learning": 0.0,
+    "case-based-learning": 0.0,
+    "peer-instruction": 0.0,
+    "simulation-lab": 0.0
+  },
+  "selected_primary": "",
+  "selected_secondary": [],
+  "rationale": "Populate from /lcs.design decision process.",
+  "confidence_threshold": 0.7,
+  "confidence": 0.0,
+  "web_research_triggers": [
+    "time-sensitive domain/tooling",
+    "confidence below threshold",
+    "conflicting artifact signals",
+    "explicit validation request"
+  ],
+  "research_evidence_refs": []
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$SEQUENCE_JSON_FILE" ]]; then
+    cat > "$SEQUENCE_JSON_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_ID",
+  "tasks": []
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$AUDIT_REPORT_JSON_FILE" ]]; then
+    cat > "$AUDIT_REPORT_JSON_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_ID",
+  "gate_decision": "BLOCK",
+  "open_critical": 0,
+  "open_high": 0,
+  "findings": [],
+  "role_readiness": {
+    "teacher_ready": false,
+    "creator_ready": false,
+    "ops_ready": false
+  }
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
+    cat > "$MANIFEST_FILE" <<EOF
+{
+  "contract_version": "1.0.0",
+  "unit_id": "$UNIT_ID",
+  "title": "$UNIT_ID",
+  "locale": "en-US",
+  "generated_at": "$NOW_UTC",
+  "outcomes": [
+    {
+      "lo_id": "LO1",
+      "priority": "P1",
+      "evidence_refs": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "brief-md",
+      "type": "brief",
+      "path": "brief.md",
+      "media_type": "text/markdown",
+      "checksum": "sha256:000000"
+    }
+  ],
+  "gate_status": {
+    "decision": "BLOCK",
+    "open_critical": 0,
+    "open_high": 0
+  },
+  "interop": {
+    "xapi": {
+      "version": "1.0.3",
+      "activity_id_set": [],
+      "statement_template_refs": []
+    }
+  }
+}
+EOF
+fi
 
 if $JSON_MODE; then
     printf '{"BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":%s}\n' \

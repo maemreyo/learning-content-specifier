@@ -18,6 +18,10 @@ try {
             throw "create-new-unit missing key: $k"
         }
     }
+    $briefJson = [System.IO.Path]::ChangeExtension([string]$createObj.BRIEF_FILE, 'json')
+    if (-not (Test-Path $briefJson)) {
+        throw "create-new-unit missing brief json sidecar: $briefJson"
+    }
 }
 finally {
     Pop-Location
@@ -56,9 +60,30 @@ try {
         throw 'setup-design HAS_GIT must be bool'
     }
 
+    $auditJsonPath = Join-Path $unitDir 'audit-report.json'
+    $auditObj = Get-Content -Path $auditJsonPath -Encoding utf8 | ConvertFrom-Json
+    $auditObj.gate_decision = 'PASS'
+    $auditObj.open_critical = 0
+    $auditObj.open_high = 0
+    $auditObj.findings = @()
+    $auditObj | ConvertTo-Json -Depth 10 | Set-Content -Path $auditJsonPath -Encoding utf8
+
+    $contractJson = & (Join-Path $repoRoot 'scripts/powershell/validate-artifact-contracts.ps1') -Json -UnitDir $unitDir
+    $contractObj = $contractJson | ConvertFrom-Json
+    if ($contractObj.STATUS -ne 'PASS') {
+        throw "validate-artifact-contracts expected PASS but got $($contractObj.STATUS)"
+    }
+
     $pathsJson = & (Join-Path $repoRoot 'scripts/powershell/check-workflow-prereqs.ps1') -Json -PathsOnly -SkipBranchCheck
     $pathsObj = $pathsJson | ConvertFrom-Json
-    foreach ($k in @('UNIT_REPO_ROOT','UNIT_BRANCH','UNIT_HAS_GIT','UNIT_DIR','UNIT_BRIEF_FILE','UNIT_DESIGN_FILE','UNIT_SEQUENCE_FILE','UNIT_CHARTER_FILE')) {
+    foreach ($k in @(
+        'UNIT_REPO_ROOT','UNIT_BRANCH','UNIT_HAS_GIT','UNIT_DIR',
+        'UNIT_BRIEF_FILE','UNIT_BRIEF_JSON_FILE',
+        'UNIT_DESIGN_FILE','UNIT_DESIGN_JSON_FILE',
+        'UNIT_SEQUENCE_FILE','UNIT_SEQUENCE_JSON_FILE',
+        'UNIT_AUDIT_REPORT_FILE','UNIT_AUDIT_REPORT_JSON_FILE',
+        'UNIT_MANIFEST_FILE','UNIT_CHARTER_FILE'
+    )) {
         if (-not $pathsObj.PSObject.Properties.Name.Contains($k)) {
             throw "check-workflow-prereqs missing key: $k"
         }

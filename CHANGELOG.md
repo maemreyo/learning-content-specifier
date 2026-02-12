@@ -7,6 +7,22 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-12
+
+### Changed
+
+- Added machine-readable artifact contract foundation for learning-content workflow:
+  - `brief.json`, `design.json`, `sequence.json`, `audit-report.json`, `outputs/manifest.json`
+  - `content-model.json`, `design-decisions.json`
+- Added JSON Schema 2020-12 files for artifact validation under `schemas/`.
+- Added cross-shell artifact contract validators:
+  - `scripts/bash/validate-artifact-contracts.sh`
+  - `scripts/powershell/validate-artifact-contracts.ps1`
+  - `scripts/validate_artifact_contracts.py`
+- Hardened author gate determinism by prioritizing `audit-report.json` when present.
+- Updated command templates and docs to enforce manifest-first consumption and deterministic json parity.
+- Added tests for artifact contracts, gate determinism, and pedagogy defaults.
+
 ## [0.3.0] - 2026-02-12
 
 ### Changed
@@ -17,8 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added deterministic authoring gate validator scripts:
   - `scripts/bash/validate-author-gates.sh`
   - `scripts/powershell/validate-author-gates.ps1`
+- Added machine-readable artifact schemas and contract validator:
+  - `schemas/*.schema.json`
+  - `scripts/bash/validate-artifact-contracts.sh`
+  - `scripts/powershell/validate-artifact-contracts.ps1`
+  - `scripts/validate_artifact_contracts.py`
+- Added json sidecar bootstrap in setup/create scripts:
+  - `brief.json`, `design.json`, `sequence.json`, `audit-report.json`, `outputs/manifest.json`
+  - `content-model.json`, `design-decisions.json`
 - Standardized paths-only prereq contract to `UNIT_*` keys and added `--skip-branch-check` support for charter initialization on `main`.
 - Hardened `setup-design` scripts to avoid unintended `design.md` overwrite unless force-reset is requested.
+- Hardened gate determinism: author validator now prioritizes `audit-report.json` when present over markdown-only inference.
 - Aligned release package agent directories with `AGENTS.md` for `codex`, `kilocode`, `auggie`, `roo`.
 - Fixed release packaging path rewrite bug that could emit invalid `.lcs.lcs/...` paths.
 - Updated VS Code/devcontainer command recommendations to new command set.
@@ -27,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs/system/migration/terminology.md`
   - `docs/system/migration/extensions-migration-notes.md`
 - Added CI smoke scripts for script contracts, release packaging, and docs link integrity.
+- Expanded CI and tests for artifact contracts, gate determinism, and pedagogy decision defaults.
 - Updated project/docs narrative to learning-content-first workflow and fixed broken docs references.
 
 ## [0.2.0] - 2026-02-12

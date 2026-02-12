@@ -5,6 +5,8 @@
 **Status**: Draft  
 **Input**: Content request: "$ARGUMENTS"
 
+> Keep `brief.json` aligned with this brief for machine-readable downstream contracts.
+
 ## Audience & Context *(mandatory)*
 
 - **Primary Audience**: [e.g., new backend engineers, grade-10 students, sales onboarding cohort]
