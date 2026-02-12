@@ -12,6 +12,11 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+try:
+    import tomllib
+except ImportError:  # pragma: no cover - fallback for older Python in local shells
+    tomllib = None
+
 
 INDEX_PATH = Path("contracts/index.json")
 CONTRACT_PACKAGE_SCHEMA_VERSION = "1.0"
@@ -41,6 +46,17 @@ def sha256_file(path: Path) -> str:
 
 
 def read_lcs_version(pyproject_path: Path) -> str:
+    if tomllib is not None:
+        try:
+            payload = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+            project = payload.get("project", {})
+            version = project.get("version")
+            if isinstance(version, str) and version:
+                return version
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Regex fallback when tomllib is unavailable or pyproject is malformed.
     text = pyproject_path.read_text(encoding="utf-8")
     section_match = re.search(r"(?ms)^\[project\]\s*(.+?)(?:^\[|\Z)", text)
     if not section_match:
@@ -66,7 +82,12 @@ def collect_entries(repo_root: Path, globs: tuple[str, ...], include_schema_id: 
             }
             if include_schema_id:
                 payload = json.loads(path.read_text(encoding="utf-8"))
-                entry["id"] = payload.get("$id", "")
+                if not isinstance(payload, dict):
+                    raise ValueError(f"Schema file must be a JSON object: {path}")
+                schema_id = payload.get("$id")
+                if not isinstance(schema_id, str) or not schema_id.strip():
+                    raise ValueError(f"Schema file missing non-empty $id: {path}")
+                entry["id"] = schema_id
             entries.append(entry)
     return entries
 

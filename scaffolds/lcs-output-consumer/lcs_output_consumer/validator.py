@@ -54,7 +54,7 @@ def validate_unit(unit_path: Path, bundle: ContractBundle) -> UnitValidationResu
         try:
             artifact_payload = json.loads(artifact_path.read_text(encoding="utf-8"))
             payloads[artifact_name] = artifact_payload
-        except Exception as exc:  # noqa: BLE001
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             issues.append(
                 _issue(
                     code="IO_ARTIFACT_INVALID_JSON",
