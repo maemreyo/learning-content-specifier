@@ -39,6 +39,11 @@ if (-not (Test-Path $paths.AUDIT_REPORT_FILE)) { New-Item -ItemType File -Path $
 $unitId = Split-Path $paths.UNIT_DIR -Leaf
 $nowUtc = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
+if (-not (Test-Path $paths.BRIEF_FILE -PathType Leaf)) {
+    New-Item -ItemType File -Path $paths.BRIEF_FILE -Force | Out-Null
+}
+$briefChecksum = (Get-FileHash -Path $paths.BRIEF_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+
 if ($ForceReset -or -not (Test-Path $paths.BRIEF_JSON_FILE)) {
     @"
 {
@@ -254,7 +259,7 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
       "type": "brief",
       "path": "brief.md",
       "media_type": "text/markdown",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:$briefChecksum"
     }
   ],
   "gate_status": {
@@ -264,7 +269,7 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
   },
   "interop": {
     "xapi": {
-      "version": "1.0.3",
+      "version": "2.0.0",
       "activity_id_set": ["https://example.org/xapi/activity/LO1"],
       "statement_template_refs": ["https://example.org/xapi/template/LO1"]
     }

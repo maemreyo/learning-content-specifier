@@ -19,10 +19,21 @@ if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT))
     exit 1
 }
 
+$pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) {
+    'python'
+}
+elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
+    'python3'
+}
+else {
+    throw 'python or python3 is required for validate-author-gates.ps1'
+}
+
 $auditFile = $paths.AUDIT_REPORT_FILE
 $auditJsonFile = $paths.AUDIT_REPORT_JSON_FILE
 $rubricUnchecked = 0
 $rubricBlockers = 0
+$rubricParseErrors = 0
 $auditDecision = 'MISSING'
 $auditOpenCritical = 0
 $auditOpenHigh = 0
@@ -49,16 +60,23 @@ if (-not (Test-Path $paths.RUBRICS_DIR -PathType Container)) {
     $blockers += "Missing rubrics directory: $($paths.RUBRICS_DIR)"
 }
 else {
-    $rubricFiles = Get-ChildItem -Path $paths.RUBRICS_DIR -Filter '*.md' -File -ErrorAction SilentlyContinue
-    if (-not $rubricFiles) {
-        $blockers += "No rubric files found in $($paths.RUBRICS_DIR)"
-    }
-    else {
-        foreach ($rubric in $rubricFiles) {
-            $content = Get-Content -Path $rubric.FullName -Encoding utf8
-            $rubricUnchecked += @($content | Where-Object { $_ -match '^\s*-\s*\[\s\]' }).Count
-            $rubricBlockers += @($content | Where-Object { $_ -match 'status:\s*(FAIL|BLOCK|UNSET|TODO)' }).Count
+    try {
+        $rubricRaw = & $pythonBin (Join-Path $paths.REPO_ROOT 'scripts/validate_rubric_gates.py') --rubrics-dir $paths.RUBRICS_DIR --json
+        $rubricObj = $rubricRaw | ConvertFrom-Json
+        $rubricUnchecked = [int]$rubricObj.UNCHECKED_COUNT
+        $rubricBlockers = [int]$rubricObj.NON_PASS_COUNT
+        $rubricParseErrors = [int]$rubricObj.PARSE_ERROR_COUNT
+
+        if ([string]$rubricObj.STATUS -ne 'PASS') {
+            $details = @($rubricObj.BLOCKERS + $rubricObj.PARSE_ERRORS) -join '; '
+            if ([string]::IsNullOrWhiteSpace($details)) {
+                $details = 'unknown-parse-error'
+            }
+            $blockers += "Rubric format validation is BLOCK ($details)"
         }
+    }
+    catch {
+        $blockers += 'Rubric parser failed to execute'
     }
 }
 
@@ -147,6 +165,7 @@ $result = [PSCustomObject]@{
     CONTRACT_SUMMARY = $contractSummary
     RUBRIC_UNCHECKED = $rubricUnchecked
     RUBRIC_BLOCKERS = $rubricBlockers
+    RUBRIC_PARSE_ERRORS = $rubricParseErrors
     AUDIT_DECISION = $auditDecision
     AUDIT_OPEN_CRITICAL = $auditOpenCritical
     AUDIT_OPEN_HIGH = $auditOpenHigh
@@ -163,6 +182,7 @@ else {
     Write-Output "CONTRACT_SUMMARY: $($result.CONTRACT_SUMMARY)"
     Write-Output "RUBRIC_UNCHECKED: $($result.RUBRIC_UNCHECKED)"
     Write-Output "RUBRIC_BLOCKERS: $($result.RUBRIC_BLOCKERS)"
+    Write-Output "RUBRIC_PARSE_ERRORS: $($result.RUBRIC_PARSE_ERRORS)"
     Write-Output "AUDIT_DECISION: $($result.AUDIT_DECISION)"
     Write-Output "AUDIT_OPEN_CRITICAL: $($result.AUDIT_OPEN_CRITICAL)"
     Write-Output "AUDIT_OPEN_HIGH: $($result.AUDIT_OPEN_HIGH)"

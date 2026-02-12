@@ -67,6 +67,10 @@ try {
     $auditObj.open_high = 0
     $auditObj.findings = @()
     $auditObj | ConvertTo-Json -Depth 10 | Set-Content -Path $auditJsonPath -Encoding utf8
+    $manifestPath = Join-Path $unitDir 'outputs/manifest.json'
+    $manifestObj = Get-Content -Path $manifestPath -Encoding utf8 | ConvertFrom-Json
+    $manifestObj.gate_status = [PSCustomObject]@{decision='PASS'; open_critical=0; open_high=0}
+    $manifestObj | ConvertTo-Json -Depth 10 | Set-Content -Path $manifestPath -Encoding utf8
 
     $contractJson = & (Join-Path $repoRoot 'scripts/powershell/validate-artifact-contracts.ps1') -Json -UnitDir $unitDir
     $contractObj = $contractJson | ConvertFrom-Json

@@ -46,6 +46,14 @@
       "type": "array",
       "minItems": 1,
       "maxItems": 20,
+      "contains": {
+        "type": "object",
+        "required": ["priority"],
+        "properties": {
+          "priority": {"const": "P1"}
+        }
+      },
+      "minContains": 1,
       "items": {
         "type": "object",
         "required": [

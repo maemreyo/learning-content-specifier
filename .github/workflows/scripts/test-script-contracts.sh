@@ -59,6 +59,13 @@ obj["open_high"]=0
 obj["findings"]=[]
 json.dump(obj, open(path,"w"), indent=2)
 PY
+python3 - <<'PY' "$UNIT_DIR/outputs/manifest.json"
+import json,sys
+path=sys.argv[1]
+obj=json.load(open(path))
+obj["gate_status"]={"decision":"PASS","open_critical":0,"open_high":0}
+json.dump(obj, open(path,"w"), indent=2)
+PY
 
 contract_json=$(scripts/bash/validate-artifact-contracts.sh --json --unit-dir "$UNIT_DIR")
 python3 - <<'PY' "$contract_json"

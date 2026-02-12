@@ -21,6 +21,34 @@ source "$SCRIPT_DIR/common.sh"
 eval "$(get_unit_paths)"
 check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 
+compute_sha256() {
+    local target_file="$1"
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$target_file" | awk '{print $1}'
+        return
+    fi
+    if command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$target_file" | awk '{print $1}'
+        return
+    fi
+    if command -v openssl >/dev/null 2>&1; then
+        openssl dgst -sha256 "$target_file" | awk '{print $NF}'
+        return
+    fi
+    local py="python3"
+    if ! command -v "$py" >/dev/null 2>&1; then
+        py="python"
+    fi
+    "$py" - "$target_file" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+print(hashlib.sha256(path.read_bytes()).hexdigest())
+PY
+}
+
 mkdir -p "$UNIT_DIR" "$RUBRICS_DIR" "$OUTPUTS_DIR"
 
 TEMPLATE="$REPO_ROOT/.lcs/templates/design-template.md"
@@ -40,6 +68,11 @@ fi
 
 UNIT_ID="$(basename "$UNIT_DIR")"
 NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+if [[ ! -f "$BRIEF_FILE" ]]; then
+    touch "$BRIEF_FILE"
+fi
+BRIEF_CHECKSUM="$(compute_sha256 "$BRIEF_FILE")"
 
 if [[ "$FORCE_RESET" == "true" || ! -f "$BRIEF_JSON_FILE" ]]; then
     cat > "$BRIEF_JSON_FILE" <<EOF
@@ -256,7 +289,7 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
       "type": "brief",
       "path": "brief.md",
       "media_type": "text/markdown",
-      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      "checksum": "sha256:$BRIEF_CHECKSUM"
     }
   ],
   "gate_status": {
@@ -266,7 +299,7 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
   },
   "interop": {
     "xapi": {
-      "version": "1.0.3",
+      "version": "2.0.0",
       "activity_id_set": ["https://example.org/xapi/activity/LO1"],
       "statement_template_refs": ["https://example.org/xapi/template/LO1"]
     }

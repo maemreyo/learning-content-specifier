@@ -67,33 +67,45 @@ PY
     fi
 fi
 
-if [[ ! -d "$RUBRICS_DIR" ]]; then
-    blockers+=("Missing rubrics directory: $RUBRICS_DIR")
+rubric_parse_errors=0
+rubric_parse_output="$($PYTHON_BIN "$REPO_ROOT/scripts/validate_rubric_gates.py" --rubrics-dir "$RUBRICS_DIR" --json 2>/dev/null || true)"
+if [[ -z "$rubric_parse_output" ]]; then
+    blockers+=("Rubric parser failed to execute")
 else
-    shopt -s nullglob
-    rubric_files=("$RUBRICS_DIR"/*.md)
-    shopt -u nullglob
+    parsed_rubric="$($PYTHON_BIN - "$rubric_parse_output" <<'PY'
+import json
+import sys
 
-    if [[ ${#rubric_files[@]} -eq 0 ]]; then
-        blockers+=("No rubric files found in $RUBRICS_DIR")
-    else
-        for rubric_file in "${rubric_files[@]}"; do
-            [[ -f "$rubric_file" ]] || continue
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("BLOCK\t0\t0\t1\tinvalid-rubric-parser-output")
+    raise SystemExit(0)
 
-            count_unchecked=$(grep -Eic '^[[:space:]]*-[[:space:]]*\[[[:space:]]\]' "$rubric_file" || true)
-            count_blockers=$(grep -Eic 'status:[[:space:]]*(FAIL|BLOCK|UNSET|TODO)' "$rubric_file" || true)
-            rubric_unchecked=$((rubric_unchecked + count_unchecked))
-            rubric_blockers=$((rubric_blockers + count_blockers))
-        done
+status = str(payload.get("STATUS", "BLOCK")).upper()
+unchecked = int(payload.get("UNCHECKED_COUNT", 0))
+non_pass = int(payload.get("NON_PASS_COUNT", 0))
+parse_error_count = int(payload.get("PARSE_ERROR_COUNT", 0))
+blockers = payload.get("BLOCKERS", [])
+parse_errors = payload.get("PARSE_ERRORS", [])
+details = "; ".join([*blockers, *parse_errors]) if (blockers or parse_errors) else ""
+
+print(f"{status}\t{unchecked}\t{non_pass}\t{parse_error_count}\t{details}")
+PY
+)"
+    IFS=$'\t' read -r rubric_parse_status rubric_unchecked rubric_blockers rubric_parse_errors rubric_parse_details <<< "$parsed_rubric"
+
+    if [[ "$rubric_parse_status" != "PASS" ]]; then
+        blockers+=("Rubric format validation is BLOCK (${rubric_parse_details:-unknown-parse-error})")
     fi
-fi
-
-if [[ $rubric_unchecked -gt 0 ]]; then
-    blockers+=("Rubric has $rubric_unchecked unchecked item(s)")
 fi
 
 if [[ $rubric_blockers -gt 0 ]]; then
     blockers+=("Rubric has $rubric_blockers non-pass status item(s)")
+fi
+
+if [[ $rubric_unchecked -gt 0 ]]; then
+    blockers+=("Rubric has $rubric_unchecked unchecked item(s)")
 fi
 
 if [[ -f "$audit_json_file" ]]; then
@@ -190,8 +202,8 @@ if [[ ${#blockers[@]} -gt 0 ]]; then
 fi
 
 if $JSON_MODE; then
-    printf '{"STATUS":"%s","UNIT_DIR":"%s","CONTRACT_STATUS":"%s","CONTRACT_SUMMARY":"%s","RUBRIC_UNCHECKED":%d,"RUBRIC_BLOCKERS":%d,"AUDIT_DECISION":"%s","AUDIT_OPEN_CRITICAL":%d,"AUDIT_OPEN_HIGH":%d,"BLOCKERS":"%s"}\n' \
-        "$status" "$UNIT_DIR" "$contract_status" "$contract_summary" "$rubric_unchecked" "$rubric_blockers" "$audit_decision" "$audit_open_critical" "$audit_open_high" "$blocker_text"
+    printf '{"STATUS":"%s","UNIT_DIR":"%s","CONTRACT_STATUS":"%s","CONTRACT_SUMMARY":"%s","RUBRIC_UNCHECKED":%d,"RUBRIC_BLOCKERS":%d,"RUBRIC_PARSE_ERRORS":%d,"AUDIT_DECISION":"%s","AUDIT_OPEN_CRITICAL":%d,"AUDIT_OPEN_HIGH":%d,"BLOCKERS":"%s"}\n' \
+        "$status" "$UNIT_DIR" "$contract_status" "$contract_summary" "$rubric_unchecked" "$rubric_blockers" "$rubric_parse_errors" "$audit_decision" "$audit_open_critical" "$audit_open_high" "$blocker_text"
 else
     echo "STATUS: $status"
     echo "UNIT_DIR: $UNIT_DIR"
@@ -199,6 +211,7 @@ else
     echo "CONTRACT_SUMMARY: $contract_summary"
     echo "RUBRIC_UNCHECKED: $rubric_unchecked"
     echo "RUBRIC_BLOCKERS: $rubric_blockers"
+    echo "RUBRIC_PARSE_ERRORS: $rubric_parse_errors"
     echo "AUDIT_DECISION: $audit_decision"
     echo "AUDIT_OPEN_CRITICAL: $audit_open_critical"
     echo "AUDIT_OPEN_HIGH: $audit_open_high"

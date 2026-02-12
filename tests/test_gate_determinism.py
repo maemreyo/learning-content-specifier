@@ -73,6 +73,10 @@ def test_gate_validator_passes_when_no_blockers_exist():
         audit_data["open_high"] = 0
         audit_data["findings"] = []
         audit_json_file.write_text(json.dumps(audit_data, indent=2), encoding="utf-8")
+        manifest_file = unit_dir / "outputs" / "manifest.json"
+        manifest_data = json.loads(manifest_file.read_text(encoding="utf-8"))
+        manifest_data["gate_status"] = {"decision": "PASS", "open_critical": 0, "open_high": 0}
+        manifest_file.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
 
         proc = _run_gate_validator(env)
         payload = json.loads(proc.stdout.strip())
@@ -117,5 +121,43 @@ def test_gate_validator_prefers_audit_json_over_markdown_when_conflicting():
         assert payload["STATUS"] == "BLOCK"
         assert payload["AUDIT_DECISION"] == "BLOCK"
         assert payload["AUDIT_OPEN_HIGH"] == 1
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_gate_validator_blocks_when_rubric_line_is_not_parseable():
+    unit_id = "995-gate-rubric-parse-error"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+
+    try:
+        _run_setup_design(env)
+
+        # Force contract + audit to PASS so rubric parser is the blocker.
+        audit_json_file = unit_dir / "audit-report.json"
+        audit_data = json.loads(audit_json_file.read_text(encoding="utf-8"))
+        audit_data["gate_decision"] = "PASS"
+        audit_data["open_critical"] = 0
+        audit_data["open_high"] = 0
+        audit_data["findings"] = []
+        audit_json_file.write_text(json.dumps(audit_data, indent=2), encoding="utf-8")
+
+        manifest_file = unit_dir / "outputs" / "manifest.json"
+        manifest_data = json.loads(manifest_file.read_text(encoding="utf-8"))
+        manifest_data["gate_status"] = {"decision": "PASS", "open_critical": 0, "open_high": 0}
+        manifest_file.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
+
+        (unit_dir / "rubrics" / "default.md").write_text(
+            "- [x] Gate ID: RB001 | Group alignment | Status PASS | Severity LOW | Evidence design.md\n",
+            encoding="utf-8",
+        )
+
+        proc = _run_gate_validator(env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert payload["RUBRIC_PARSE_ERRORS"] > 0
+        assert "Rubric format validation is BLOCK" in payload["BLOCKERS"]
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)

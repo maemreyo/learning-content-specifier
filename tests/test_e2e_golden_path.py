@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+import hashlib
 from pathlib import Path
 
 
@@ -196,6 +197,7 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         lesson_file = unit_dir / "outputs" / "module-01" / "lesson-01.md"
         lesson_file.parent.mkdir(parents=True, exist_ok=True)
         lesson_file.write_text("# Lesson 01\n", encoding="utf-8")
+        lesson_checksum = hashlib.sha256(lesson_file.read_bytes()).hexdigest()
 
         manifest_file = unit_dir / "outputs" / "manifest.json"
         manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
@@ -206,7 +208,7 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
                 "type": "lesson",
                 "path": "outputs/module-01/lesson-01.md",
                 "media_type": "text/markdown",
-                "checksum": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+                "checksum": f"sha256:{lesson_checksum}",
             }
         )
         manifest_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
