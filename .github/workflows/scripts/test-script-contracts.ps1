@@ -28,10 +28,15 @@ $tempRoot = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-" + [guid]::NewGuid().T
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $tempRoot '.lcs/templates') -Force | Out-Null
 Copy-Item (Join-Path $repoRoot 'templates/brief-template.md') (Join-Path $tempRoot '.lcs/templates/brief-template.md') -Force
+$createNewUnitScript = Join-Path $repoRoot 'scripts/powershell/create-new-unit.ps1'
+$setupDesignScript = Join-Path $repoRoot 'scripts/powershell/setup-design.ps1'
+$validateContractsScript = Join-Path $repoRoot 'scripts/powershell/validate-artifact-contracts.ps1'
+$checkWorkflowScript = Join-Path $repoRoot 'scripts/powershell/check-workflow-prereqs.ps1'
+$validateGatesScript = Join-Path $repoRoot 'scripts/powershell/validate-author-gates.ps1'
 
 Push-Location $tempRoot
 try {
-    $createJson = & (Join-Path $repoRoot 'scripts/powershell/create-new-unit.ps1') -Json -UnitDescription "temporary unit for contract test"
+    $createJson = & $createNewUnitScript -Json -UnitDescription "temporary unit for contract test"
     $createObj = $createJson | ConvertFrom-Json
     foreach ($k in @('UNIT_NAME','BRIEF_FILE','UNIT_NUM')) {
         if (-not $createObj.PSObject.Properties.Name.Contains($k)) {
@@ -69,7 +74,7 @@ Open High: 0
 $env:LCS_UNIT = $unit
 
 try {
-    $setupJson = & (Join-Path $repoRoot 'scripts/powershell/setup-design.ps1') -Json
+    $setupJson = & $setupDesignScript -Json
     $setupObj = $setupJson | ConvertFrom-Json
     foreach ($k in @('BRIEF_FILE','DESIGN_FILE','UNIT_DIR','BRANCH','HAS_GIT')) {
         if (-not $setupObj.PSObject.Properties.Name.Contains($k)) {
@@ -92,13 +97,13 @@ try {
     $manifestObj.gate_status = [PSCustomObject]@{decision='PASS'; open_critical=0; open_high=0}
     $manifestObj | ConvertTo-Json -Depth 10 | Set-Content -Path $manifestPath -Encoding utf8
 
-    $contractJson = & (Join-Path $repoRoot 'scripts/powershell/validate-artifact-contracts.ps1') -Json -UnitDir $unitDir
+    $contractJson = & $validateContractsScript -Json -UnitDir $unitDir
     $contractObj = $contractJson | ConvertFrom-Json
     if ($contractObj.STATUS -ne 'PASS') {
         throw "validate-artifact-contracts expected PASS but got $($contractObj.STATUS)"
     }
 
-    $pathsJson = & (Join-Path $repoRoot 'scripts/powershell/check-workflow-prereqs.ps1') -Json -PathsOnly -SkipBranchCheck
+    $pathsJson = & $checkWorkflowScript -Json -PathsOnly -SkipBranchCheck
     $pathsObj = $pathsJson | ConvertFrom-Json
     foreach ($k in @(
         'UNIT_REPO_ROOT','UNIT_BRANCH','UNIT_HAS_GIT','UNIT_DIR',
@@ -113,7 +118,7 @@ try {
         }
     }
 
-    $gateJson = & (Join-Path $repoRoot 'scripts/powershell/validate-author-gates.ps1') -Json
+    $gateJson = & $validateGatesScript -Json
     $gateObj = $gateJson | ConvertFrom-Json
     if ($gateObj.STATUS -ne 'PASS') {
         throw 'validate-author-gates expected PASS'
