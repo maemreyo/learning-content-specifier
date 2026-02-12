@@ -1,10 +1,10 @@
 # AGENTS.md
 
-## About Spec Kit and Specify
+## About LCS and Specify
 
-**GitHub Spec Kit** is a comprehensive toolkit for implementing Spec-Driven Development (SDD) - a methodology that emphasizes creating clear specifications before implementation. The toolkit includes templates, scripts, and workflows that guide development teams through a structured approach to building software.
+**GitHub LCS** is a comprehensive toolkit for implementing Spec-Driven Development (SDD) - a methodology that emphasizes creating clear specifications before implementation. The toolkit includes templates, scripts, and workflows that guide development teams through a structured approach to building software.
 
-**LCS CLI** is the command-line interface that bootstraps projects with the Spec Kit framework. It sets up the necessary directory structures, templates, and AI agent integrations to support the Spec-Driven Development workflow.
+**LCS CLI** is the command-line interface that bootstraps projects with the LCS framework. It sets up the necessary directory structures, templates, and AI agent integrations to support the Spec-Driven Development workflow.
 
 The toolkit supports multiple AI coding assistants, allowing teams to use their preferred tools while maintaining consistent project structure and development practices.
 
@@ -132,8 +132,8 @@ Modify `.github/workflows/scripts/create-github-release.sh` to include the new a
 ```bash
 gh release create "$VERSION" \
   # ... existing packages ...
-  .genreleases/spec-kit-template-windsurf-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-windsurf-ps-"$VERSION".zip \
+  .genreleases/learning-content-specifier-template-windsurf-sh-"$VERSION".zip \
+  .genreleases/learning-content-specifier-template-windsurf-ps-"$VERSION".zip \
   # Add new agent packages here
 ```
 

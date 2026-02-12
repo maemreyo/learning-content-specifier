@@ -88,7 +88,7 @@ if ($PathsOnly) {
 # Validate required directories and files
 if (-not (Test-Path $paths.FEATURE_DIR -PathType Container)) {
     Write-Output "ERROR: Feature directory not found: $($paths.FEATURE_DIR)"
-    Write-Output "Run /lcs.specify first to create the feature structure."
+    Write-Output "Run /lcs.lcs first to create the feature structure."
     exit 1
 }
 

@@ -41,7 +41,7 @@ $featureDesc = ($FeatureDescription -join ' ').Trim()
 function Find-RepositoryRoot {
     param(
         [string]$StartDir,
-        [string[]]$Markers = @('.git', '.specify')
+        [string[]]$Markers = @('.git', '.lcs')
     )
     $current = Resolve-Path $StartDir
     while ($true) {
@@ -236,9 +236,9 @@ if ($branchName.Length -gt $maxBranchLength) {
     $originalBranchName = $branchName
     $branchName = "$featureNum-$truncatedSuffix"
     
-    Write-Warning "[specify] Branch name exceeded GitHub's 244-byte limit"
-    Write-Warning "[specify] Original: $originalBranchName ($($originalBranchName.Length) bytes)"
-    Write-Warning "[specify] Truncated to: $branchName ($($branchName.Length) bytes)"
+    Write-Warning "[lcs] Branch name exceeded GitHub's 244-byte limit"
+    Write-Warning "[lcs] Original: $originalBranchName ($($originalBranchName.Length) bytes)"
+    Write-Warning "[lcs] Truncated to: $branchName ($($branchName.Length) bytes)"
 }
 
 if ($hasGit) {
@@ -248,13 +248,13 @@ if ($hasGit) {
         Write-Warning "Failed to create git branch: $branchName"
     }
 } else {
-    Write-Warning "[specify] Warning: Git repository not detected; skipped branch creation for $branchName"
+    Write-Warning "[lcs] Warning: Git repository not detected; skipped branch creation for $branchName"
 }
 
 $featureDir = Join-Path $specsDir $branchName
 New-Item -ItemType Directory -Path $featureDir -Force | Out-Null
 
-$template = Join-Path $repoRoot '.specify/templates/spec-template.md'
+$template = Join-Path $repoRoot '.lcs/templates/spec-template.md'
 $specFile = Join-Path $featureDir 'spec.md'
 if (Test-Path $template) { 
     Copy-Item $template $specFile -Force 
@@ -262,8 +262,8 @@ if (Test-Path $template) {
     New-Item -ItemType File -Path $specFile | Out-Null 
 }
 
-# Set the SPECIFY_FEATURE environment variable for the current session
-$env:SPECIFY_FEATURE = $branchName
+# Set the LCS_FEATURE environment variable for the current session
+$env:LCS_FEATURE = $branchName
 
 if ($Json) {
     $obj = [PSCustomObject]@{ 
@@ -278,6 +278,6 @@ if ($Json) {
     Write-Output "SPEC_FILE: $specFile"
     Write-Output "FEATURE_NUM: $featureNum"
     Write-Output "HAS_GIT: $hasGit"
-    Write-Output "SPECIFY_FEATURE environment variable set to: $branchName"
+    Write-Output "LCS_FEATURE environment variable set to: $branchName"
 }
 

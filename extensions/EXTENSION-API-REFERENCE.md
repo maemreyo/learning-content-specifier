@@ -1,6 +1,6 @@
 # Extension API Reference
 
-Technical reference for Spec Kit extension system APIs and manifest schema.
+Technical reference for LCS extension system APIs and manifest schema.
 
 ## Table of Contents
 
@@ -89,7 +89,7 @@ defaults:                # Optional, default configuration values
 
 - **Type**: string
 - **Format**: Version specifier
-- **Description**: Required spec-kit version range
+- **Description**: Required learning-content-specifier version range
 - **Examples**:
   - `>=0.1.0` - Any version 0.1.0 or higher
   - `>=0.1.0,<2.0.0` - Version 0.1.x or 1.x
@@ -110,7 +110,7 @@ defaults:                # Optional, default configuration values
 - **Type**: object
 - **Keys**: Event names (e.g., `after_tasks`, `after_implement`, `before_commit`)
 - **Description**: Hooks that execute at lifecycle events
-- **Events**: Defined by core spec-kit commands
+- **Events**: Defined by core learning-content-specifier commands
 
 ---
 
@@ -133,7 +133,7 @@ manifest.id                        # str: Extension ID
 manifest.name                      # str: Extension name
 manifest.version                   # str: Version
 manifest.description               # str: Description
-manifest.requires_speckit_version  # str: Required spec-kit version
+manifest.requires_speckit_version  # str: Required learning-content-specifier version
 manifest.commands                  # List[Dict]: Command definitions
 manifest.hooks                     # Dict: Hook definitions
 ```
@@ -148,7 +148,7 @@ manifest.get_hash()  # str: SHA256 hash of manifest file
 
 ```python
 ValidationError       # Invalid manifest structure
-CompatibilityError    # Incompatible with current spec-kit version
+CompatibilityError    # Incompatible with current learning-content-specifier version
 ```
 
 ### ExtensionRegistry
@@ -408,7 +408,7 @@ tools: [string]       # Optional, MCP tools required
 
   ```markdown
   <!-- Extension: {extension-id} -->
-  <!-- Config: .specify/extensions/{extension-id}/ -->
+  <!-- Config: .lcs/extensions/{extension-id}/ -->
   ```
 
 ---
@@ -417,7 +417,7 @@ tools: [string]       # Optional, MCP tools required
 
 ### Extension Config File
 
-**File**: `.specify/extensions/{extension-id}/{extension-id}-config.yml`
+**File**: `.lcs/extensions/{extension-id}/{extension-id}-config.yml`
 
 Extensions define their own config schema. Common patterns:
 
@@ -493,7 +493,7 @@ Standard events (defined by core):
 
 ### Hook Configuration
 
-**In `.specify/extensions.yml`**:
+**In `.lcs/extensions.yml`**:
 
 ```yaml
 hooks:
@@ -636,7 +636,7 @@ except ValidationError as e:
 
 ### CompatibilityError
 
-Raised when extension is incompatible with current spec-kit version.
+Raised when extension is incompatible with current learning-content-specifier version.
 
 ```python
 from specify_cli.extensions import CompatibilityError
@@ -680,7 +680,7 @@ satisfied = version_satisfies("1.2.3", ">=1.0.0,<2.0.0")  # bool
 ## File System Layout
 
 ```text
-.specify/
+.lcs/
 ├── extensions/
 │   ├── .registry               # Extension registry (JSON)
 │   ├── .cache/                 # Catalog cache
@@ -700,7 +700,7 @@ satisfied = version_satisfies("1.2.3", ">=1.0.0,<2.0.0")  # bool
 │   │   ├── docs/               # Documentation
 │   │   └── README.md
 │   └── extensions.yml          # Project extension config
-└── scripts/                    # (existing spec-kit)
+└── scripts/                    # (existing learning-content-specifier)
 
 .claude/
 └── commands/
@@ -711,4 +711,4 @@ satisfied = version_satisfies("1.2.3", ">=1.0.0,<2.0.0")  # bool
 
 *Last Updated: 2026-01-28*
 *API Version: 1.0*
-*Spec Kit Version: 0.1.0*
+*LCS Version: 0.1.0*

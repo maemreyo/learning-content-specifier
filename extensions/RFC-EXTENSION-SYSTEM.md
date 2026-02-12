@@ -1,4 +1,4 @@
-# RFC: Spec Kit Extension System
+# RFC: LCS Extension System
 
 **Status**: Draft
 **Author**: Stats Perform Engineering
@@ -31,7 +31,7 @@
 
 ## Summary
 
-Introduce an extension system to Spec Kit that allows modular integration with external tools (Jira, Linear, Azure DevOps, etc.) without bloating the core framework. Extensions are self-contained packages installed into `.specify/extensions/` with declarative manifests, versioned independently, and discoverable through a central catalog.
+Introduce an extension system to LCS that allows modular integration with external tools (Jira, Linear, Azure DevOps, etc.) without bloating the core framework. Extensions are self-contained packages installed into `.lcs/extensions/` with declarative manifests, versioned independently, and discoverable through a central catalog.
 
 ---
 
@@ -39,7 +39,7 @@ Introduce an extension system to Spec Kit that allows modular integration with e
 
 ### Current Problems
 
-1. **Monolithic Growth**: Adding Jira integration to core spec-kit creates:
+1. **Monolithic Growth**: Adding Jira integration to core learning-content-specifier creates:
    - Large configuration files affecting all users
    - Dependencies on Jira MCP server for everyone
    - Merge conflicts as features accumulate
@@ -58,7 +58,7 @@ Introduce an extension system to Spec Kit that allows modular integration with e
 
 ### Goals
 
-1. **Modularity**: Core spec-kit remains lean, extensions are opt-in
+1. **Modularity**: Core learning-content-specifier remains lean, extensions are opt-in
 2. **Extensibility**: Clear API for building new integrations
 3. **Independence**: Extensions version/release separately from core
 4. **Discoverability**: Central catalog for finding extensions
@@ -70,7 +70,7 @@ Introduce an extension system to Spec Kit that allows modular integration with e
 
 ### 1. Convention Over Configuration
 
-- Standard directory structure (`.specify/extensions/{name}/`)
+- Standard directory structure (`.lcs/extensions/{name}/`)
 - Declarative manifest (`extension.yml`)
 - Predictable command naming (`lcs.{extension}.{command}`)
 
@@ -106,7 +106,7 @@ Introduce an extension system to Spec Kit that allows modular integration with e
 
 ```text
 project/
-├── .specify/
+├── .lcs/
 │   ├── scripts/                 # Core scripts (unchanged)
 │   ├── templates/               # Core templates (unchanged)
 │   ├── memory/                  # Session memory
@@ -127,7 +127,7 @@ project/
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│                    Spec Kit Core                        │
+│                    LCS Core                        │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  CLI (specify)                                   │   │
 │  │  - init, check                                   │   │
@@ -140,7 +140,7 @@ project/
 │  └──────────────────────────────────────────────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Core Commands                                   │   │
-│  │  - /lcs.specify                              │   │
+│  │  - /lcs.lcs                              │   │
 │  │  - /lcs.tasks                                │   │
 │  │  - /lcs.implement                            │   │
 │  └─────────┬────────────────────────────────────────┘   │
@@ -187,11 +187,11 @@ extension:
   id: "jira"                    # Unique identifier (lowercase, alphanumeric, hyphens)
   name: "Jira Integration"      # Human-readable name
   version: "1.0.0"              # Semantic version
-  description: "Create Jira Epics, Stories, and Issues from spec-kit artifacts"
+  description: "Create Jira Epics, Stories, and Issues from learning-content-specifier artifacts"
   author: "Stats Perform"       # Author/organization
-  repository: "https://github.com/statsperform/spec-kit-jira"
+  repository: "https://github.com/statsperform/learning-content-specifier-jira"
   license: "MIT"                # SPDX license identifier
-  homepage: "https://github.com/statsperform/spec-kit-jira/blob/main/README.md"
+  homepage: "https://github.com/statsperform/learning-content-specifier-jira/blob/main/README.md"
 
 # Compatibility requirements (REQUIRED)
 requires:
@@ -207,7 +207,7 @@ requires:
       install_url: "https://github.com/your-org/jira-mcp-server"
       check_command: "jira --version"  # Optional: CLI command to verify
 
-  # Core spec-kit commands this extension depends on
+  # Core learning-content-specifier commands this extension depends on
   commands:
     - "lcs.tasks"             # Extension needs tasks command
 
@@ -293,13 +293,13 @@ tags:
   - "project-management"
 
 # Changelog URL (OPTIONAL)
-changelog: "https://github.com/statsperform/spec-kit-jira/blob/main/CHANGELOG.md"
+changelog: "https://github.com/statsperform/learning-content-specifier-jira/blob/main/CHANGELOG.md"
 
 # Support information (OPTIONAL)
 support:
-  documentation: "https://github.com/statsperform/spec-kit-jira/blob/main/docs/"
-  issues: "https://github.com/statsperform/spec-kit-jira/issues"
-  discussions: "https://github.com/statsperform/spec-kit-jira/discussions"
+  documentation: "https://github.com/statsperform/learning-content-specifier-jira/blob/main/docs/"
+  issues: "https://github.com/statsperform/learning-content-specifier-jira/issues"
+  discussions: "https://github.com/statsperform/learning-content-specifier-jira/discussions"
   email: "support@statsperform.com"
 ```
 
@@ -342,12 +342,12 @@ lcs extension add jira
 1. **Resolve**: Look up extension in catalog
 2. **Download**: Fetch extension package (ZIP from GitHub release)
 3. **Validate**: Check manifest schema, compatibility
-4. **Extract**: Unpack to `.specify/extensions/jira/`
+4. **Extract**: Unpack to `.lcs/extensions/jira/`
 5. **Configure**: Copy config templates
 6. **Register**: Add commands to AI agent config
-7. **Record**: Update `.specify/extensions/.registry`
+7. **Record**: Update `.lcs/extensions/.registry`
 
-**Registry Format** (`.specify/extensions/.registry`):
+**Registry Format** (`.lcs/extensions/.registry`):
 
 ```json
 {
@@ -368,7 +368,7 @@ lcs extension add jira
 
 ```bash
 # User edits extension config
-vim .specify/extensions/jira/jira-config.yml
+vim .lcs/extensions/jira/jira-config.yml
 ```
 
 **Config discovery order:**
@@ -417,7 +417,7 @@ lcs extension remove jira
 
 1. Confirm with user (show what will be removed)
 2. Unregister commands from AI agent
-3. Remove from `.specify/extensions/jira/`
+3. Remove from `.lcs/extensions/jira/`
 4. Update registry
 5. Optionally preserve config for reinstall
 
@@ -466,8 +466,8 @@ tools:
   - 'jira-mcp-server/epic_create'
   - 'jira-mcp-server/story_create'
 scripts:
-  sh: .specify/scripts/bash/check-prerequisites.sh --json
-  ps: .specify/scripts/powershell/check-prerequisites.ps1 -Json
+  sh: .lcs/scripts/bash/check-prerequisites.sh --json
+  ps: .lcs/scripts/powershell/check-prerequisites.ps1 -Json
 ---
 
 # Command implementation (copied from extension)
@@ -475,7 +475,7 @@ scripts:
 $ARGUMENTS
 
 ## Steps
-1. Load jira-config.yml from .specify/extensions/jira/
+1. Load jira-config.yml from .lcs/extensions/jira/
 2. Parse spec.md and tasks.md
 3. Create Jira items
 ```
@@ -502,8 +502,8 @@ tools = [
 ]
 
 [command.script]
-sh = ".specify/scripts/bash/check-prerequisites.sh --json"
-ps = ".specify/scripts/powershell/check-prerequisites.ps1 -Json"
+sh = ".lcs/scripts/bash/check-prerequisites.sh --json"
+ps = ".lcs/scripts/powershell/check-prerequisites.ps1 -Json"
 
 [command.template]
 content = """
@@ -512,7 +512,7 @@ content = """
 {{args}}
 
 ## Steps
-1. Load jira-config.yml from .specify/extensions/jira/
+1. Load jira-config.yml from .lcs/extensions/jira/
 2. Parse spec.md and tasks.md
 3. Create Jira items
 """
@@ -600,7 +600,7 @@ def convert_to_claude(
 ### Configuration File Hierarchy
 
 ```yaml
-# .specify/extensions/jira/jira-config.yml (Project config)
+# .lcs/extensions/jira/jira-config.yml (Project config)
 project:
   key: "MSATS"
 
@@ -613,7 +613,7 @@ defaults:
 ```
 
 ```yaml
-# .specify/extensions/jira/jira-config.local.yml (Local overrides - gitignored)
+# .lcs/extensions/jira/jira-config.local.yml (Local overrides - gitignored)
 project:
   key: "MYTEST"  # Override for local testing
 ```
@@ -633,20 +633,20 @@ export SPECKIT_JIRA_PROJECT_KEY="DEVTEST"
 1. Run helper script to load and merge config:
 
 ```bash
-config_json=$(bash .specify/extensions/jira/scripts/parse-jira-config.sh)
+config_json=$(bash .lcs/extensions/jira/scripts/parse-jira-config.sh)
 echo "$config_json"
 ```
 
 1. Parse JSON and use in subsequent steps
 ````
 
-**Script**: `.specify/extensions/jira/scripts/parse-jira-config.sh`
+**Script**: `.lcs/extensions/jira/scripts/parse-jira-config.sh`
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXT_DIR=".specify/extensions/jira"
+EXT_DIR=".lcs/extensions/jira"
 CONFIG_FILE="$EXT_DIR/jira-config.yml"
 LOCAL_CONFIG="$EXT_DIR/jira-config.local.yml"
 
@@ -687,7 +687,7 @@ echo "$defaults"
 ```python
 import jsonschema
 
-schema = load_yaml(".specify/extensions/jira/extension.yml")['config_schema']
+schema = load_yaml(".lcs/extensions/jira/extension.yml")['config_schema']
 config = json.loads(config_json)
 
 try:
@@ -723,7 +723,7 @@ hooks:
 
 **During extension installation**, record hooks in project config:
 
-**File**: `.specify/extensions.yml` (project-level extension config)
+**File**: `.lcs/extensions.yml` (project-level extension config)
 
 ```yaml
 # Extensions installed in this project
@@ -765,9 +765,9 @@ After task generation completes, check for registered hooks:
 
 ```bash
 # Check if extensions.yml exists and has after_tasks hooks
-if [ -f ".specify/extensions.yml" ]; then
+if [ -f ".lcs/extensions.yml" ]; then
   # Parse hooks for after_tasks
-  hooks=$(yq eval '.hooks.after_tasks[] | select(.enabled == true)' .specify/extensions.yml -o=json)
+  hooks=$(yq eval '.hooks.after_tasks[] | select(.enabled == true)' .lcs/extensions.yml -o=json)
 
   if [ -n "$hooks" ]; then
     echo ""
@@ -828,7 +828,7 @@ def execute_command_with_hooks(command_name: str, args: str):
 
 ### Hook Conditions
 
-Extensions can specify **conditions** for hooks:
+Extensions can lcs **conditions** for hooks:
 
 ```yaml
 hooks:
@@ -860,7 +860,7 @@ def should_execute_hook(hook: dict, config: dict) -> bool:
 
 ### Central Catalog
 
-**URL**: `https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.json`
+**URL**: `https://raw.githubusercontent.com/maemreyo/learning-content-specifier/main/extensions/catalog.json`
 
 **Format**:
 
@@ -872,14 +872,14 @@ def should_execute_hook(hook: dict, config: dict) -> bool:
     "jira": {
       "name": "Jira Integration",
       "id": "jira",
-      "description": "Create Jira Epics, Stories, and Issues from spec-kit artifacts",
+      "description": "Create Jira Epics, Stories, and Issues from learning-content-specifier artifacts",
       "author": "Stats Perform",
       "version": "1.0.0",
-      "download_url": "https://github.com/statsperform/spec-kit-jira/releases/download/v1.0.0/spec-kit-jira-1.0.0.zip",
-      "repository": "https://github.com/statsperform/spec-kit-jira",
-      "homepage": "https://github.com/statsperform/spec-kit-jira/blob/main/README.md",
-      "documentation": "https://github.com/statsperform/spec-kit-jira/blob/main/docs/",
-      "changelog": "https://github.com/statsperform/spec-kit-jira/blob/main/CHANGELOG.md",
+      "download_url": "https://github.com/statsperform/learning-content-specifier-jira/releases/download/v1.0.0/learning-content-specifier-jira-1.0.0.zip",
+      "repository": "https://github.com/statsperform/learning-content-specifier-jira",
+      "homepage": "https://github.com/statsperform/learning-content-specifier-jira/blob/main/README.md",
+      "documentation": "https://github.com/statsperform/learning-content-specifier-jira/blob/main/docs/",
+      "changelog": "https://github.com/statsperform/learning-content-specifier-jira/blob/main/CHANGELOG.md",
       "license": "MIT",
       "requires": {
         "speckit_version": ">=0.1.0,<2.0.0",
@@ -898,11 +898,11 @@ def should_execute_hook(hook: dict, config: dict) -> bool:
     "linear": {
       "name": "Linear Integration",
       "id": "linear",
-      "description": "Sync spec-kit tasks with Linear issues",
+      "description": "Sync learning-content-specifier tasks with Linear issues",
       "author": "Community",
       "version": "0.9.0",
-      "download_url": "https://github.com/example/spec-kit-linear/releases/download/v0.9.0/spec-kit-linear-0.9.0.zip",
-      "repository": "https://github.com/example/spec-kit-linear",
+      "download_url": "https://github.com/example/learning-content-specifier-linear/releases/download/v0.9.0/learning-content-specifier-linear-0.9.0.zip",
+      "repository": "https://github.com/example/learning-content-specifier-linear",
       "requires": {
         "speckit_version": ">=0.1.0"
       },
@@ -935,10 +935,10 @@ Organizations can host private catalogs:
 
 ```bash
 # Add custom catalog
-lcs extension add-catalog https://internal.company.com/spec-kit/catalog.json
+lcs extension add-catalog https://internal.company.com/learning-content-specifier/catalog.json
 
 # Set as default
-lcs extension set-catalog --default https://internal.company.com/spec-kit/catalog.json
+lcs extension set-catalog --default https://internal.company.com/learning-content-specifier/catalog.json
 
 # List catalogs
 lcs extension catalogs
@@ -946,8 +946,8 @@ lcs extension catalogs
 
 **Catalog priority**:
 
-1. Project-specific catalog (`.specify/extension-catalogs.yml`)
-2. User-level catalog (`~/.specify/extension-catalogs.yml`)
+1. Project-specific catalog (`.lcs/extension-catalogs.yml`)
+2. User-level catalog (`~/.lcs/extension-catalogs.yml`)
 3. Default GitHub catalog
 
 ---
@@ -989,14 +989,14 @@ Found 1 extension:
 │ jira (v1.0.0) ✓ Verified                                │
 │ Jira Integration                                        │
 │                                                         │
-│ Create Jira Epics, Stories, and Issues from spec-kit   │
+│ Create Jira Epics, Stories, and Issues from learning-content-specifier   │
 │ artifacts                                               │
 │                                                         │
 │ Author: Stats Perform                                   │
 │ Tags: issue-tracking, jira, atlassian                   │
 │ Downloads: 1,250                                        │
 │                                                         │
-│ Repository: github.com/statsperform/spec-kit-jira       │
+│ Repository: github.com/statsperform/learning-content-specifier-jira       │
 │ Documentation: github.com/.../docs                      │
 └─────────────────────────────────────────────────────────┘
 
@@ -1019,15 +1019,15 @@ $ lcs extension info jira
 Jira Integration (jira) v1.0.0
 
 Description:
-  Create Jira Epics, Stories, and Issues from spec-kit artifacts
+  Create Jira Epics, Stories, and Issues from learning-content-specifier artifacts
 
 Author: Stats Perform
 License: MIT
-Repository: https://github.com/statsperform/spec-kit-jira
-Documentation: https://github.com/statsperform/spec-kit-jira/blob/main/docs/
+Repository: https://github.com/statsperform/learning-content-specifier-jira
+Documentation: https://github.com/statsperform/learning-content-specifier-jira/blob/main/docs/
 
 Requirements:
-  • Spec Kit: >=0.1.0,<2.0.0
+  • LCS: >=0.1.0,<2.0.0
   • Tools: jira-mcp-server (>=1.0.0)
 
 Provides:
@@ -1056,20 +1056,20 @@ $ lcs extension add jira
 
 Installing extension: Jira Integration
 
-✓ Downloaded spec-kit-jira-1.0.0.zip (245 KB)
+✓ Downloaded learning-content-specifier-jira-1.0.0.zip (245 KB)
 ✓ Validated manifest
-✓ Checked compatibility (spec-kit 0.1.0 ≥ 0.1.0)
-✓ Extracted to .specify/extensions/jira/
+✓ Checked compatibility (learning-content-specifier 0.1.0 ≥ 0.1.0)
+✓ Extracted to .lcs/extensions/jira/
 ✓ Registered 3 commands with claude
 ✓ Installed config template (jira-config.yml)
 
 ⚠  Configuration required:
-   Edit .specify/extensions/jira/jira-config.yml to set your Jira project key
+   Edit .lcs/extensions/jira/jira-config.yml to set your Jira project key
 
 Extension installed successfully!
 
 Next steps:
-  1. Configure: vim .specify/extensions/jira/jira-config.yml
+  1. Configure: vim .lcs/extensions/jira/jira-config.yml
   2. Discover fields: /lcs.jira.discover-fields
   3. Use commands: /lcs.jira.specstoissues
 ```
@@ -1090,13 +1090,13 @@ $ lcs extension remove jira
 
 ⚠  This will remove:
    • 3 commands from AI agent
-   • Extension directory: .specify/extensions/jira/
+   • Extension directory: .lcs/extensions/jira/
    • Config file: jira-config.yml (will be backed up)
 
 Continue? (yes/no): yes
 
 ✓ Unregistered commands
-✓ Backed up config to .specify/extensions/.backup/jira-config.yml
+✓ Backed up config to .lcs/extensions/.backup/jira-config.yml
 ✓ Removed extension directory
 ✓ Updated registry
 
@@ -1128,7 +1128,7 @@ Changes in v1.1.0:
 
 Update? (yes/no): yes
 
-✓ Downloaded spec-kit-jira-1.1.0.zip
+✓ Downloaded learning-content-specifier-jira-1.1.0.zip
 ✓ Validated manifest
 ✓ Backed up current version
 ✓ Extracted new version
@@ -1137,7 +1137,7 @@ Update? (yes/no): yes
 
 Extension updated successfully!
 
-Changelog: https://github.com/statsperform/spec-kit-jira/blob/main/CHANGELOG.md#v110
+Changelog: https://github.com/statsperform/learning-content-specifier-jira/blob/main/CHANGELOG.md#v110
 ```
 
 **Options:**
@@ -1182,15 +1182,15 @@ def check_compatibility(extension_manifest: dict) -> bool:
 
     requires = extension_manifest['requires']
 
-    # 1. Check spec-kit version
+    # 1. Check learning-content-specifier version
     current_speckit = get_speckit_version()  # e.g., "0.1.5"
     required_speckit = requires['speckit_version']  # e.g., ">=0.1.0,<2.0.0"
 
     if not version_satisfies(current_speckit, required_speckit):
         raise IncompatibleVersionError(
-            f"Extension requires spec-kit {required_speckit}, "
+            f"Extension requires learning-content-specifier {required_speckit}, "
             f"but {current_speckit} is installed. "
-            f"Upgrade spec-kit with: uv tool install lcs-cli --force"
+            f"Upgrade learning-content-specifier with: uv tool install lcs-cli --force"
         )
 
     # 2. Check required tools
@@ -1218,7 +1218,7 @@ def check_compatibility(extension_manifest: dict) -> bool:
         if not command_exists(cmd):
             raise MissingCommandError(
                 f"Extension requires core command: {cmd}\n"
-                f"Update spec-kit to latest version"
+                f"Update learning-content-specifier to latest version"
             )
 
     return True
@@ -1265,7 +1265,7 @@ Extensions run with **same privileges as AI agent**:
 **Verified Extensions** (in catalog):
 
 - Published by known organizations (GitHub, Stats Perform, etc.)
-- Code reviewed by spec-kit maintainers
+- Code reviewed by learning-content-specifier maintainers
 - Marked with ✓ badge in catalog
 
 **Community Extensions**:
@@ -1291,8 +1291,8 @@ Extensions run with **same privileges as AI agent**:
 ```yaml
 # Future extension.yml
 permissions:
-  - "filesystem:read:.specify/extensions/jira/"  # Can only read own config
-  - "filesystem:write:.specify/memory/"          # Can write to memory
+  - "filesystem:read:.lcs/extensions/jira/"  # Can only read own config
+  - "filesystem:write:.lcs/memory/"          # Can write to memory
   - "network:external:*.atlassian.net"           # Can call Jira API
   - "env:read:SPECKIT_JIRA_*"                    # Can read own env vars
 ```
@@ -1306,7 +1306,7 @@ permissions:
 "jira": {
   "download_url": "...",
   "checksum": "sha256:abc123...",
-  "signature": "https://github.com/.../spec-kit-jira-1.0.0.sig",
+  "signature": "https://github.com/.../learning-content-specifier-jira-1.0.0.sig",
   "signing_key": "https://github.com/statsperform.gpg"
 }
 ```
@@ -1319,7 +1319,7 @@ CLI verifies signature before extraction.
 
 ### Backward Compatibility
 
-**Goal**: Existing spec-kit projects work without changes.
+**Goal**: Existing learning-content-specifier projects work without changes.
 
 **Strategy**:
 
@@ -1397,7 +1397,7 @@ AI agent registers both names, so old scripts work.
   - [ ] `lcs extension list`
   - [ ] `lcs extension add` (from URL)
   - [ ] `lcs extension remove`
-- [ ] Extension registry (`.specify/extensions/.registry`)
+- [ ] Extension registry (`.lcs/extensions/.registry`)
 - [ ] Command registration (Claude only initially)
 - [ ] Basic validation (manifest schema, compatibility)
 - [ ] Documentation (extension development guide)
@@ -1414,7 +1414,7 @@ AI agent registers both names, so old scripts work.
 
 **Deliverables**:
 
-- [ ] Create `spec-kit-jira` repository
+- [ ] Create `learning-content-specifier-jira` repository
 - [ ] Port Jira functionality to extension
 - [ ] Create `jira-config.yml` template
 - [ ] Commands:
@@ -1438,7 +1438,7 @@ AI agent registers both names, so old scripts work.
 
 **Deliverables**:
 
-- [ ] Central catalog (`extensions/catalog.json` in spec-kit repo)
+- [ ] Central catalog (`extensions/catalog.json` in learning-content-specifier repo)
 - [ ] Catalog fetch and parsing
 - [ ] CLI commands:
   - [ ] `lcs extension search`
@@ -1460,7 +1460,7 @@ AI agent registers both names, so old scripts work.
 
 - [ ] Hook system (`hooks` in extension.yml)
 - [ ] Hook registration and execution
-- [ ] Project extensions config (`.specify/extensions.yml`)
+- [ ] Project extensions config (`.lcs/extensions.yml`)
 - [ ] CLI commands:
   - [ ] `lcs extension update`
   - [ ] `lcs extension enable/disable`
@@ -1521,9 +1521,9 @@ AI agent registers both names, so old scripts work.
 
 **Options**:
 
-- A) Extension directory: `.specify/extensions/jira/jira-config.yml` (encapsulated)
-- B) Root level: `.specify/jira-config.yml` (more visible)
-- C) Unified: `.specify/extensions.yml` (all extension configs in one file)
+- A) Extension directory: `.lcs/extensions/jira/jira-config.yml` (encapsulated)
+- B) Root level: `.lcs/jira-config.yml` (more visible)
+- C) Unified: `.lcs/extensions.yml` (all extension configs in one file)
 
 **Recommendation**: A (extension directory), cleaner separation
 
@@ -1578,7 +1578,7 @@ AI agent registers both names, so old scripts work.
 **Options**:
 
 - A) Single version: Only one version installed at a time
-- B) Multi-version: Side-by-side versions (`.specify/extensions/jira@1.0/`, `.specify/extensions/jira@2.0/`)
+- B) Multi-version: Side-by-side versions (`.lcs/extensions/jira@1.0/`, `.lcs/extensions/jira@2.0/`)
 - C) Per-branch: Different branches use different versions
 
 **Recommendation**: A initially (simpler), consider B in future if needed
@@ -1589,10 +1589,10 @@ AI agent registers both names, so old scripts work.
 
 ### Appendix A: Example Extension Structure
 
-**Complete structure of `spec-kit-jira` extension:**
+**Complete structure of `learning-content-specifier-jira` extension:**
 
 ```text
-spec-kit-jira/
+learning-content-specifier-jira/
 ├── README.md                        # Overview, features, installation
 ├── LICENSE                          # MIT license
 ├── CHANGELOG.md                     # Version history
@@ -1683,7 +1683,7 @@ spec-kit-jira/
 
 **Planned support matrix:**
 
-| Extension Feature | Spec Kit Version | AI Agent Support |
+| Extension Feature | LCS Version | AI Agent Support |
 |-------------------|------------------|------------------|
 | Basic commands | 0.2.0+ | Claude, Gemini, Copilot |
 | Hooks (after_tasks) | 0.3.0+ | Claude, Gemini |
@@ -1764,7 +1764,7 @@ spec-kit-jira/
 
 ## Summary & Next Steps
 
-This RFC proposes a comprehensive extension system for Spec Kit that:
+This RFC proposes a comprehensive extension system for LCS that:
 
 1. **Keeps core lean** while enabling unlimited integrations
 2. **Supports multiple agents** (Claude, Gemini, Copilot, etc.)

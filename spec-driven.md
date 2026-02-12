@@ -121,7 +121,7 @@ Total: ~12 hours of documentation work
 
 ```bash
 # Step 1: Create the feature specification (5 minutes)
-/lcs.specify Real-time chat system with message history and user presence
+/lcs.lcs Real-time chat system with message history and user presence
 
 # This automatically:
 # - Creates branch "003-chat-system"
@@ -184,7 +184,7 @@ Both templates mandate the use of `[NEEDS CLARIFICATION]` markers:
 ```text
 When creating this spec from a user prompt:
 1. **Mark all ambiguities**: Use [NEEDS CLARIFICATION: specific question]
-2. **Don't guess**: If the prompt doesn't specify something, mark it
+2. **Don't guess**: If the prompt doesn't lcs something, mark it
 ```
 
 This prevents the common LLM behavior of making plausible but potentially incorrect assumptions. Instead of guessing that a "login system" uses email/password authentication, the LLM must mark it as `[NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]`.

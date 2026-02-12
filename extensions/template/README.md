@@ -1,6 +1,6 @@
 # Extension Template
 
-Starter template for creating a Spec Kit extension.
+Starter template for creating a LCS extension.
 
 ## Quick Start
 
@@ -31,7 +31,7 @@ Starter template for creating a Spec Kit extension.
 6. **Test locally**:
 
    ```bash
-   cd /path/to/spec-kit-project
+   cd /path/to/learning-content-specifier-project
    lcs extension add --dev /path/to/my-extension
    ```
 
@@ -76,4 +76,4 @@ Starter template for creating a Spec Kit extension.
 
 - Version: 1.0.0
 - Last Updated: 2026-01-28
-- Compatible with Spec Kit: >=0.1.0
+- Compatible with LCS: >=0.1.0

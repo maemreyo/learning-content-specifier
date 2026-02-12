@@ -1,6 +1,6 @@
 <div align="center">
-    <img src="./media/logo_large.webp" alt="Spec Kit Logo" width="200" height="200"/>
-    <h1>🌱 Spec Kit</h1>
+    <img src="./media/logo_large.webp" alt="LCS Logo" width="200" height="200"/>
+    <h1>🌱 LCS</h1>
     <h3><em>Build high-quality software faster.</em></h3>
 </div>
 
@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/github/spec-kit/actions/workflows/release.yml"><img src="https://github.com/github/spec-kit/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
-    <a href="https://github.com/github/spec-kit/stargazers"><img src="https://img.shields.io/github/stars/github/spec-kit?style=social" alt="GitHub stars"/></a>
-    <a href="https://github.com/github/spec-kit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/github/spec-kit" alt="License"/></a>
-    <a href="https://github.github.io/spec-kit/"><img src="https://img.shields.io/badge/docs-GitHub_Pages-blue" alt="Documentation"/></a>
+    <a href="https://github.com/maemreyo/learning-content-specifier/actions/workflows/release.yml"><img src="https://github.com/maemreyo/learning-content-specifier/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
+    <a href="https://github.com/maemreyo/learning-content-specifier/stargazers"><img src="https://img.shields.io/github/stars/maemreyo/learning-content-specifier?style=social" alt="GitHub stars"/></a>
+    <a href="https://github.com/maemreyo/learning-content-specifier/blob/main/LICENSE"><img src="https://img.shields.io/github/license/maemreyo/learning-content-specifier" alt="License"/></a>
+    <a href="https://github.github.io/learning-content-specifier/"><img src="https://img.shields.io/badge/docs-GitHub_Pages-blue" alt="Documentation"/></a>
 </p>
 
 ---
@@ -51,7 +51,7 @@ Choose your preferred installation method:
 Install once and use everywhere:
 
 ```bash
-uv tool install lcs-cli --from git+https://github.com/github/spec-kit.git
+uv tool install lcs-cli --from git+https://github.com/maemreyo/learning-content-specifier.git
 ```
 
 Then use the tool directly:
@@ -72,7 +72,7 @@ lcs check
 To upgrade Specify, see the [Upgrade Guide](./docs/upgrade.md) for detailed instructions. Quick upgrade:
 
 ```bash
-uv tool install lcs-cli --force --from git+https://github.com/github/spec-kit.git
+uv tool install lcs-cli --force --from git+https://github.com/maemreyo/learning-content-specifier.git
 ```
 
 #### Option 2: One-time Usage
@@ -80,7 +80,7 @@ uv tool install lcs-cli --force --from git+https://github.com/github/spec-kit.gi
 Run directly without installing:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git lcs init <PROJECT_NAME>
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME>
 ```
 
 **Benefits of persistent installation:**
@@ -105,7 +105,7 @@ Use the **`/lcs.constitution`** command to create your project's governing princ
 Use the **`/lcs.specify`** command to describe what you want to build. Focus on the **what** and **why**, not the tech stack.
 
 ```bash
-/lcs.specify Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.
+/lcs.lcs Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.
 ```
 
 ### 4. Create a technical implementation plan
@@ -136,9 +136,9 @@ For detailed step-by-step instructions, see our [comprehensive guide](./spec-dri
 
 ## 📽️ Video Overview
 
-Want to see Spec Kit in action? Watch our [video overview](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)!
+Want to see LCS in action? Watch our [video overview](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)!
 
-[![Spec Kit video header](/media/spec-kit-video-header.jpg)](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)
+[![LCS video header](/media/learning-content-specifier-video-header.jpg)](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)
 
 ## 🤖 Supported AI Agents
 
@@ -165,7 +165,7 @@ Want to see Spec Kit in action? Watch our [video overview](https://www.youtube.c
 
 ## 🔧 LCS CLI Reference
 
-The `specify` command supports the following options:
+The `lcs` command supports the following options:
 
 ### Commands
 
@@ -359,7 +359,7 @@ lcs init --here --force
 
 ![LCS CLI bootstrapping a new project in the terminal](./media/specify_cli.gif)
 
-You will be prompted to select the AI agent you are using. You can also proactively specify it directly in the terminal:
+You will be prompted to select the AI agent you are using. You can also proactively lcs it directly in the terminal:
 
 ```bash
 lcs init <project_name> --ai claude
@@ -401,7 +401,7 @@ The first step should be establishing your project's governing principles using 
 /lcs.constitution Create principles focused on code quality, testing standards, user experience consistency, and performance requirements. Include governance for how these principles should guide technical decisions and implementation choices.
 ```
 
-This step creates or updates the `.specify/memory/constitution.md` file with your project's foundational guidelines that the AI agent will reference during specification, planning, and implementation phases.
+This step creates or updates the `.lcs/memory/constitution.md` file with your project's foundational guidelines that the AI agent will reference during specification, planning, and implementation phases.
 
 ### **STEP 2:** Create project specifications
 
@@ -643,7 +643,7 @@ rm gcm-linux_amd64.2.6.1.deb
 
 ## 💬 Support
 
-For support, please open a [GitHub issue](https://github.com/github/spec-kit/issues/new). We welcome bug reports, feature requests, and questions about using Spec-Driven Development.
+For support, please open a [GitHub issue](https://github.com/maemreyo/learning-content-specifier/issues/new). We welcome bug reports, feature requests, and questions about using Spec-Driven Development.
 
 ## 🙏 Acknowledgements
 

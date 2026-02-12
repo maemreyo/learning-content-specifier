@@ -34,14 +34,14 @@ lcs extension add --dev /path/to/my-extension
 1. Create configuration file:
 
    ```bash
-   cp .specify/extensions/my-extension/config-template.yml \
-      .specify/extensions/my-extension/my-extension-config.yml
+   cp .lcs/extensions/my-extension/config-template.yml \
+      .lcs/extensions/my-extension/my-extension-config.yml
    ```
 
 2. Edit configuration:
 
    ```bash
-   vim .specify/extensions/my-extension/my-extension-config.yml
+   vim .lcs/extensions/my-extension/my-extension-config.yml
    ```
 
 3. Set required values:
@@ -145,8 +145,8 @@ MIT License - see LICENSE file
 
 ## Support
 
-- **Issues**: <https://github.com/your-org/spec-kit-my-extension/issues>
-- **Spec Kit Docs**: <https://github.com/statsperform/spec-kit>
+- **Issues**: <https://github.com/your-org/learning-content-specifier-my-extension/issues>
+- **LCS Docs**: <https://github.com/statsperform/learning-content-specifier>
 
 ## Changelog
 
@@ -155,4 +155,4 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 ---
 
 *Extension Version: 1.0.0*
-*Spec Kit: >=0.1.0*
+*LCS: >=0.1.0*

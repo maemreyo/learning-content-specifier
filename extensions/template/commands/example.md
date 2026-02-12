@@ -9,7 +9,7 @@ tools:
 
 <!-- CUSTOMIZE: Replace this entire file with your command documentation -->
 
-This is an example command that demonstrates how to create commands for Spec Kit extensions.
+This is an example command that demonstrates how to create commands for LCS extensions.
 
 ## Purpose
 
@@ -36,7 +36,7 @@ $ARGUMENTS
 Load extension configuration from the project:
 
 ``bash
-config_file=".specify/extensions/my-extension/my-extension-config.yml"
+config_file=".lcs/extensions/my-extension/my-extension-config.yml"
 
 if [ ! -f "$config_file" ]; then
   echo "❌ Error: Configuration not found at $config_file"
@@ -99,7 +99,7 @@ echo ""
 Save results to a file if needed:
 
 ``bash
-output_file=".specify/my-extension-output.json"
+output_file=".lcs/my-extension-output.json"
 
 cat > "$output_file" <<EOF
 {
@@ -152,8 +152,8 @@ export SPECKIT_MY_EXTENSION_KEY="override-value"
 **Solution**: Install the extension and create configuration:
 ``bash
 lcs extension add my-extension
-cp .specify/extensions/my-extension/config-template.yml \
-   .specify/extensions/my-extension/my-extension-config.yml
+cp .lcs/extensions/my-extension/config-template.yml \
+   .lcs/extensions/my-extension/my-extension-config.yml
 ``
 
 ### "MCP tool not available"

@@ -6,14 +6,14 @@
     "jira": {
       "name": "Jira Integration",
       "id": "jira",
-      "description": "Create Jira Epics, Stories, and Issues from spec-kit artifacts",
+      "description": "Create Jira Epics, Stories, and Issues from learning-content-specifier artifacts",
       "author": "Your Organization",
       "version": "2.1.0",
-      "download_url": "https://github.com/your-org/spec-kit-jira/archive/refs/tags/v2.1.0.zip",
-      "repository": "https://github.com/your-org/spec-kit-jira",
-      "homepage": "https://github.com/your-org/spec-kit-jira",
-      "documentation": "https://github.com/your-org/spec-kit-jira/blob/main/README.md",
-      "changelog": "https://github.com/your-org/spec-kit-jira/blob/main/CHANGELOG.md",
+      "download_url": "https://github.com/your-org/learning-content-specifier-jira/archive/refs/tags/v2.1.0.zip",
+      "repository": "https://github.com/your-org/learning-content-specifier-jira",
+      "homepage": "https://github.com/your-org/learning-content-specifier-jira",
+      "documentation": "https://github.com/your-org/learning-content-specifier-jira/blob/main/README.md",
+      "changelog": "https://github.com/your-org/learning-content-specifier-jira/blob/main/CHANGELOG.md",
       "license": "MIT",
       "requires": {
         "speckit_version": ">=0.1.0",
@@ -42,8 +42,8 @@
       "description": "Sync specs and tasks with Linear issues",
       "author": "Your Organization",
       "version": "1.0.0",
-      "download_url": "https://github.com/your-org/spec-kit-linear/archive/refs/tags/v1.0.0.zip",
-      "repository": "https://github.com/your-org/spec-kit-linear",
+      "download_url": "https://github.com/your-org/learning-content-specifier-linear/archive/refs/tags/v1.0.0.zip",
+      "repository": "https://github.com/your-org/learning-content-specifier-linear",
       "license": "MIT",
       "requires": {
         "speckit_version": ">=0.1.0"

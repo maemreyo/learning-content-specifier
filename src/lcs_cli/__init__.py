@@ -243,7 +243,7 @@ BANNER = """
 TAGLINE = "LCS - Learning Content Specifier"
 
 DEFAULT_TEMPLATE_REPO_OWNER = os.getenv("LCS_TEMPLATE_REPO_OWNER", "github")
-DEFAULT_TEMPLATE_REPO_NAME = os.getenv("LCS_TEMPLATE_REPO_NAME", "spec-kit")
+DEFAULT_TEMPLATE_REPO_NAME = os.getenv("LCS_TEMPLATE_REPO_NAME", "learning-content-specifier")
 DEFAULT_TEMPLATE_ASSET_PREFIX = os.getenv("LCS_TEMPLATE_ASSET_PREFIX", "lcs-template")
 class StepTracker:
     """Track and render hierarchical steps without emojis, similar to Claude Code tree output.
@@ -495,7 +495,7 @@ def check_tool(tool: str, tracker: StepTracker = None) -> bool:
         True if tool is found, False otherwise
     """
     # Special handling for Claude CLI after `claude migrate-installer`
-    # See: https://github.com/github/spec-kit/issues/123
+    # See: https://github.com/maemreyo/learning-content-specifier/issues/123
     # The migrate-installer command REMOVES the original executable from PATH
     # and creates an alias at ~/.claude/local/claude instead
     # This path should be prioritized over other claude executables in PATH

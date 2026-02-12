@@ -7,8 +7,8 @@
         "lcs.implement": true
     },
     "chat.tools.terminal.autoApprove": {
-        ".specify/scripts/bash/": true,
-        ".specify/scripts/powershell/": true
+        ".lcs/scripts/bash/": true,
+        ".lcs/scripts/powershell/": true
     }
 }
 

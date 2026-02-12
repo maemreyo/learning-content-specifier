@@ -1,6 +1,6 @@
 # Extension User Guide
 
-Complete guide for using Spec Kit extensions to enhance your workflow.
+Complete guide for using LCS extensions to enhance your workflow.
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@ Complete guide for using Spec Kit extensions to enhance your workflow.
 
 ### What are Extensions?
 
-Extensions are modular packages that add new commands and functionality to Spec Kit without bloating the core framework. They allow you to:
+Extensions are modular packages that add new commands and functionality to LCS without bloating the core framework. They allow you to:
 
 - **Integrate** with external tools (Jira, Linear, GitHub, etc.)
 - **Automate** repetitive tasks with hooks
@@ -29,7 +29,7 @@ Extensions are modular packages that add new commands and functionality to Spec 
 
 ### Why Use Extensions?
 
-- **Clean Core**: Keeps spec-kit lightweight and focused
+- **Clean Core**: Keeps learning-content-specifier lightweight and focused
 - **Optional Features**: Only install what you need
 - **Community Driven**: Anyone can create and share extensions
 - **Version Controlled**: Extensions are versioned independently
@@ -40,13 +40,13 @@ Extensions are modular packages that add new commands and functionality to Spec 
 
 ### Prerequisites
 
-- Spec Kit version 0.1.0 or higher
-- A spec-kit project (directory with `.specify/` folder)
+- LCS version 0.1.0 or higher
+- A learning-content-specifier project (directory with `.lcs/` folder)
 
 ### Check Your Version
 
 ```bash
-specify --version
+lcs --version
 # Should show 0.1.0 or higher
 ```
 
@@ -65,7 +65,7 @@ lcs extension info jira
 lcs extension add jira
 
 # 4. Configure it
-vim .specify/extensions/jira/jira-config.yml
+vim .lcs/extensions/jira/jira-config.yml
 
 # 5. Use it
 # (Commands are now available in Claude Code)
@@ -149,8 +149,8 @@ This will:
 
 1. Download the extension from GitHub
 2. Validate the manifest
-3. Check compatibility with your spec-kit version
-4. Install to `.specify/extensions/jira/`
+3. Check compatibility with your learning-content-specifier version
+4. Install to `.lcs/extensions/jira/`
 5. Register commands with your AI agent
 6. Create config template
 
@@ -158,7 +158,7 @@ This will:
 
 ```bash
 # From GitHub release
-lcs extension add --from https://github.com/org/spec-kit-ext/archive/refs/tags/v1.0.0.zip
+lcs extension add --from https://github.com/org/learning-content-specifier-ext/archive/refs/tags/v1.0.0.zip
 ```
 
 ### Install from Local Directory (Development)
@@ -174,7 +174,7 @@ lcs extension add --dev /path/to/extension
 ✓ Extension installed successfully!
 
 Jira Integration (v1.0.0)
-  Create Jira Epics, Stories, and Issues from spec-kit artifacts
+  Create Jira Epics, Stories, and Issues from learning-content-specifier artifacts
 
 Provided commands:
   • lcs.jira.specstoissues - Create Jira hierarchy from spec and tasks
@@ -182,7 +182,7 @@ Provided commands:
   • lcs.jira.sync-status - Sync task completion status to Jira
 
 ⚠  Configuration may be required
-   Check: .specify/extensions/jira/
+   Check: .lcs/extensions/jira/
 ```
 
 ---
@@ -207,14 +207,14 @@ Most extensions require configuration:
 
 ```bash
 # 1. Find the config file
-ls .specify/extensions/jira/
+ls .lcs/extensions/jira/
 
 # 2. Copy template to config
-cp .specify/extensions/jira/jira-config.template.yml \
-   .specify/extensions/jira/jira-config.yml
+cp .lcs/extensions/jira/jira-config.template.yml \
+   .lcs/extensions/jira/jira-config.yml
 
 # 3. Edit configuration
-vim .specify/extensions/jira/jira-config.yml
+vim .lcs/extensions/jira/jira-config.yml
 
 # 4. Use the extension
 # (Commands will now work with your config)
@@ -259,7 +259,7 @@ Output:
 Installed Extensions:
 
   ✓ Jira Integration (v1.0.0)
-     Create Jira Epics, Stories, and Issues from spec-kit artifacts
+     Create Jira Epics, Stories, and Issues from learning-content-specifier artifacts
      Commands: 3 | Hooks: 1 | Status: Enabled
 ```
 
@@ -327,7 +327,7 @@ lcs extension remove jira --force
 Extensions can have multiple configuration files:
 
 ```text
-.specify/extensions/jira/
+.lcs/extensions/jira/
 ├── jira-config.yml           # Main config (version controlled)
 ├── jira-config.local.yml     # Local overrides (gitignored)
 └── jira-config.template.yml  # Template (reference)
@@ -344,7 +344,7 @@ Configuration is merged in this order (highest priority last):
 
 ### Example: Jira Configuration
 
-**Project config** (`.specify/extensions/jira/jira-config.yml`):
+**Project config** (`.lcs/extensions/jira/jira-config.yml`):
 
 ```yaml
 project:
@@ -355,7 +355,7 @@ defaults:
     labels: ["spec-driven"]
 ```
 
-**Local override** (`.specify/extensions/jira/jira-config.local.yml`):
+**Local override** (`.lcs/extensions/jira/jira-config.local.yml`):
 
 ```yaml
 project:
@@ -372,7 +372,7 @@ Final resolved config uses `DEVTEST` from environment variable.
 
 ### Project-Wide Extension Settings
 
-File: `.specify/extensions.yml`
+File: `.lcs/extensions.yml`
 
 ```yaml
 # Extensions installed in this project
@@ -396,7 +396,7 @@ hooks:
 
 ### Core Environment Variables
 
-In addition to extension-specific environment variables (`SPECKIT_{EXT_ID}_*`), spec-kit supports core environment variables:
+In addition to extension-specific environment variables (`SPECKIT_{EXT_ID}_*`), learning-content-specifier supports core environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -419,7 +419,7 @@ export SPECKIT_CATALOG_URL="https://example.com/staging/catalog.json"
 
 ### Why the Default Catalog is Empty
 
-The default spec-kit catalog ships empty by design. This allows organizations to:
+The default learning-content-specifier catalog ships empty by design. This allows organizations to:
 
 - **Control available extensions** - Curate which extensions your team can install
 - **Host private extensions** - Internal tools that shouldn't be public
@@ -436,16 +436,16 @@ Create a `catalog.json` file with your extensions:
 {
   "schema_version": "1.0",
   "updated_at": "2026-02-03T00:00:00Z",
-  "catalog_url": "https://your-org.com/spec-kit/catalog.json",
+  "catalog_url": "https://your-org.com/learning-content-specifier/catalog.json",
   "extensions": {
     "jira": {
       "name": "Jira Integration",
       "id": "jira",
-      "description": "Create Jira issues from spec-kit artifacts",
+      "description": "Create Jira issues from learning-content-specifier artifacts",
       "author": "Your Organization",
       "version": "2.1.0",
-      "download_url": "https://github.com/your-org/spec-kit-jira/archive/refs/tags/v2.1.0.zip",
-      "repository": "https://github.com/your-org/spec-kit-jira",
+      "download_url": "https://github.com/your-org/learning-content-specifier-jira/archive/refs/tags/v2.1.0.zip",
+      "repository": "https://github.com/your-org/learning-content-specifier-jira",
       "license": "MIT",
       "requires": {
         "speckit_version": ">=0.1.0",
@@ -467,7 +467,7 @@ Create a `catalog.json` file with your extensions:
       "author": "Your Organization",
       "version": "1.0.0",
       "download_url": "https://internal.your-org.com/extensions/internal-tool-1.0.0.zip",
-      "repository": "https://github.internal.your-org.com/spec-kit-internal",
+      "repository": "https://github.internal.your-org.com/learning-content-specifier-internal",
       "license": "Proprietary",
       "requires": {
         "speckit_version": ">=0.1.0"
@@ -488,8 +488,8 @@ Options for hosting your catalog:
 
 | Method | URL Example | Use Case |
 | ------ | ----------- | -------- |
-| GitHub Pages | `https://your-org.github.io/spec-kit-catalog/catalog.json` | Public or org-visible |
-| Internal web server | `https://internal.company.com/spec-kit/catalog.json` | Corporate network |
+| GitHub Pages | `https://your-org.github.io/learning-content-specifier-catalog/catalog.json` | Public or org-visible |
+| Internal web server | `https://internal.company.com/learning-content-specifier/catalog.json` | Corporate network |
 | S3/Cloud storage | `https://s3.amazonaws.com/your-bucket/catalog.json` | Cloud-hosted teams |
 | Local file server | `http://localhost:8000/catalog.json` | Development/testing |
 
@@ -501,15 +501,15 @@ Options for hosting your catalog:
 
 ```bash
 # In ~/.bashrc, ~/.zshrc, or CI pipeline
-export SPECKIT_CATALOG_URL="https://your-org.com/spec-kit/catalog.json"
+export SPECKIT_CATALOG_URL="https://your-org.com/learning-content-specifier/catalog.json"
 ```
 
 ##### Option B: Per-project configuration
 
-Create `.env` or set in your shell before running spec-kit commands:
+Create `.env` or set in your shell before running learning-content-specifier commands:
 
 ```bash
-SPECKIT_CATALOG_URL="https://your-org.com/spec-kit/catalog.json" lcs extension search
+SPECKIT_CATALOG_URL="https://your-org.com/learning-content-specifier/catalog.json" lcs extension search
 ```
 
 #### 4. Verify Configuration
@@ -553,7 +553,7 @@ Host proprietary extensions that integrate with internal systems:
 {
   "internal-auth": {
     "name": "Internal SSO Integration",
-    "download_url": "https://artifactory.company.com/spec-kit/internal-auth-1.0.0.zip",
+    "download_url": "https://artifactory.company.com/learning-content-specifier/internal-auth-1.0.0.zip",
     "verified": true
   }
 }
@@ -585,7 +585,7 @@ For networks without internet access:
 ```json
 {
   "jira": {
-    "download_url": "https://files.internal/spec-kit/jira-2.1.0.zip"
+    "download_url": "https://files.internal/learning-content-specifier/jira-2.1.0.zip"
   }
 }
 ```
@@ -598,7 +598,7 @@ Test new extensions before publishing:
 # Start local server
 python -m http.server 8000 --directory ./my-catalog/
 
-# Point spec-kit to local catalog
+# Point learning-content-specifier to local catalog
 export SPECKIT_CATALOG_URL="http://localhost:8000/catalog.json"
 
 # Test installation
@@ -614,7 +614,7 @@ You can still install extensions not in your catalog using `--from`:
 lcs extension add jira
 
 # Direct URL (bypasses catalog)
-lcs extension add --from https://github.com/someone/spec-kit-ext/archive/v1.0.0.zip
+lcs extension add --from https://github.com/someone/learning-content-specifier-ext/archive/v1.0.0.zip
 
 # Local development
 lcs extension add --dev /path/to/extension
@@ -647,8 +647,8 @@ lcs extension add --dev /path/to/extension
 2. Create config from template:
 
    ```bash
-   cp .specify/extensions/jira/jira-config.template.yml \
-      .specify/extensions/jira/jira-config.yml
+   cp .lcs/extensions/jira/jira-config.template.yml \
+      .lcs/extensions/jira/jira-config.yml
    ```
 
 3. Reinstall extension: `lcs extension remove jira && lcs extension add jira`
@@ -671,11 +671,11 @@ lcs extension add --dev /path/to/extension
 
 ### Incompatible Version
 
-**Error**: `Extension requires spec-kit >=0.2.0, but you have 0.1.0`
+**Error**: `Extension requires learning-content-specifier >=0.2.0, but you have 0.1.0`
 
 **Solutions**:
 
-1. Upgrade spec-kit:
+1. Upgrade learning-content-specifier:
 
    ```bash
    uv tool upgrade lcs-cli
@@ -716,23 +716,23 @@ lcs extension add --dev /path/to/extension
 
 **Do commit**:
 
-- `.specify/extensions.yml` (project extension config)
-- `.specify/extensions/*/jira-config.yml` (project config)
+- `.lcs/extensions.yml` (project extension config)
+- `.lcs/extensions/*/jira-config.yml` (project config)
 
 **Don't commit**:
 
-- `.specify/extensions/.cache/` (catalog cache)
-- `.specify/extensions/.backup/` (config backups)
-- `.specify/extensions/*/*.local.yml` (local overrides)
-- `.specify/extensions/.registry` (installation state)
+- `.lcs/extensions/.cache/` (catalog cache)
+- `.lcs/extensions/.backup/` (config backups)
+- `.lcs/extensions/*/*.local.yml` (local overrides)
+- `.lcs/extensions/.registry` (installation state)
 
 Add to `.gitignore`:
 
 ```gitignore
-.specify/extensions/.cache/
-.specify/extensions/.backup/
-.specify/extensions/*/*.local.yml
-.specify/extensions/.registry
+.lcs/extensions/.cache/
+.lcs/extensions/.backup/
+.lcs/extensions/*/*.local.yml
+.lcs/extensions/.registry
 ```
 
 ### 2. Team Workflows
@@ -751,7 +751,7 @@ Add to `.gitignore`:
 
 This project uses:
 - **jira** (v1.0.0) - Jira integration
-  - Config: `.specify/extensions/jira/jira-config.yml`
+  - Config: `.lcs/extensions/jira/jira-config.yml`
   - Requires: jira-mcp-server
 
 To install: `lcs extension add jira`
@@ -762,7 +762,7 @@ To install: `lcs extension add jira`
 Use local config for development:
 
 ```yaml
-# .specify/extensions/jira/jira-config.local.yml
+# .lcs/extensions/jira/jira-config.local.yml
 project:
   key: "DEVTEST"  # Your test project
 
@@ -797,7 +797,7 @@ lcs extension update
 **Pin versions for stability**:
 
 ```yaml
-# .specify/extensions.yml
+# .lcs/extensions.yml
 installed:
   - id: jira
     version: "1.0.0"  # Pin to specific version
@@ -834,7 +834,7 @@ After creating tasks, sync to Jira:
 
 **A**: Yes! Extensions are designed to work together. Install as many as you need.
 
-### Q: Do extensions slow down spec-kit?
+### Q: Do extensions slow down learning-content-specifier?
 
 **A**: No. Extensions are loaded on-demand and only when their commands are used.
 
@@ -846,7 +846,7 @@ After creating tasks, sync to Jira:
 
 **A**: Look for the ✓ Verified badge. Verified extensions are reviewed by maintainers. Always review extension code before installing.
 
-### Q: Can extensions modify spec-kit core?
+### Q: Can extensions modify learning-content-specifier core?
 
 **A**: No. Extensions can only add commands and hooks. They cannot modify core functionality.
 
@@ -868,18 +868,18 @@ After creating tasks, sync to Jira:
 
 ### Q: How do I backup my extension configuration?
 
-**A**: Extension configs are in `.specify/extensions/{extension}/`. Back up this directory or commit configs to git.
+**A**: Extension configs are in `.lcs/extensions/{extension}/`. Back up this directory or commit configs to git.
 
 ---
 
 ## Support
 
 - **Extension Issues**: Report to extension repository (see `lcs extension info`)
-- **Spec Kit Issues**: <https://github.com/statsperform/spec-kit/issues>
-- **Extension Catalog**: <https://github.com/statsperform/spec-kit/tree/main/extensions>
+- **LCS Issues**: <https://github.com/statsperform/learning-content-specifier/issues>
+- **Extension Catalog**: <https://github.com/statsperform/learning-content-specifier/tree/main/extensions>
 - **Documentation**: See EXTENSION-DEVELOPMENT-GUIDE.md and EXTENSION-PUBLISHING-GUIDE.md
 
 ---
 
 *Last Updated: 2026-01-28*
-*Spec Kit Version: 0.1.0*
+*LCS Version: 0.1.0*

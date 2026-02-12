@@ -30,10 +30,10 @@ and this project adheres to  [Semantic Versioning](https://semver.org/spec/v2.0.
 
 ### Requirements
 
-- Spec Kit: >=0.1.0
+- LCS: >=0.1.0
 - External dependencies (if any)
 
 ---
 
-[Unreleased]: https://github.com/your-org/spec-kit-my-extension/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/your-org/spec-kit-my-extension/releases/tag/v1.0.0
+[Unreleased]: https://github.com/your-org/learning-content-specifier-my-extension/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/your-org/learning-content-specifier-my-extension/releases/tag/v1.0.0

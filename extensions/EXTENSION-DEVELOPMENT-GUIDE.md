@@ -1,6 +1,6 @@
 # Extension Development Guide
 
-A guide for creating Spec Kit extensions.
+A guide for creating LCS extensions.
 
 ---
 
@@ -24,11 +24,11 @@ extension:
   version: "1.0.0"                      # Semantic versioning
   description: "My custom extension"
   author: "Your Name"
-  repository: "https://github.com/you/spec-kit-my-ext"
+  repository: "https://github.com/you/learning-content-specifier-my-ext"
   license: "MIT"
 
 requires:
-  speckit_version: ">=0.1.0"            # Minimum spec-kit version
+  speckit_version: ">=0.1.0"            # Minimum learning-content-specifier version
   tools:                                # Optional: External tools required
     - name: "my-tool"
       required: true
@@ -100,12 +100,12 @@ echo "Arguments: $ARGUMENTS"
 
 ## Extension Configuration
 
-Load extension config from `.specify/extensions/my-ext/my-ext-config.yml`.
+Load extension config from `.lcs/extensions/my-ext/my-ext-config.yml`.
 
 ### 5. Test Locally
 
 ```bash
-cd /path/to/spec-kit-project
+cd /path/to/learning-content-specifier-project
 lcs extension add --dev /path/to/my-extension
 ```
 
@@ -170,7 +170,7 @@ Compatibility requirements.
 **Optional sub-fields**:
 
 - `tools`: External tools required (array of tool objects)
-- `commands`: Core spec-kit commands needed (array of command names)
+- `commands`: Core learning-content-specifier commands needed (array of command names)
 - `scripts`: Core scripts required (array of script names)
 
 #### `provides`
@@ -272,10 +272,10 @@ scripts:
 
 ```yaml
 scripts:
-  sh: .specify/scripts/bash/helper.sh
+  sh: .lcs/scripts/bash/helper.sh
 ```
 
-This allows scripts to reference core spec-kit scripts.
+This allows scripts to reference core learning-content-specifier scripts.
 
 ---
 
@@ -309,15 +309,15 @@ credentials:
 In your command, load config with layered precedence:
 
 1. Extension defaults (`extension.yml` → `defaults`)
-2. Project config (`.specify/extensions/my-ext/my-ext-config.yml`)
-3. Local overrides (`.specify/extensions/my-ext/my-ext-config.local.yml` - gitignored)
+2. Project config (`.lcs/extensions/my-ext/my-ext-config.yml`)
+3. Local overrides (`.lcs/extensions/my-ext/my-ext-config.local.yml` - gitignored)
 4. Environment variables (`SPECKIT_MY_EXT_*`)
 
 **Example loading script**:
 
 ```bash
 #!/usr/bin/env bash
-EXT_DIR=".specify/extensions/my-ext"
+EXT_DIR=".lcs/extensions/my-ext"
 
 # Load and merge config
 config=$(yq eval '.' "$EXT_DIR/my-ext-config.yml" -o=json)
@@ -420,11 +420,11 @@ def test_command_files_exist():
 
 ### Option 1: GitHub Repository
 
-1. **Create repository**: `spec-kit-my-ext`
+1. **Create repository**: `learning-content-specifier-my-ext`
 2. **Add files**:
 
    ```text
-   spec-kit-my-ext/
+   learning-content-specifier-my-ext/
    ├── extension.yml
    ├── commands/
    ├── scripts/
@@ -438,8 +438,8 @@ def test_command_files_exist():
 4. **Install from repo**:
 
    ```bash
-   git clone https://github.com/you/spec-kit-my-ext
-   lcs extension add --dev spec-kit-my-ext/
+   git clone https://github.com/you/learning-content-specifier-my-ext
+   lcs extension add --dev learning-content-specifier-my-ext/
    ```
 
 ### Option 2: ZIP Archive (Future)
@@ -447,20 +447,20 @@ def test_command_files_exist():
 Create ZIP archive and host on GitHub Releases:
 
 ```bash
-zip -r spec-kit-my-ext-1.0.0.zip extension.yml commands/ scripts/ docs/
+zip -r learning-content-specifier-my-ext-1.0.0.zip extension.yml commands/ scripts/ docs/
 ```
 
 Users install with:
 
 ```bash
-lcs extension add --from https://github.com/.../spec-kit-my-ext-1.0.0.zip
+lcs extension add --from https://github.com/.../learning-content-specifier-my-ext-1.0.0.zip
 ```
 
 ### Option 3: Extension Catalog (Future)
 
 Submit to official catalog:
 
-1. **Fork** spec-kit repository
+1. **Fork** learning-content-specifier repository
 2. **Add entry** to `extensions/catalog.json`
 3. **Create PR**
 4. **After merge**, users can install with:
@@ -568,7 +568,7 @@ timeout: 30
 
 Load config:
 ```bash
-config_file=".specify/extensions/tool/tool-config.yml"
+config_file=".lcs/extensions/tool/tool-config.yml"
 endpoint=$(yq eval '.api_endpoint' "$config_file")
 echo "Using endpoint: $endpoint"
 ```
@@ -597,9 +597,9 @@ hooks:
 
 - **Fix**: Use lowercase, alphanumeric + hyphens only
 
-**Error**: `Extension requires spec-kit >=0.2.0`
+**Error**: `Extension requires learning-content-specifier >=0.2.0`
 
-- **Fix**: Update spec-kit with `uv tool install lcs-cli --force`
+- **Fix**: Update learning-content-specifier with `uv tool install lcs-cli --force`
 
 **Error**: `Command file not found`
 
@@ -616,7 +616,7 @@ hooks:
 3. Commands registered in registry:
 
    ```bash
-   cat .specify/extensions/.registry
+   cat .lcs/extensions/.registry
    ```
 
 **Fix**: Reinstall extension to trigger registration
@@ -625,7 +625,7 @@ hooks:
 
 **Check**:
 
-1. Config file exists: `.specify/extensions/{ext-id}/{ext-id}-config.yml`
+1. Config file exists: `.lcs/extensions/{ext-id}/{ext-id}-config.yml`
 2. YAML syntax is valid: `yq eval '.' config.yml`
 3. Environment variables set correctly
 
@@ -635,7 +635,7 @@ hooks:
 
 - **Issues**: Report bugs at GitHub repository
 - **Discussions**: Ask questions in GitHub Discussions
-- **Examples**: See `spec-kit-jira` for full-featured example (Phase B)
+- **Examples**: See `learning-content-specifier-jira` for full-featured example (Phase B)
 
 ---
 

@@ -941,7 +941,7 @@ class ExtensionCatalog:
 
     DEFAULT_CATALOG_URL = os.environ.get(
         "LCS_DEFAULT_CATALOG_URL",
-        "https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.json",
+        "https://raw.githubusercontent.com/maemreyo/learning-content-specifier/main/extensions/catalog.json",
     )
     CACHE_DURATION = 3600  # 1 hour in seconds
 

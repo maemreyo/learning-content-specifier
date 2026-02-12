@@ -3,11 +3,11 @@
 
 <#
 .SYNOPSIS
-    Build Spec Kit template release archives for each supported AI assistant and script type.
+    Build LCS template release archives for each supported AI assistant and script type.
 
 .DESCRIPTION
     create-release-packages.ps1 (workflow-local)
-    Build Spec Kit template release archives for each supported AI assistant and script type.
+    Build LCS template release archives for each supported AI assistant and script type.
     
 .PARAMETER Version
     Version string with leading 'v' (e.g., v0.2.0)
@@ -61,9 +61,9 @@ New-Item -ItemType Directory -Path $GenReleasesDir -Force | Out-Null
 function Rewrite-Paths {
     param([string]$Content)
     
-    $Content = $Content -replace '(/?)\bmemory/', '.specify/memory/'
-    $Content = $Content -replace '(/?)\bscripts/', '.specify/scripts/'
-    $Content = $Content -replace '(/?)\btemplates/', '.specify/templates/'
+    $Content = $Content -replace '(/?)\bmemory/', '.lcs/memory/'
+    $Content = $Content -replace '(/?)\bscripts/', '.lcs/scripts/'
+    $Content = $Content -replace '(/?)\btemplates/', '.lcs/templates/'
     return $Content
 }
 
@@ -230,13 +230,13 @@ function Build-Variant {
             'sh' {
                 if (Test-Path "scripts/bash") {
                     Copy-Item -Path "scripts/bash" -Destination $scriptsDestDir -Recurse -Force
-                    Write-Host "Copied scripts/bash -> .specify/scripts"
+                    Write-Host "Copied scripts/bash -> .lcs/scripts"
                 }
             }
             'ps' {
                 if (Test-Path "scripts/powershell") {
                     Copy-Item -Path "scripts/powershell" -Destination $scriptsDestDir -Recurse -Force
-                    Write-Host "Copied scripts/powershell -> .specify/scripts"
+                    Write-Host "Copied scripts/powershell -> .lcs/scripts"
                 }
             }
         }
@@ -261,7 +261,7 @@ function Build-Variant {
             New-Item -ItemType Directory -Path $destFileDir -Force | Out-Null
             Copy-Item -Path $_.FullName -Destination $destFile -Force
         }
-        Write-Host "Copied templates -> .specify/templates"
+        Write-Host "Copied templates -> .lcs/templates"
     }
     
     # Generate agent-specific command files
@@ -350,7 +350,7 @@ function Build-Variant {
     }
     
     # Create zip archive
-    $zipFile = Join-Path $GenReleasesDir "spec-kit-template-${Agent}-${Script}-${Version}.zip"
+    $zipFile = Join-Path $GenReleasesDir "learning-content-specifier-template-${Agent}-${Script}-${Version}.zip"
     Compress-Archive -Path "$baseDir/*" -DestinationPath $zipFile -Force
     Write-Host "Created $zipFile"
 }
@@ -419,6 +419,6 @@ foreach ($agent in $AgentList) {
 }
 
 Write-Host "`nArchives in ${GenReleasesDir}:"
-Get-ChildItem -Path $GenReleasesDir -Filter "spec-kit-template-*-${Version}.zip" | ForEach-Object {
+Get-ChildItem -Path $GenReleasesDir -Filter "learning-content-specifier-template-*-${Version}.zip" | ForEach-Object {
     Write-Host "  $($_.Name)"
 }

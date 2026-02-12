@@ -1,6 +1,6 @@
 # Extension Publishing Guide
 
-This guide explains how to publish your extension to the Spec Kit extension catalog, making it discoverable by `lcs extension search`.
+This guide explains how to publish your extension to the LCS extension catalog, making it discoverable by `lcs extension search`.
 
 ## Table of Contents
 
@@ -64,12 +64,12 @@ extension:
   version: "1.0.0"                # Semantic version
   description: "Brief description (one sentence)"
   author: "Your Name or Organization"
-  repository: "https://github.com/your-org/spec-kit-your-extension"
+  repository: "https://github.com/your-org/learning-content-specifier-your-extension"
   license: "MIT"
-  homepage: "https://github.com/your-org/spec-kit-your-extension"
+  homepage: "https://github.com/your-org/learning-content-specifier-your-extension"
 
 requires:
-  speckit_version: ">=0.1.0"    # Required spec-kit version
+  speckit_version: ">=0.1.0"    # Required learning-content-specifier version
 
 provides:
   commands:                       # List all commands
@@ -101,7 +101,7 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # Create release on GitHub
-# Go to: https://github.com/your-org/spec-kit-your-extension/releases/new
+# Go to: https://github.com/your-org/learning-content-specifier-your-extension/releases/new
 # - Tag: v1.0.0
 # - Title: v1.0.0 - Release Name
 # - Description: Changelog/release notes
@@ -110,7 +110,7 @@ git push origin v1.0.0
 The release archive URL will be:
 
 ```text
-https://github.com/your-org/spec-kit-your-extension/archive/refs/tags/v1.0.0.zip
+https://github.com/your-org/learning-content-specifier-your-extension/archive/refs/tags/v1.0.0.zip
 ```
 
 ### 4. Test Installation
@@ -122,22 +122,22 @@ Test that users can install from your release:
 lcs extension add --dev /path/to/your-extension
 
 # Test from GitHub archive
-lcs extension add --from https://github.com/your-org/spec-kit-your-extension/archive/refs/tags/v1.0.0.zip
+lcs extension add --from https://github.com/your-org/learning-content-specifier-your-extension/archive/refs/tags/v1.0.0.zip
 ```
 
 ---
 
 ## Submit to Catalog
 
-### 1. Fork the spec-kit Repository
+### 1. Fork the learning-content-specifier Repository
 
 ```bash
 # Fork on GitHub
-# https://github.com/statsperform/spec-kit/fork
+# https://github.com/statsperform/learning-content-specifier/fork
 
 # Clone your fork
-git clone https://github.com/YOUR-USERNAME/spec-kit.git
-cd spec-kit
+git clone https://github.com/YOUR-USERNAME/learning-content-specifier.git
+cd learning-content-specifier
 ```
 
 ### 2. Add Extension to Catalog
@@ -148,7 +148,7 @@ Edit `extensions/catalog.json` and add your extension:
 {
   "schema_version": "1.0",
   "updated_at": "2026-01-28T15:54:00Z",
-  "catalog_url": "https://raw.githubusercontent.com/statsperform/spec-kit/main/extensions/catalog.json",
+  "catalog_url": "https://raw.githubusercontent.com/statsperform/learning-content-specifier/main/extensions/catalog.json",
   "extensions": {
     "your-extension": {
       "name": "Your Extension Name",
@@ -156,11 +156,11 @@ Edit `extensions/catalog.json` and add your extension:
       "description": "Brief description of your extension",
       "author": "Your Name",
       "version": "1.0.0",
-      "download_url": "https://github.com/your-org/spec-kit-your-extension/archive/refs/tags/v1.0.0.zip",
-      "repository": "https://github.com/your-org/spec-kit-your-extension",
-      "homepage": "https://github.com/your-org/spec-kit-your-extension",
-      "documentation": "https://github.com/your-org/spec-kit-your-extension/blob/main/docs/",
-      "changelog": "https://github.com/your-org/spec-kit-your-extension/blob/main/CHANGELOG.md",
+      "download_url": "https://github.com/your-org/learning-content-specifier-your-extension/archive/refs/tags/v1.0.0.zip",
+      "repository": "https://github.com/your-org/learning-content-specifier-your-extension",
+      "homepage": "https://github.com/your-org/learning-content-specifier-your-extension",
+      "documentation": "https://github.com/your-org/learning-content-specifier-your-extension/blob/main/docs/",
+      "changelog": "https://github.com/your-org/learning-content-specifier-your-extension/blob/main/CHANGELOG.md",
       "license": "MIT",
       "requires": {
         "speckit_version": ">=0.1.0",
@@ -218,7 +218,7 @@ git commit -m "Add your-extension to catalog
 git push origin add-your-extension
 
 # Create Pull Request on GitHub
-# https://github.com/statsperform/spec-kit/compare
+# https://github.com/statsperform/learning-content-specifier/compare
 ```
 
 **Pull Request Template**:
@@ -230,7 +230,7 @@ git push origin add-your-extension
 **Extension ID**: your-extension
 **Version**: 1.0.0
 **Author**: Your Name
-**Repository**: https://github.com/your-org/spec-kit-your-extension
+**Repository**: https://github.com/your-org/learning-content-specifier-your-extension
 
 ### Description
 Brief description of what your extension does.
@@ -246,7 +246,7 @@ Brief description of what your extension does.
 
 ### Testing
 Tested on:
-- macOS 13.0+ with spec-kit 0.1.0
+- macOS 13.0+ with learning-content-specifier 0.1.0
 - Project: [Your test project]
 
 ### Additional Notes
@@ -357,12 +357,12 @@ When releasing a new version:
 4. **Update catalog**:
 
    ```bash
-   # Fork spec-kit repo (or update existing fork)
-   cd spec-kit
+   # Fork learning-content-specifier repo (or update existing fork)
+   cd learning-content-specifier
 
    # Update extensions/catalog.json
    jq '.extensions["your-extension"].version = "1.1.0"' extensions/catalog.json > tmp.json && mv tmp.json extensions/catalog.json
-   jq '.extensions["your-extension"].download_url = "https://github.com/your-org/spec-kit-your-extension/archive/refs/tags/v1.1.0.zip"' extensions/catalog.json > tmp.json && mv tmp.json extensions/catalog.json
+   jq '.extensions["your-extension"].download_url = "https://github.com/your-org/learning-content-specifier-your-extension/archive/refs/tags/v1.1.0.zip"' extensions/catalog.json > tmp.json && mv tmp.json extensions/catalog.json
    jq '.extensions["your-extension"].updated_at = "2026-02-15T00:00:00Z"' extensions/catalog.json > tmp.json && mv tmp.json extensions/catalog.json
    jq '.updated_at = "2026-02-15T00:00:00Z"' extensions/catalog.json > tmp.json && mv tmp.json extensions/catalog.json
 
@@ -466,8 +466,8 @@ A: Extensions should be free and open-source. Commercial support/services are al
 
 ## Support
 
-- **Catalog Issues**: <https://github.com/statsperform/spec-kit/issues>
-- **Extension Template**: <https://github.com/statsperform/spec-kit-extension-template> (coming soon)
+- **Catalog Issues**: <https://github.com/statsperform/learning-content-specifier/issues>
+- **Extension Template**: <https://github.com/statsperform/learning-content-specifier-extension-template> (coming soon)
 - **Development Guide**: See EXTENSION-DEVELOPMENT-GUIDE.md
 - **Community**: Discussions and Q&A
 
