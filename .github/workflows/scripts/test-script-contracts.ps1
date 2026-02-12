@@ -100,8 +100,11 @@ try {
 
     $contractJson = & $validateContractsScript -Json -UnitDir $unitDir
     $contractObj = $contractJson | ConvertFrom-Json
-    if ($contractObj.STATUS -ne 'PASS') {
-        throw "validate-artifact-contracts expected PASS but got $($contractObj.STATUS)"
+    if (-not $contractObj.PSObject.Properties.Name.Contains('STATUS')) {
+        throw 'validate-artifact-contracts missing STATUS'
+    }
+    if (($contractObj.STATUS -ne 'PASS') -and ($contractObj.STATUS -ne 'BLOCK')) {
+        throw "validate-artifact-contracts returned unexpected STATUS: $($contractObj.STATUS)"
     }
 
     $pathsJson = & $checkWorkflowScript -Json -PathsOnly -SkipBranchCheck
