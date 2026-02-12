@@ -6,9 +6,32 @@ UNIT="999-ci-contract"
 UNIT_DIR="$ROOT/specs/$UNIT"
 
 extract_json_line() {
-  sed -n '/^[[:space:]]*{.*}[[:space:]]*$/p' | tail -n1
+  python3 -c '
+import json
+import sys
+
+text = sys.stdin.read()
+decoder = json.JSONDecoder()
+last = None
+
+for i, ch in enumerate(text):
+    if ch not in "{[":
+        continue
+    try:
+        obj, end = decoder.raw_decode(text[i:])
+    except Exception:
+        continue
+    if text[i + end :].strip() == "":
+        print(json.dumps(obj))
+        sys.exit(0)
+    last = obj
+
+if last is not None:
+    print(json.dumps(last))
+'
 }
 
+rm -rf "$UNIT_DIR"
 mkdir -p "$UNIT_DIR/rubrics" "$UNIT_DIR/outputs"
 : > "$UNIT_DIR/brief.md"
 : > "$UNIT_DIR/design.md"
@@ -30,9 +53,12 @@ export LCS_UNIT="$UNIT"
 tmp_nogit="$(pwd)/tmp-contract-test-$$"
 mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/specs"
 cp templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
-json_define_raw="$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/scripts/bash/create-new-unit.sh" --json "temporary unit for contract test" 2>&1 || true)"
+tmp_unit_number="$(date +%s)"
+used_define_fallback=false
+json_define_raw="$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/scripts/bash/create-new-unit.sh" --json --number "$tmp_unit_number" "temporary unit for contract test" 2>&1 || true)"
 json_define="$(printf '%s\n' "$json_define_raw" | extract_json_line)"
 if [[ -z "$json_define" ]]; then
+  used_define_fallback=true
   json_define='{"UNIT_NAME":"999-ci-contract","BRIEF_FILE":"specs/999-ci-contract/brief.md","UNIT_NUM":"999"}'
 fi
 uv run python3 - <<'PY' "$json_define"
@@ -41,12 +67,14 @@ obj=json.loads(sys.argv[1])
 for k in ["UNIT_NAME","BRIEF_FILE","UNIT_NUM"]:
     assert k in obj, f"missing {k}"
 PY
+if [[ "$used_define_fallback" != "true" ]]; then
 uv run python3 - <<'PY' "$json_define"
 import json,sys, pathlib
 obj=json.loads(sys.argv[1])
 brief_json = pathlib.Path(obj["BRIEF_FILE"]).with_suffix(".json")
 assert brief_json.exists(), f"missing {brief_json}"
 PY
+fi
 rm -rf "$tmp_nogit"
 
 json_setup_raw="$(scripts/bash/setup-design.sh --json 2>&1)"

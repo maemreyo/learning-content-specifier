@@ -77,12 +77,10 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: pip install pytest pytest-cov
+        run: uv sync --extra test
 
       - name: Run pytest
-        run: |
-          $env:PYTHONPATH = "src"
-          uv run pytest -q
+        run: uv run pytest -q
 
       - name: Run PowerShell script contracts
         shell: pwsh
