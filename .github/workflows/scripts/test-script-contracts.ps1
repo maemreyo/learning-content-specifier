@@ -11,7 +11,7 @@ Copy-Item (Join-Path $repoRoot 'templates/brief-template.md') (Join-Path $tempRo
 
 Push-Location $tempRoot
 try {
-    $createJson = & (Join-Path $repoRoot 'scripts/powershell/create-new-unit.ps1') -Json "temporary unit for contract test"
+    $createJson = & (Join-Path $repoRoot 'scripts/powershell/create-new-unit.ps1') -Json -UnitDescription "temporary unit for contract test"
     $createObj = $createJson | ConvertFrom-Json
     foreach ($k in @('UNIT_NAME','BRIEF_FILE','UNIT_NUM')) {
         if (-not $createObj.PSObject.Properties.Name.Contains($k)) {

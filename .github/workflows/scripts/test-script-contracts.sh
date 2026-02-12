@@ -150,22 +150,40 @@ PY
 scripts/bash/validate-author-gates.sh --json >/dev/null
 
 if command -v pwsh >/dev/null 2>&1; then
-  pjson_setup=$(pwsh -NoLogo -NoProfile -File scripts/powershell/setup-design.ps1 -Json)
-  python - <<'PY' "$pjson_setup"
+  pjson_setup_raw="$(pwsh -NoLogo -NoProfile -File scripts/powershell/setup-design.ps1 -Json 2>&1)"
+  pjson_setup="$(normalize_json "$pjson_setup_raw" || true)"
+  if [[ -z "$pjson_setup" ]]; then
+    echo "PowerShell setup-design.ps1 did not emit JSON output" >&2
+    echo "$pjson_setup_raw" >&2
+    exit 1
+  fi
+  uv run python3 - <<'PY' "$pjson_setup"
 import json,sys
 obj=json.loads(sys.argv[1])
 assert isinstance(obj["HAS_GIT"], bool), "PowerShell HAS_GIT must be bool"
 PY
 
-  pcontract=$(pwsh -NoLogo -NoProfile -File scripts/powershell/validate-artifact-contracts.ps1 -Json -UnitDir "$UNIT_DIR")
-  python - <<'PY' "$pcontract"
+  pcontract_raw="$(pwsh -NoLogo -NoProfile -File scripts/powershell/validate-artifact-contracts.ps1 -Json -UnitDir "$UNIT_DIR" 2>&1)"
+  pcontract="$(normalize_json "$pcontract_raw" || true)"
+  if [[ -z "$pcontract" ]]; then
+    echo "PowerShell validate-artifact-contracts.ps1 did not emit JSON output" >&2
+    echo "$pcontract_raw" >&2
+    exit 1
+  fi
+  uv run python3 - <<'PY' "$pcontract"
 import json,sys
 obj=json.loads(sys.argv[1])
 assert obj["STATUS"] == "PASS", obj
 PY
 
-  pjson_paths=$(pwsh -NoLogo -NoProfile -File scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly -SkipBranchCheck)
-  python - <<'PY' "$pjson_paths"
+  pjson_paths_raw="$(pwsh -NoLogo -NoProfile -File scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly -SkipBranchCheck 2>&1)"
+  pjson_paths="$(normalize_json "$pjson_paths_raw" || true)"
+  if [[ -z "$pjson_paths" ]]; then
+    echo "PowerShell check-workflow-prereqs.ps1 did not emit JSON output" >&2
+    echo "$pjson_paths_raw" >&2
+    exit 1
+  fi
+  uv run python3 - <<'PY' "$pjson_paths"
 import json,sys
 obj=json.loads(sys.argv[1])
 for k in [
@@ -176,9 +194,16 @@ for k in [
     assert k in obj, f"missing {k}"
 PY
 
-  pwsh -NoLogo -NoProfile -File scripts/powershell/validate-author-gates.ps1 -Json | uv run python3 - <<'PY'
+  pgate_raw="$(pwsh -NoLogo -NoProfile -File scripts/powershell/validate-author-gates.ps1 -Json 2>&1)"
+  pgate_json="$(normalize_json "$pgate_raw" || true)"
+  if [[ -z "$pgate_json" ]]; then
+    echo "PowerShell validate-author-gates.ps1 did not emit JSON output" >&2
+    echo "$pgate_raw" >&2
+    exit 1
+  fi
+  uv run python3 - <<'PY' "$pgate_json"
 import json,sys
-obj=json.loads(sys.stdin.read())
+obj=json.loads(sys.argv[1])
 assert obj["STATUS"] == "PASS"
 PY
 else
