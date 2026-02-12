@@ -7,6 +7,16 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-02-12
+
+### Changed
+
+- Updated root `README.md` with explicit installation and bootstrap guidance for working in a different repository:
+  - `uvx` one-off usage
+  - global `uv tool install` usage
+  - initializing directly in an existing repo with `lcs init .`
+- Updated CLI startup banner in `src/lcs_cli/__init__.py` to the new LCS banner style.
+
 ## [0.4.0] - 2026-02-12
 
 ### Changed

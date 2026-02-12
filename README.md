@@ -4,6 +4,49 @@ Learning Content Specifier.
 
 LCS is a spec-driven toolkit for producing learning content with deterministic quality gates. The workflow is built around `Course -> Module -> Lesson` and local-first artifacts.
 
+## Install And Use In Another Repo
+
+### Prerequisite
+
+- Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
+
+### Option A: One-off usage (no global install)
+
+From any folder where you want to create a new project:
+
+```bash
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project-name> --ai codex
+```
+
+Then enter the project:
+
+```bash
+cd <project-name>
+```
+
+### Option B: Install `lcs` globally
+
+```bash
+uv tool install --from git+https://github.com/maemreyo/learning-content-specifier.git lcs-cli
+```
+
+Create or bootstrap from any folder:
+
+```bash
+lcs init <project-name> --ai codex
+cd <project-name>
+```
+
+### Use LCS inside an existing repo
+
+From the root of your existing repo:
+
+```bash
+lcs init . --ai codex
+```
+
+This will scaffold `.lcs/`, command files for your selected agent, templates, and workflow scripts so you can start authoring learning content immediately.
+
 ## Core Command Flow
 
 `/lcs.charter -> /lcs.define -> /lcs.refine -> /lcs.design -> /lcs.sequence -> /lcs.rubric -> /lcs.audit -> /lcs.author -> /lcs.issueize`
@@ -39,13 +82,9 @@ Before `/lcs.author`:
 - Audit report artifacts exist with `PASS` decision (`audit-report.md` and/or `audit-report.json`).
 - No unresolved `CRITICAL` or `HIGH` findings.
 
-## Quick Start
+## Quick Start Workflow
 
-```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project-name> --ai claude
-```
-
-Then in your agent:
+In your agent:
 
 ```text
 /lcs.charter
