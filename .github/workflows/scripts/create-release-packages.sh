@@ -151,7 +151,14 @@ build_variant() {
     esac
   fi
   
-  [[ -d templates ]] && { mkdir -p "$SPEC_DIR/templates"; find templates -type f -not -path "templates/commands/*" -not -name "vscode-settings.json" -exec cp --parents {} "$SPEC_DIR"/ \; ; echo "Copied templates -> .lcs/templates"; }
+  if [[ -d templates ]]; then
+    while IFS= read -r template_file; do
+      dest="$SPEC_DIR/$template_file"
+      mkdir -p "$(dirname "$dest")"
+      cp "$template_file" "$dest"
+    done < <(find templates -type f -not -path "templates/commands/*" -not -name "vscode-settings.json")
+    echo "Copied templates -> .lcs/templates"
+  fi
   
   # NOTE: We substitute {ARGS} internally. Outward tokens differ intentionally:
   #   * Markdown/prompt (claude, copilot, cursor-agent, opencode): $ARGUMENTS
@@ -233,13 +240,16 @@ norm_list() {
 }
 
 validate_subset() {
-  local type=$1; shift; local -n allowed=$1; shift; local items=("$@")
+  local type=$1
+  local allowed_csv=$2
+  shift 2
+  local items=("$@")
   local invalid=0
   for it in "${items[@]}"; do
     local found=0
-    for a in "${allowed[@]}"; do [[ $it == "$a" ]] && { found=1; break; }; done
+    for a in $allowed_csv; do [[ $it == "$a" ]] && { found=1; break; }; done
     if [[ $found -eq 0 ]]; then
-      echo "Error: unknown $type '$it' (allowed: ${allowed[*]})" >&2
+      echo "Error: unknown $type '$it' (allowed: $allowed_csv)" >&2
       invalid=1
     fi
   done
@@ -247,15 +257,21 @@ validate_subset() {
 }
 
 if [[ -n ${AGENTS:-} ]]; then
-  mapfile -t AGENT_LIST < <(printf '%s' "$AGENTS" | norm_list)
-  validate_subset agent ALL_AGENTS "${AGENT_LIST[@]}" || exit 1
+  AGENT_LIST=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && AGENT_LIST+=("$line")
+  done < <(printf '%s' "$AGENTS" | norm_list)
+  validate_subset agent "${ALL_AGENTS[*]}" "${AGENT_LIST[@]}" || exit 1
 else
   AGENT_LIST=("${ALL_AGENTS[@]}")
 fi
 
 if [[ -n ${SCRIPTS:-} ]]; then
-  mapfile -t SCRIPT_LIST < <(printf '%s' "$SCRIPTS" | norm_list)
-  validate_subset script ALL_SCRIPTS "${SCRIPT_LIST[@]}" || exit 1
+  SCRIPT_LIST=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && SCRIPT_LIST+=("$line")
+  done < <(printf '%s' "$SCRIPTS" | norm_list)
+  validate_subset script "${ALL_SCRIPTS[*]}" "${SCRIPT_LIST[@]}" || exit 1
 else
   SCRIPT_LIST=("${ALL_SCRIPTS[@]}")
 fi
@@ -271,4 +287,3 @@ done
 
 echo "Archives in $GENRELEASES_DIR:"
 ls -1 "$GENRELEASES_DIR"/learning-content-specifier-template-*-"${NEW_VERSION}".zip
-

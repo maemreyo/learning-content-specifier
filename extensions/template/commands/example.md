@@ -201,7 +201,7 @@ export SPECKIT_MY_EXTENSION_KEY="custom-value"
 
 # Use as part of a workflow
 >
-> /lcs.tasks
+> /lcs.sequence
 > /lcs.my-extension.example
 ``
 

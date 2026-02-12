@@ -6,35 +6,35 @@ flowchart TD
     %% Phase 1: Project Initialization
     subgraph "Phase 1: Khởi tạo dự án"
         Init[Khởi tạo LCS<br/>lcs init]
-        Constitution[Tạo nguyên tắc<br/>/lcs.constitution]
+        Constitution[Tạo nguyên tắc<br/>/lcs.charter]
     end
 
     %% Phase 2: Specification
     subgraph "Phase 2: Định nghĩa yêu cầu"
-        Specify[Định nghĩa spec<br/>/lcs.specify]
-        Clarify[Làm rõ yêu cầu<br/>/lcs.clarify]
+        Specify[Định nghĩa spec<br/>/lcs.define]
+        Clarify[Làm rõ yêu cầu<br/>/lcs.refine]
     end
 
     %% Phase 3: Planning
     subgraph "Phase 3: Lập kế hoạch"
-        Plan[Tạo kế hoạch kỹ thuật<br/>/lcs.plan]
-        Tasks[Tạo danh sách tác vụ<br/>/lcs.tasks]
+        Plan[Tạo kế hoạch kỹ thuật<br/>/lcs.design]
+        Tasks[Tạo danh sách tác vụ<br/>/lcs.sequence]
     end
 
     %% Phase 4: Implementation
     subgraph "Phase 4: Thực hiện"
-        Implement[Thực hiện code<br/>/lcs.implement]
+        Implement[Thực hiện code<br/>/lcs.author]
     end
 
     %% Phase 5: Validation & Extension
     subgraph "Phase 5: Xác thực & Mở rộng"
-        Analyze[Phân tích<br/>/lcs.analyze]
-        Checklist[Tạo checklist<br/>/lcs.checklist]
+        Analyze[Phân tích<br/>/lcs.audit]
+        Checklist[Tạo checklist<br/>/lcs.rubric]
     end
 
     %% Data Stores
     subgraph "Dữ liệu lưu trữ"
-        Memory[Memory<br/>.lcs/memory/constitution.md]
+        Memory[Memory<br/>.lcs/memory/charter.md]
         Specs[Specs<br/>.lcs/specs/]
         Templates[Templates<br/>.lcs/templates/]
         Extensions[Extensions<br/>.lcs/extensions/]

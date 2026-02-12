@@ -1,61 +1,38 @@
 #!/usr/bin/env pwsh
-# Common PowerShell functions analogous to common.sh
+# Common PowerShell functions for learning-content workflow scripts
 
 function Get-RepoRoot {
     try {
         $result = git rev-parse --show-toplevel 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            return $result
-        }
-    } catch {
-        # Git command failed
-    }
-    
-    # Fall back to script location for non-git repos
-    return (Resolve-Path (Join-Path $PSScriptRoot "../../..")).Path
+        if ($LASTEXITCODE -eq 0) { return $result }
+    } catch {}
+    return (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 }
 
 function Get-CurrentBranch {
-    # First check if LCS_FEATURE environment variable is set
-    if ($env:LCS_FEATURE) {
-        return $env:LCS_FEATURE
-    }
-    
-    # Then check git if available
+    if ($env:LCS_UNIT) { return $env:LCS_UNIT }
+    if ($env:LCS_FEATURE) { return $env:LCS_FEATURE }
+
     try {
         $result = git rev-parse --abbrev-ref HEAD 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            return $result
-        }
-    } catch {
-        # Git command failed
-    }
-    
-    # For non-git repos, try to find the latest feature directory
+        if ($LASTEXITCODE -eq 0) { return $result }
+    } catch {}
+
     $repoRoot = Get-RepoRoot
-    $specsDir = Join-Path $repoRoot "specs"
-    
+    $specsDir = Join-Path $repoRoot 'specs'
     if (Test-Path $specsDir) {
-        $latestFeature = ""
+        $latest = ''
         $highest = 0
-        
         Get-ChildItem -Path $specsDir -Directory | ForEach-Object {
             if ($_.Name -match '^(\d{3})-') {
                 $num = [int]$matches[1]
-                if ($num -gt $highest) {
-                    $highest = $num
-                    $latestFeature = $_.Name
-                }
+                if ($num -gt $highest) { $highest = $num; $latest = $_.Name }
             }
         }
-        
-        if ($latestFeature) {
-            return $latestFeature
-        }
+        if ($latest) { return $latest }
     }
-    
-    # Final fallback
-    return "main"
+
+    return 'main'
 }
 
 function Test-HasGit {
@@ -67,49 +44,75 @@ function Test-HasGit {
     }
 }
 
-function Test-FeatureBranch {
+function Test-UnitBranch {
     param(
         [string]$Branch,
         [bool]$HasGit = $true
     )
-    
-    # For non-git repos, we can't enforce branch naming but still provide output
+
     if (-not $HasGit) {
-        Write-Warning "[lcs] Warning: Git repository not detected; skipped branch validation"
+        Write-Warning '[lcs] Warning: Git repository not detected; skipped branch validation'
         return $true
     }
-    
+
     if ($Branch -notmatch '^[0-9]{3}-') {
-        Write-Output "ERROR: Not on a feature branch. Current branch: $Branch"
-        Write-Output "Feature branches should be named like: 001-feature-name"
+        Write-Output "ERROR: Not on a unit branch. Current branch: $Branch"
+        Write-Output 'Unit branches should be named like: 001-unit-name'
         return $false
     }
+
     return $true
 }
 
-function Get-FeatureDir {
-    param([string]$RepoRoot, [string]$Branch)
-    Join-Path $RepoRoot "specs/$Branch"
+function Find-UnitDirByPrefix {
+    param(
+        [string]$RepoRoot,
+        [string]$Branch
+    )
+
+    $specsDir = Join-Path $RepoRoot 'specs'
+    if ($Branch -notmatch '^(\d{3})-') {
+        return (Join-Path $specsDir $Branch)
+    }
+
+    $prefix = $matches[1]
+    $matchesDirs = @()
+    if (Test-Path $specsDir) {
+        $matchesDirs = Get-ChildItem -Path $specsDir -Directory -Filter "$prefix-*" | Select-Object -ExpandProperty Name
+    }
+
+    if ($matchesDirs.Count -eq 0) {
+        return (Join-Path $specsDir $Branch)
+    }
+    if ($matchesDirs.Count -eq 1) {
+        return (Join-Path $specsDir $matchesDirs[0])
+    }
+
+    Write-Warning "Multiple unit directories found with prefix '$prefix': $($matchesDirs -join ', ')"
+    return (Join-Path $specsDir $Branch)
 }
 
-function Get-FeaturePathsEnv {
+function Get-UnitPathsEnv {
     $repoRoot = Get-RepoRoot
     $currentBranch = Get-CurrentBranch
     $hasGit = Test-HasGit
-    $featureDir = Get-FeatureDir -RepoRoot $repoRoot -Branch $currentBranch
-    
+    $unitDir = Find-UnitDirByPrefix -RepoRoot $repoRoot -Branch $currentBranch
+
     [PSCustomObject]@{
-        REPO_ROOT     = $repoRoot
+        REPO_ROOT = $repoRoot
         CURRENT_BRANCH = $currentBranch
-        HAS_GIT       = $hasGit
-        FEATURE_DIR   = $featureDir
-        FEATURE_SPEC  = Join-Path $featureDir 'spec.md'
-        IMPL_PLAN     = Join-Path $featureDir 'plan.md'
-        TASKS         = Join-Path $featureDir 'tasks.md'
-        RESEARCH      = Join-Path $featureDir 'research.md'
-        DATA_MODEL    = Join-Path $featureDir 'data-model.md'
-        QUICKSTART    = Join-Path $featureDir 'quickstart.md'
-        CONTRACTS_DIR = Join-Path $featureDir 'contracts'
+        HAS_GIT = $hasGit
+        UNIT_DIR = $unitDir
+        BRIEF_FILE = Join-Path $unitDir 'brief.md'
+        DESIGN_FILE = Join-Path $unitDir 'design.md'
+        SEQUENCE_FILE = Join-Path $unitDir 'sequence.md'
+        RESEARCH_FILE = Join-Path $unitDir 'research.md'
+        CONTENT_MODEL_FILE = Join-Path $unitDir 'content-model.md'
+        ASSESSMENT_MAP_FILE = Join-Path $unitDir 'assessment-map.md'
+        DELIVERY_GUIDE_FILE = Join-Path $unitDir 'delivery-guide.md'
+        RUBRICS_DIR = Join-Path $unitDir 'rubrics'
+        OUTPUTS_DIR = Join-Path $unitDir 'outputs'
+        CHARTER_FILE = Join-Path $repoRoot '.lcs/memory/charter.md'
     }
 }
 
@@ -118,20 +121,7 @@ function Test-FileExists {
     if (Test-Path -Path $Path -PathType Leaf) {
         Write-Output "  ✓ $Description"
         return $true
-    } else {
-        Write-Output "  ✗ $Description"
-        return $false
     }
+    Write-Output "  ✗ $Description"
+    return $false
 }
-
-function Test-DirHasFiles {
-    param([string]$Path, [string]$Description)
-    if ((Test-Path -Path $Path -PathType Container) -and (Get-ChildItem -Path $Path -ErrorAction SilentlyContinue | Where-Object { -not $_.PSIsContainer } | Select-Object -First 1)) {
-        Write-Output "  ✓ $Description"
-        return $true
-    } else {
-        Write-Output "  ✗ $Description"
-        return $false
-    }
-}
-

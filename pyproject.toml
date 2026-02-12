@@ -1,6 +1,6 @@
 [project]
 name = "lcs-cli"
-version = "0.1.4"
+version = "0.2.0"
 description = "LCS CLI. A tool to bootstrap your projects for Spec-Driven Development."
 requires-python = ">=3.11"
 dependencies = [
@@ -49,5 +49,4 @@ omit = ["*/tests/*", "*/__pycache__/*"]
 precision = 2
 show_missing = true
 skip_covered = false
-
 

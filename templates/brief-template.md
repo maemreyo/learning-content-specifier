@@ -1,115 +1,89 @@
-# Feature Specification: [FEATURE NAME]
+# Learning Unit Brief: [UNIT NAME]
 
-**Feature Branch**: `[###-feature-name]`  
+**Unit ID**: `[###-unit-name]`  
 **Created**: [DATE]  
 **Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
+**Input**: Content request: "$ARGUMENTS"
 
-## User Scenarios & Testing *(mandatory)*
+## Audience & Context *(mandatory)*
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+- **Primary Audience**: [e.g., new backend engineers, grade-10 students, sales onboarding cohort]
+- **Entry Level**: [beginner/intermediate/advanced]
+- **Delivery Context**: [self-paced/instructor-led/blended]
+- **Estimated Duration**: [e.g., 90 minutes]
 
-### User Story 1 - [Brief Title] (Priority: P1)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
-
-### User Story 2 - [Brief Title] (Priority: P2)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
-
-### User Story 3 - [Brief Title] (Priority: P3)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
-
-[Add more user stories as needed, each with an assigned priority]
-
-### Edge Cases
+## Learning Outcomes *(mandatory)*
 
 <!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
+  Outcomes MUST be observable and measurable.
+  Prioritize outcomes to support incremental delivery.
 -->
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+### LO1 - [Outcome title] (Priority: P1)
 
-## Requirements *(mandatory)*
+- **Statement**: Learner will be able to [observable verb + object]
+- **Evidence**: [How this outcome is proven]
+- **Acceptance Criteria**:
+  1. **Given** [learning context], **When** [learner action], **Then** [demonstrable result]
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
+### LO2 - [Outcome title] (Priority: P2)
 
-### Functional Requirements
+- **Statement**: Learner will be able to [observable verb + object]
+- **Evidence**: [How this outcome is proven]
+- **Acceptance Criteria**:
+  1. **Given** [learning context], **When** [learner action], **Then** [demonstrable result]
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+### LO3 - [Outcome title] (Priority: P3)
 
-*Example of marking unclear requirements:*
+- **Statement**: Learner will be able to [observable verb + object]
+- **Evidence**: [How this outcome is proven]
+- **Acceptance Criteria**:
+  1. **Given** [learning context], **When** [learner action], **Then** [demonstrable result]
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+## Scope Boundaries *(mandatory)*
 
-### Key Entities *(include if feature involves data)*
+- **In Scope**:
+  - [Topics and skills covered]
+- **Out of Scope**:
+  - [Topics explicitly excluded]
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
+## Content Requirements *(mandatory)*
 
-## Success Criteria *(mandatory)*
+### Functional Content Requirements
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
+- **CR-001**: Unit MUST include [core concept/content block]
+- **CR-002**: Unit MUST include at least one [practice activity/lab/discussion]
+- **CR-003**: Unit MUST include assessment evidence for each LO
+- **CR-004**: Unit MUST provide learner-facing completion criteria
+- **CR-005**: Unit MUST include remediation guidance for failing learners
 
-### Measurable Outcomes
+### Accessibility & Readability Requirements
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+- **AR-001**: Content MUST meet [accessibility baseline, e.g., WCAG 2.1 AA text alternatives]
+- **AR-002**: Reading complexity MUST align to target audience level
+- **AR-003**: Media alternatives MUST be provided where required
+
+### Key Content Entities
+
+- **Course**: [Program container with modules]
+- **Module**: [Logical grouping of lessons]
+- **Lesson**: [Atomic learning experience]
+- **Assessment Item**: [Question/task mapped to a specific LO]
+
+## Success Metrics *(mandatory)*
+
+- **SM-001**: [e.g., >= 85% learners meet LO1 on first attempt]
+- **SM-002**: [e.g., >= 90% completion rate within target duration]
+- **SM-003**: [e.g., <= 10% accessibility defects in audit]
+- **SM-004**: [e.g., learner confidence delta +20% post-unit]
+
+## Risks & Edge Cases
+
+- [How to handle learners with missing prerequisites]
+- [How to handle inaccessible media or missing assets]
+- [How to handle assessment ambiguity]
+
+## Assumptions
+
+- [Assumption 1]
+- [Assumption 2]

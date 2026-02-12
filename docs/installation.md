@@ -66,9 +66,9 @@ uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs in
 
 After initialization, you should see the following commands available in your AI agent:
 
-- `/lcs.specify` - Create specifications
-- `/lcs.plan` - Generate implementation plans  
-- `/lcs.tasks` - Break down into actionable tasks
+- `/lcs.define` - Create specifications
+- `/lcs.design` - Generate implementation plans  
+- `/lcs.sequence` - Break down into actionable tasks
 
 The `.lcs/scripts` directory will contain both `.sh` and `.ps1` scripts.
 

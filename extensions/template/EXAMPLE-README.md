@@ -117,7 +117,7 @@ export SPECKIT_MY_EXTENSION_CONNECTION_API_KEY="custom-key"
 > /lcs.spec
 
 # Step 2: Generate tasks
-> /lcs.tasks
+> /lcs.sequence
 
 # Step 3: Use extension
 > /lcs.my-extension.example

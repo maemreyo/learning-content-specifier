@@ -65,7 +65,7 @@ provides:
 # CUSTOMIZE: Define hooks (optional)
 # Remove if no hooks needed
 hooks:
-  # Hook that runs after /lcs.tasks
+  # Hook that runs after /lcs.sequence
   after_tasks:
     command: "lcs.my-extension.example"
     optional: true # User will be prompted

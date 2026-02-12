@@ -1,9 +1,9 @@
 ---
-description: Convert existing tasks into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts.
+description: Convert sequence tasks into dependency-ordered GitHub issues.
 tools: ['github/github-mcp-server/issue_write']
 scripts:
-  sh: scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks
-  ps: scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks
+  sh: scripts/bash/check-workflow-prereqs.sh --json --require-sequence --include-sequence
+  ps: scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireSequence -IncludeSequence
 ---
 
 ## User Input
@@ -12,22 +12,11 @@ scripts:
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+## Workflow
 
-## Outline
-
-1. Run `{SCRIPT}` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
-1. From the executed script, extract the path to **tasks**.
-1. Get the Git remote by running:
-
-```bash
-git config --get remote.origin.url
-```
-
-> [!CAUTION]
-> ONLY PROCEED TO NEXT STEPS IF THE REMOTE IS A GITHUB URL
-
-1. For each task in the list, use the GitHub MCP server to create a new issue in the repository that is representative of the Git remote.
-
-> [!CAUTION]
-> UNDER NO CIRCUMSTANCES EVER CREATE ISSUES IN REPOSITORIES THAT DO NOT MATCH THE REMOTE URL
+1. Run `{SCRIPT}` and parse `UNIT_DIR`.
+2. Load `UNIT_DIR/sequence.md`.
+3. Read remote URL from `git config --get remote.origin.url`.
+4. Continue only if remote is a GitHub repository.
+5. Create one issue per actionable sequence task, preserving dependencies and LO labels.
+6. Report created issue links and any skipped tasks.

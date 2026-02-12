@@ -11,7 +11,7 @@ Spec-Driven Development **flips the script** on traditional software development
 ## Getting Started
 
 - [Installation Guide](installation.md)
-- [Quick Start Guide](quickstart.md)
+- [Quick Start Guide](delivery-guide.md)
 - [Upgrade Guide](upgrade.md)
 - [Local Development](local-development.md)
 

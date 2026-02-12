@@ -981,40 +981,40 @@ def ensure_executable_scripts(project_path: Path, tracker: StepTracker | None = 
             for f in failures:
                 console.print(f"  - {f}")
 
-def ensure_constitution_from_template(project_path: Path, tracker: StepTracker | None = None) -> None:
-    """Copy constitution template to memory if it doesn't exist (preserves existing constitution on reinitialization)."""
-    memory_constitution = project_path / ".lcs" / "memory" / "constitution.md"
-    template_constitution = project_path / ".lcs" / "templates" / "constitution-template.md"
+def ensure_charter_from_template(project_path: Path, tracker: StepTracker | None = None) -> None:
+    """Copy charter template to memory if it doesn't exist (preserves existing charter on reinitialization)."""
+    memory_charter = project_path / ".lcs" / "memory" / "charter.md"
+    template_charter = project_path / ".lcs" / "templates" / "charter-template.md"
 
-    # If constitution already exists in memory, preserve it
-    if memory_constitution.exists():
+    # If charter already exists in memory, preserve it
+    if memory_charter.exists():
         if tracker:
-            tracker.add("constitution", "Constitution setup")
-            tracker.skip("constitution", "existing file preserved")
+            tracker.add("charter", "Charter setup")
+            tracker.skip("charter", "existing file preserved")
         return
 
     # If template doesn't exist, something went wrong with extraction
-    if not template_constitution.exists():
+    if not template_charter.exists():
         if tracker:
-            tracker.add("constitution", "Constitution setup")
-            tracker.error("constitution", "template not found")
+            tracker.add("charter", "Charter setup")
+            tracker.error("charter", "template not found")
         return
 
     # Copy template to memory directory
     try:
-        memory_constitution.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(template_constitution, memory_constitution)
+        memory_charter.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(template_charter, memory_charter)
         if tracker:
-            tracker.add("constitution", "Constitution setup")
-            tracker.complete("constitution", "copied from template")
+            tracker.add("charter", "Charter setup")
+            tracker.complete("charter", "copied from template")
         else:
-            console.print(f"[cyan]Initialized constitution from template[/cyan]")
+            console.print(f"[cyan]Initialized charter from template[/cyan]")
     except Exception as e:
         if tracker:
-            tracker.add("constitution", "Constitution setup")
-            tracker.error("constitution", str(e))
+            tracker.add("charter", "Charter setup")
+            tracker.error("charter", str(e))
         else:
-            console.print(f"[yellow]Warning: Could not initialize constitution: {e}[/yellow]")
+            console.print(f"[yellow]Warning: Could not initialize charter: {e}[/yellow]")
 
 @app.command()
 def init(
@@ -1182,7 +1182,7 @@ def init(
         ("zip-list", "Archive contents"),
         ("extracted-summary", "Extraction summary"),
         ("chmod", "Ensure scripts executable"),
-        ("constitution", "Constitution setup"),
+        ("charter", "Charter setup"),
         ("cleanup", "Cleanup"),
         ("git", "Initialize git repository"),
         ("final", "Finalize")
@@ -1203,7 +1203,7 @@ def init(
 
             ensure_executable_scripts(project_path, tracker=tracker)
 
-            ensure_constitution_from_template(project_path, tracker=tracker)
+            ensure_charter_from_template(project_path, tracker=tracker)
 
             if not no_git:
                 tracker.start("git")
@@ -1296,22 +1296,25 @@ def init(
 
     steps_lines.append(f"{step_num}. Start using slash commands with your AI agent:")
 
-    steps_lines.append("   2.1 [cyan]/lcs.constitution[/] - Establish project principles")
-    steps_lines.append("   2.2 [cyan]/lcs.specify[/] - Create baseline specification")
-    steps_lines.append("   2.3 [cyan]/lcs.plan[/] - Create implementation plan")
-    steps_lines.append("   2.4 [cyan]/lcs.tasks[/] - Generate actionable tasks")
-    steps_lines.append("   2.5 [cyan]/lcs.implement[/] - Execute implementation")
+    steps_lines.append("   2.1 [cyan]/lcs.charter[/] - Establish learning-content governance")
+    steps_lines.append("   2.2 [cyan]/lcs.define[/] - Create the unit brief")
+    steps_lines.append("   2.3 [cyan]/lcs.refine[/] - Clarify ambiguity in the brief")
+    steps_lines.append("   2.4 [cyan]/lcs.design[/] - Build learning design artifacts")
+    steps_lines.append("   2.5 [cyan]/lcs.sequence[/] - Generate production sequence")
+    steps_lines.append("   2.6 [cyan]/lcs.rubric[/] - Generate hard-gate rubric")
+    steps_lines.append("   2.7 [cyan]/lcs.audit[/] - Run consistency audit")
+    steps_lines.append("   2.8 [cyan]/lcs.author[/] - Author local output assets")
 
     steps_panel = Panel("\n".join(steps_lines), title="Next Steps", border_style="cyan", padding=(1,2))
     console.print()
     console.print(steps_panel)
 
     enhancement_lines = [
-        "Optional commands that you can use for your specs [bright_black](improve quality & confidence)[/bright_black]",
+        "Optional commands that improve delivery traceability [bright_black](quality & governance)[/bright_black]",
         "",
-        f"○ [cyan]/lcs.clarify[/] [bright_black](optional)[/bright_black] - Ask structured questions to de-risk ambiguous areas before planning (run before [cyan]/lcs.plan[/] if used)",
-        f"○ [cyan]/lcs.analyze[/] [bright_black](optional)[/bright_black] - Cross-artifact consistency & alignment report (after [cyan]/lcs.tasks[/], before [cyan]/lcs.implement[/])",
-        f"○ [cyan]/lcs.checklist[/] [bright_black](optional)[/bright_black] - Generate quality checklists to validate requirements completeness, clarity, and consistency (after [cyan]/lcs.plan[/])"
+        f"○ [cyan]/lcs.issueize[/] [bright_black](optional)[/bright_black] - Convert sequence tasks into GitHub issues",
+        f"○ [cyan]/lcs.rubric[/] [bright_black](required gate)[/bright_black] - Validate quality gates before [cyan]/lcs.author[/]",
+        f"○ [cyan]/lcs.audit[/] [bright_black](required gate)[/bright_black] - Detect cross-artifact issues before [cyan]/lcs.author[/]"
     ]
     enhancements_panel = Panel("\n".join(enhancement_lines), title="Enhancement Commands", border_style="cyan", padding=(1,2))
     console.print()
@@ -2078,4 +2081,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -61,7 +61,7 @@ sequenceDiagram
     CLI-->>User: Extension removed
 
     %% Hook Execution
-    User->>Agent: /lcs.implement (after tasks)
+    User->>Agent: /lcs.author (after tasks)
     Agent->>Agent: Execute implementation
     Agent->>ExtMgr: Trigger hook "after_tasks"
     ExtMgr->>ExtMgr: Evaluate hook conditions

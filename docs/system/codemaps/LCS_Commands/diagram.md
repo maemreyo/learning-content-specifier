@@ -1,122 +1,97 @@
 ```mermaid
 graph TB
     subgraph Commands["Command Layer"]
-        1a["1a: /lcs.specify"]
-        3a["3a: /lcs.clarify"]
-        4a["4a: /lcs.plan"]
-        5a["5a: /lcs.tasks"]
-        6a["6a: /lcs.implement"]
-        1a_analyze["1a: /lcs.analyze"]
-        7a["7a: /lcs.checklist"]
-        8a["8a: /lcs.constitution"]
+        c0["0: /lcs.charter"]
+        c1["1: /lcs.define"]
+        c2["2: /lcs.refine"]
+        c3["3: /lcs.design"]
+        c4["4: /lcs.sequence"]
+        c5["5: /lcs.rubric"]
+        c6["6: /lcs.audit"]
+        c7["7: /lcs.author"]
+        c8["8: /lcs.issueize"]
     end
 
     subgraph Scripts["Script Execution"]
-        2a["2a: create-new-feature.sh"]
-        1c["1c: check-prerequisites.sh"]
-        2d["2d: git checkout branch"]
-        2e["2e: copy spec template"]
+        s1["create-new-unit.sh"]
+        s2["setup-design.sh"]
+        s3["check-workflow-prereqs.sh"]
+        s4["update-agent-context.sh"]
     end
 
-    subgraph Artifacts["Feature Artifacts"]
-        spec["spec.md"]
-        plan["plan.md"]
-        tasks["tasks.md"]
-        checklists["checklists/"]
-        constitution["constitution.md"]
+    subgraph Artifacts["Learning Content Artifacts"]
+        brief["brief.md"]
+        design["design.md"]
+        seq["sequence.md"]
+        cmodel["content-model.md"]
+        amap["assessment-map.md"]
+        dguide["delivery-guide.md"]
+        rubrics["rubrics/"]
+        outputs["outputs/"]
+        charter["charter.md"]
     end
 
     subgraph Templates["Template Layer"]
-        spec_tpl["spec-template.md"]
-        plan_tpl["plan-template.md"]
-        tasks_tpl["tasks-template.md"]
-        checklist_tpl["checklist-template.md"]
-        const_tpl["constitution-template.md"]
+        t1["brief-template.md"]
+        t2["design-template.md"]
+        t3["sequence-template.md"]
+        t4["rubric-template.md"]
+        t5["charter-template.md"]
     end
 
-    subgraph Validation["Validation & Analysis"]
-        1f["1f: Duplication Detection"]
-        1g["1g: Constitution Alignment"]
-        6a_gate["6a: Checklist Validation Gate"]
-        analysis_report["Analysis Report"]
+    subgraph Validation["Validation & Hard Gates"]
+        g1["Objective-Activity-Assessment Gate"]
+        g2["Pedagogy Consistency Gate"]
+        g3["Accessibility/Readability Gate"]
+        g4["Metadata Completeness Gate"]
+        g5["Cross-Artifact Consistency Gate"]
     end
 
-    subgraph Governance["Governance"]
-        4c["4c: Constitution Check Gate"]
-        8b["8b: Constitution Loading"]
-        8d["8d: Consistency Propagation"]
-    end
+    c0 --> t5 --> charter
 
-    %% Specification flow
-    1a -->|invokes| 2a
-    2a -->|creates branch| 2d
-    2d -->|initializes| spec
-    spec_tpl -->|provides structure| 2e
-    2e -->|populates| spec
+    c1 --> s1 --> brief
+    t1 --> brief
 
-    %% Clarification flow
-    3a -->|loads| spec
-    3a -->|performs scan| spec
-    spec -->|updated with clarifications| spec
+    c2 --> s3 --> brief
 
-    %% Planning flow
-    4a -->|validates prerequisites| 1c
-    1c -->|checks| plan
-    4a -->|loads| spec
-    spec_tpl -->|provides structure| plan_tpl
-    4a -->|checks alignment| 4c
-    constitution -->|guides| 4c
-    4a -->|creates| plan
+    c3 --> s2 --> design
+    c3 --> cmodel
+    c3 --> amap
+    c3 --> dguide
+    c3 --> s4
+    t2 --> design
 
-    %% Task generation flow
-    5a -->|validates prerequisites| 1c
-    5a -->|loads| spec
-    5a -->|loads| plan
-    tasks_tpl -->|provides structure| 5a
-    5a -->|creates| tasks
+    c4 --> s3 --> seq
+    t3 --> seq
 
-    %% Implementation flow
-    6a -->|validates prerequisites| 1c
-    6a -->|checks| 6a_gate
-    checklists -->|gates| 6a_gate
-    6a_gate -->|allows if complete| 6a
-    6a -->|loads| tasks
-    6a -->|executes| tasks
+    c5 --> s3 --> rubrics
+    t4 --> rubrics
 
-    %% Analysis flow
-    1a_analyze -->|validates prerequisites| 1c
-    1a_analyze -->|loads| spec
-    1a_analyze -->|loads| plan
-    1a_analyze -->|loads| tasks
-    1a_analyze -->|performs| 1f
-    1a_analyze -->|performs| 1g
-    constitution -->|validates against| 1g
-    1a_analyze -->|generates| analysis_report
+    c6 --> s3
+    c6 --> brief
+    c6 --> design
+    c6 --> seq
+    c6 --> g5
 
-    %% Checklist flow
-    7a -->|loads| spec
-    7a -->|loads| plan
-    checklist_tpl -->|provides structure| 7a
-    7a -->|creates| checklists
+    charter -.-> g1
+    charter -.-> g2
+    charter -.-> g3
+    charter -.-> g4
 
-    %% Constitution flow
-    8a -->|loads| const_tpl
-    8a -->|identifies placeholders| 8b
-    8a -->|creates| constitution
-    8a -->|propagates changes| 8d
-    plan_tpl -->|updated by| 8d
-    spec_tpl -->|updated by| 8d
-    tasks_tpl -->|updated by| 8d
+    c7 --> s3
+    rubrics --> c7
+    c7 --> g1
+    c7 --> g2
+    c7 --> g3
+    c7 --> g4
+    c7 --> outputs
 
-    %% Cross-system connections
-    constitution -.->|governs| spec
-    constitution -.->|governs| plan
-    constitution -.->|governs| tasks
+    c8 --> s3
+    c8 --> seq
 
     style Commands fill:#a5d8ff
     style Scripts fill:#fcc2d7
     style Artifacts fill:#b2f2bb
     style Templates fill:#ffec99
     style Validation fill:#d0bfff
-    style Governance fill:#ffd8a8
 ```

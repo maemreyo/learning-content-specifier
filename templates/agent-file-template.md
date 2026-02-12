@@ -1,26 +1,26 @@
-# [PROJECT NAME] Development Guidelines
+# [PROJECT NAME] Learning Content Guidelines
 
-Auto-generated from all feature plans. Last updated: [DATE]
+Auto-generated from all learning design plans. Last updated: [DATE]
 
-## Active Technologies
+## Active Learning Profiles
 
-[EXTRACTED FROM ALL PLAN.MD FILES]
+[EXTRACTED FROM ALL DESIGN.MD FILES]
 
-## Project Structure
+## Content Structure
 
 ```text
 [ACTUAL STRUCTURE FROM PLANS]
 ```
 
-## Commands
+## Authoring Commands
 
 [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]
 
-## Code Style
+## Style & Delivery Conventions
 
 [LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE]
 
-## Recent Changes
+## Recent Unit Changes
 
 [LAST 3 FEATURES AND WHAT THEY ADDED]
 

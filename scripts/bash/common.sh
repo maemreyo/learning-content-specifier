@@ -1,156 +1,131 @@
 #!/usr/bin/env bash
-# Common functions and variables for all scripts
+# Common functions and variables for learning-content workflow scripts
 
-# Get repository root, with fallback for non-git repositories
 get_repo_root() {
     if git rev-parse --show-toplevel >/dev/null 2>&1; then
         git rev-parse --show-toplevel
     else
-        # Fall back to script location for non-git repos
-        local script_dir="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        local script_dir
+        script_dir="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         (cd "$script_dir/../../.." && pwd)
     fi
 }
 
-# Get current branch, with fallback for non-git repositories
 get_current_branch() {
-    # First check if LCS_FEATURE environment variable is set
+    if [[ -n "${LCS_UNIT:-}" ]]; then
+        echo "$LCS_UNIT"
+        return
+    fi
+
     if [[ -n "${LCS_FEATURE:-}" ]]; then
         echo "$LCS_FEATURE"
         return
     fi
 
-    # Then check git if available
     if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
         git rev-parse --abbrev-ref HEAD
         return
     fi
 
-    # For non-git repos, try to find the latest feature directory
-    local repo_root=$(get_repo_root)
-    local specs_dir="$repo_root/specs"
+    local repo_root specs_dir latest_unit="" highest=0
+    repo_root="$(get_repo_root)"
+    specs_dir="$repo_root/specs"
 
     if [[ -d "$specs_dir" ]]; then
-        local latest_feature=""
-        local highest=0
-
         for dir in "$specs_dir"/*; do
-            if [[ -d "$dir" ]]; then
-                local dirname=$(basename "$dir")
-                if [[ "$dirname" =~ ^([0-9]{3})- ]]; then
-                    local number=${BASH_REMATCH[1]}
-                    number=$((10#$number))
-                    if [[ "$number" -gt "$highest" ]]; then
-                        highest=$number
-                        latest_feature=$dirname
-                    fi
+            [[ -d "$dir" ]] || continue
+            local name number
+            name="$(basename "$dir")"
+            if [[ "$name" =~ ^([0-9]{3})- ]]; then
+                number=$((10#${BASH_REMATCH[1]}))
+                if [[ "$number" -gt "$highest" ]]; then
+                    highest="$number"
+                    latest_unit="$name"
                 fi
             fi
         done
-
-        if [[ -n "$latest_feature" ]]; then
-            echo "$latest_feature"
-            return
-        fi
     fi
 
-    echo "main"  # Final fallback
+    [[ -n "$latest_unit" ]] && echo "$latest_unit" || echo "main"
 }
 
-# Check if we have git available
 has_git() {
     git rev-parse --show-toplevel >/dev/null 2>&1
 }
 
-check_feature_branch() {
-    local branch="$1"
-    local has_git_repo="$2"
+check_unit_branch() {
+    local branch="$1" has_git_repo="$2"
 
-    # For non-git repos, we can't enforce branch naming but still provide output
     if [[ "$has_git_repo" != "true" ]]; then
         echo "[lcs] Warning: Git repository not detected; skipped branch validation" >&2
         return 0
     fi
 
     if [[ ! "$branch" =~ ^[0-9]{3}- ]]; then
-        echo "ERROR: Not on a feature branch. Current branch: $branch" >&2
-        echo "Feature branches should be named like: 001-feature-name" >&2
+        echo "ERROR: Not on a unit branch. Current branch: $branch" >&2
+        echo "Unit branches should be named like: 001-unit-name" >&2
         return 1
     fi
 
     return 0
 }
 
-get_feature_dir() { echo "$1/specs/$2"; }
+find_unit_dir_by_prefix() {
+    local repo_root="$1" branch_name="$2" specs_dir prefix matches=()
+    specs_dir="$repo_root/specs"
 
-# Find feature directory by numeric prefix instead of exact branch match
-# This allows multiple branches to work on the same spec (e.g., 004-fix-bug, 004-add-feature)
-find_feature_dir_by_prefix() {
-    local repo_root="$1"
-    local branch_name="$2"
-    local specs_dir="$repo_root/specs"
-
-    # Extract numeric prefix from branch (e.g., "004" from "004-whatever")
     if [[ ! "$branch_name" =~ ^([0-9]{3})- ]]; then
-        # If branch doesn't have numeric prefix, fall back to exact match
         echo "$specs_dir/$branch_name"
         return
     fi
 
-    local prefix="${BASH_REMATCH[1]}"
+    prefix="${BASH_REMATCH[1]}"
 
-    # Search for directories in specs/ that start with this prefix
-    local matches=()
     if [[ -d "$specs_dir" ]]; then
         for dir in "$specs_dir"/"$prefix"-*; do
-            if [[ -d "$dir" ]]; then
-                matches+=("$(basename "$dir")")
-            fi
+            [[ -d "$dir" ]] || continue
+            matches+=("$(basename "$dir")")
         done
     fi
 
-    # Handle results
     if [[ ${#matches[@]} -eq 0 ]]; then
-        # No match found - return the branch name path (will fail later with clear error)
         echo "$specs_dir/$branch_name"
     elif [[ ${#matches[@]} -eq 1 ]]; then
-        # Exactly one match - perfect!
         echo "$specs_dir/${matches[0]}"
     else
-        # Multiple matches - this shouldn't happen with proper naming convention
-        echo "ERROR: Multiple spec directories found with prefix '$prefix': ${matches[*]}" >&2
-        echo "Please ensure only one spec directory exists per numeric prefix." >&2
-        echo "$specs_dir/$branch_name"  # Return something to avoid breaking the script
+        echo "ERROR: Multiple unit directories found with prefix '$prefix': ${matches[*]}" >&2
+        echo "$specs_dir/$branch_name"
     fi
 }
 
-get_feature_paths() {
-    local repo_root=$(get_repo_root)
-    local current_branch=$(get_current_branch)
-    local has_git_repo="false"
+get_unit_paths() {
+    local repo_root current_branch has_git_repo="false" unit_dir
+    repo_root="$(get_repo_root)"
+    current_branch="$(get_current_branch)"
 
     if has_git; then
         has_git_repo="true"
     fi
 
-    # Use prefix-based lookup to support multiple branches per spec
-    local feature_dir=$(find_feature_dir_by_prefix "$repo_root" "$current_branch")
+    unit_dir="$(find_unit_dir_by_prefix "$repo_root" "$current_branch")"
 
-    cat <<EOF
+    cat <<PATHS
 REPO_ROOT='$repo_root'
 CURRENT_BRANCH='$current_branch'
 HAS_GIT='$has_git_repo'
-FEATURE_DIR='$feature_dir'
-FEATURE_SPEC='$feature_dir/spec.md'
-IMPL_PLAN='$feature_dir/plan.md'
-TASKS='$feature_dir/tasks.md'
-RESEARCH='$feature_dir/research.md'
-DATA_MODEL='$feature_dir/data-model.md'
-QUICKSTART='$feature_dir/quickstart.md'
-CONTRACTS_DIR='$feature_dir/contracts'
-EOF
+UNIT_DIR='$unit_dir'
+BRIEF_FILE='$unit_dir/brief.md'
+DESIGN_FILE='$unit_dir/design.md'
+SEQUENCE_FILE='$unit_dir/sequence.md'
+RESEARCH_FILE='$unit_dir/research.md'
+CONTENT_MODEL_FILE='$unit_dir/content-model.md'
+ASSESSMENT_MAP_FILE='$unit_dir/assessment-map.md'
+DELIVERY_GUIDE_FILE='$unit_dir/delivery-guide.md'
+RUBRICS_DIR='$unit_dir/rubrics'
+OUTPUTS_DIR='$unit_dir/outputs'
+CHARTER_FILE='$repo_root/.lcs/memory/charter.md'
+PATHS
 }
 
 check_file() { [[ -f "$1" ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
 check_dir() { [[ -d "$1" && -n $(ls -A "$1" 2>/dev/null) ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
-

@@ -54,7 +54,7 @@ def valid_manifest_data():
         },
         "requires": {
             "lcs_version": ">=0.1.0",
-            "commands": ["lcs.tasks"],
+            "commands": ["lcs.sequence"],
         },
         "provides": {
             "commands": [

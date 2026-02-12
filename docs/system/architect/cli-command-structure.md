@@ -23,14 +23,14 @@ flowchart TD
 
     %% Agent Commands (generated)
     subgraph "AI Agent Commands"
-        Constitution[/lcs.constitution<br/>Create project principles]
-        Specify[/lcs.specify<br/>Define requirements]
-        Clarify[/lcs.clarify<br/>Clarify specifications]
-        Plan[/lcs.plan<br/>Create technical plans]
-        Tasks[/lcs.tasks<br/>Generate task lists]
-        Implement[/lcs.implement<br/>Execute implementation]
-        Analyze[/lcs.analyze<br/>Analyze consistency]
-        Checklist[/lcs.checklist<br/>Create quality checklists]
+        Constitution[/lcs.charter<br/>Create project principles]
+        Specify[/lcs.define<br/>Define requirements]
+        Clarify[/lcs.refine<br/>Clarify specifications]
+        Plan[/lcs.design<br/>Create technical plans]
+        Tasks[/lcs.sequence<br/>Generate task lists]
+        Implement[/lcs.author<br/>Execute implementation]
+        Analyze[/lcs.audit<br/>Analyze consistency]
+        Checklist[/lcs.rubric<br/>Create quality checklists]
     end
 
     %% Extension Commands (dynamic)

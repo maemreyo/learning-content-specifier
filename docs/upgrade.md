@@ -59,8 +59,8 @@ Running `lcs init --here --force` will update:
 
 These files are **never touched** by the upgrade—the template packages don't even contain them:
 
-- ✅ **Your specifications** (`specs/001-my-feature/spec.md`, etc.) - **CONFIRMED SAFE**
-- ✅ **Your implementation plans** (`specs/001-my-feature/plan.md`, `tasks.md`, etc.) - **CONFIRMED SAFE**
+- ✅ **Your specifications** (`specs/001-my-feature/brief.md`, etc.) - **CONFIRMED SAFE**
+- ✅ **Your implementation plans** (`specs/001-my-feature/design.md`, `sequence.md`, etc.) - **CONFIRMED SAFE**
 - ✅ **Your source code** - **CONFIRMED SAFE**
 - ✅ **Your git history** - **CONFIRMED SAFE**
 
@@ -102,26 +102,26 @@ With `--force`, it skips the confirmation and proceeds immediately.
 
 ### 1. Constitution file will be overwritten
 
-**Known issue:** `lcs init --here --force` currently overwrites `.lcs/memory/constitution.md` with the default template, erasing any customizations you made.
+**Known issue:** `lcs init --here --force` currently overwrites `.lcs/memory/charter.md` with the default template, erasing any customizations you made.
 
 **Workaround:**
 
 ```bash
 # 1. Back up your constitution before upgrading
-cp .lcs/memory/constitution.md .lcs/memory/constitution-backup.md
+cp .lcs/memory/charter.md .lcs/memory/constitution-backup.md
 
 # 2. Run the upgrade
 lcs init --here --force --ai copilot
 
 # 3. Restore your customized constitution
-mv .lcs/memory/constitution-backup.md .lcs/memory/constitution.md
+mv .lcs/memory/constitution-backup.md .lcs/memory/charter.md
 ```
 
 Or use git to restore it:
 
 ```bash
 # After upgrade, restore from git history
-git restore .lcs/memory/constitution.md
+git restore .lcs/memory/charter.md
 ```
 
 ### 2. Custom template modifications
@@ -171,14 +171,14 @@ uv tool install lcs-cli --force --from git+https://github.com/maemreyo/learning-
 lcs init --here --force --ai copilot
 
 # Restore your constitution if customized
-git restore .lcs/memory/constitution.md
+git restore .lcs/memory/charter.md
 ```
 
 ### Scenario 2: "I customized templates and constitution"
 
 ```bash
 # 1. Back up customizations
-cp .lcs/memory/constitution.md /tmp/constitution-backup.md
+cp .lcs/memory/charter.md /tmp/constitution-backup.md
 cp -r .lcs/templates /tmp/templates-backup
 
 # 2. Upgrade CLI
@@ -188,7 +188,7 @@ uv tool install lcs-cli --force --from git+https://github.com/maemreyo/learning-
 lcs init --here --force --ai copilot
 
 # 4. Restore customizations
-mv /tmp/constitution-backup.md .lcs/memory/constitution.md
+mv /tmp/constitution-backup.md .lcs/memory/charter.md
 # Manually merge template changes if needed
 ```
 
@@ -215,13 +215,13 @@ If you initialized your project with `--no-git`, you can still upgrade:
 
 ```bash
 # Manually back up files you customized
-cp .lcs/memory/constitution.md /tmp/constitution-backup.md
+cp .lcs/memory/charter.md /tmp/constitution-backup.md
 
 # Run upgrade
 lcs init --here --force --ai copilot --no-git
 
 # Restore customizations
-mv /tmp/constitution-backup.md .lcs/memory/constitution.md
+mv /tmp/constitution-backup.md .lcs/memory/charter.md
 ```
 
 The `--no-git` flag skips git initialization but doesn't affect file updates.
@@ -303,13 +303,13 @@ This tells LCS which feature directory to use when creating specs, plans, and ta
 
 ```bash
 # If you committed before upgrading
-git restore .lcs/memory/constitution.md
+git restore .lcs/memory/charter.md
 
 # If you backed up manually
-cp /tmp/constitution-backup.md .lcs/memory/constitution.md
+cp /tmp/constitution-backup.md .lcs/memory/charter.md
 ```
 
-**Prevention:** Always commit or back up `constitution.md` before upgrading.
+**Prevention:** Always commit or back up `charter.md` before upgrading.
 
 ### "Warning: Current directory is not empty"
 
@@ -361,7 +361,7 @@ Only LCS infrastructure files:
 - ✅ **Expected** when adding LCS to an existing codebase
 - ⚠️ **Unexpected** if you thought you were creating a new project in an empty directory
 
-**Prevention tip:** Before upgrading, commit or back up your `.lcs/memory/constitution.md` if you customized it.
+**Prevention tip:** Before upgrading, commit or back up your `.lcs/memory/charter.md` if you customized it.
 
 ### "CLI upgrade doesn't seem to work"
 
@@ -398,7 +398,7 @@ The `lcs` CLI tool is used for:
 - **Upgrades:** `lcs init --here --force` to update templates and commands
 - **Diagnostics:** `lcs check` to verify tool installation
 
-Once you've run `lcs init`, the slash commands (like `/lcs.specify`, `/lcs.plan`, etc.) are **permanently installed** in your project's agent folder (`.claude/`, `.github/prompts/`, etc.). Your AI assistant reads these command files directly—no need to run `lcs` again.
+Once you've run `lcs init`, the slash commands (like `/lcs.define`, `/lcs.design`, etc.) are **permanently installed** in your project's agent folder (`.claude/`, `.github/prompts/`, etc.). Your AI assistant reads these command files directly—no need to run `lcs` again.
 
 **If your agent isn't recognizing slash commands:**
 
@@ -438,7 +438,7 @@ LCS follows semantic versioning for major releases. The CLI and project files ar
 
 After upgrading:
 
-- **Test new slash commands:** Run `/lcs.constitution` or another command to verify everything works
+- **Test new slash commands:** Run `/lcs.charter` or another command to verify everything works
 - **Review release notes:** Check [GitHub Releases](https://github.com/maemreyo/learning-content-specifier/releases) for new features and breaking changes
 - **Update workflows:** If new commands were added, update your team's development workflows
 - **Check documentation:** Visit your repository docs for updated guides

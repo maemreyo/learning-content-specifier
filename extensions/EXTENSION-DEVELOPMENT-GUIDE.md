@@ -196,8 +196,8 @@ Integration hooks for automatic execution.
 
 Available hook points:
 
-- `after_tasks`: After `/lcs.tasks` completes
-- `after_implement`: After `/lcs.implement` completes (future)
+- `after_tasks`: After `/lcs.sequence` completes
+- `after_implement`: After `/lcs.author` completes (future)
 
 Hook object:
 

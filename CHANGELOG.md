@@ -7,6 +7,26 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-12
+
+### Changed
+
+- **Breaking (Clean Break):** Migrated workflow from software-delivery semantics to learning-content production semantics
+- Replaced slash command set with:
+  - `/lcs.charter`, `/lcs.define`, `/lcs.refine`, `/lcs.design`, `/lcs.sequence`, `/lcs.rubric`, `/lcs.audit`, `/lcs.author`, `/lcs.issueize`
+- Replaced artifact contract in `specs/<###-slug>/` with:
+  - `brief.md`, `design.md`, `sequence.md`, `content-model.md`, `assessment-map.md`, `delivery-guide.md`, `rubrics/`, `outputs/`
+- Replaced governance artifact from `.lcs/memory/constitution.md` to `.lcs/memory/charter.md`
+- Replaced core template set with:
+  - `brief-template.md`, `design-template.md`, `sequence-template.md`, `rubric-template.md`, `charter-template.md`
+- Replaced command template files to align with the new slash command set
+- Replaced script entrypoints and contracts:
+  - `create-new-unit.*`, `setup-design.*`, `check-workflow-prereqs.*`
+- Updated `update-agent-context` scripts to extract learning-profile metadata from `design.md`
+- Updated CLI onboarding and init messaging in `src/lcs_cli/__init__.py` to the new command flow
+- Updated command architecture diagram and codemap narrative to learning-content workflow
+- Updated documentation references from legacy commands/artifacts to the new clean-break contract
+
 ## [0.1.4] - 2026-02-12
 
 ### Fixed

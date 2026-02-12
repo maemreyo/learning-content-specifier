@@ -72,37 +72,37 @@ The key is treating specifications as the source of truth, with code as the gene
 
 ## Streamlining SDD with Commands
 
-The SDD methodology is significantly enhanced through three powerful commands that automate the specification → planning → tasking workflow:
+The SDD methodology is significantly enhanced through command automation for learning-content workflow:
 
-### The `/lcs.specify` Command
+### The `/lcs.define` Command
 
-This command transforms a simple feature description (the user-prompt) into a complete, structured specification with automatic repository management:
+This command transforms a learning-unit request into a complete `brief.md` with automatic unit scaffolding:
 
-1. **Automatic Feature Numbering**: Scans existing specs to determine the next feature number (e.g., 001, 002, 003)
-2. **Branch Creation**: Generates a semantic branch name from your description and creates it automatically
-3. **Template-Based Generation**: Copies and customizes the feature specification template with your requirements
-4. **Directory Structure**: Creates the proper `specs/[branch-name]/` structure for all related documents
+1. **Automatic Unit Numbering**: Scans existing specs to determine the next unit number (e.g., 001, 002, 003)
+2. **Branch Creation**: Generates a semantic branch name and creates it automatically
+3. **Template-Based Generation**: Copies and customizes `brief-template.md`
+4. **Directory Structure**: Creates `specs/[branch-name]/` for design, sequence, rubrics, and outputs
 
-### The `/lcs.plan` Command
+### The `/lcs.design` Command
 
-Once a feature specification exists, this command creates a comprehensive implementation plan:
+Once a brief exists, this command creates learning design artifacts:
 
-1. **Specification Analysis**: Reads and understands the feature requirements, user stories, and acceptance criteria
-2. **Constitutional Compliance**: Ensures alignment with project constitution and architectural principles
-3. **Technical Translation**: Converts business requirements into technical architecture and implementation details
-4. **Detailed Documentation**: Generates supporting documents for data models, API contracts, and test scenarios
-5. **Quickstart Validation**: Produces a quickstart guide capturing key validation scenarios
+1. **Brief Analysis**: Reads outcomes, scope, audience, and acceptance evidence
+2. **Charter Compliance**: Ensures alignment with project charter and hard gates
+3. **Learning Translation**: Converts outcomes into instructional strategy and assessment strategy
+4. **Detailed Documentation**: Generates `content-model.md`, `assessment-map.md`, and `delivery-guide.md`
+5. **Metadata Readiness**: Ensures output metadata for downstream consumption is defined
 
-### The `/lcs.tasks` Command
+### The `/lcs.sequence` Command
 
-After a plan is created, this command analyzes the plan and related design documents to generate an executable task list:
+After design is created, this command generates an executable production sequence:
 
-1. **Inputs**: Reads `plan.md` (required) and, if present, `data-model.md`, `contracts/`, and `research.md`
-2. **Task Derivation**: Converts contracts, entities, and scenarios into specific tasks
+1. **Inputs**: Reads `design.md` (required) and optional `content-model.md`, `assessment-map.md`, `delivery-guide.md`, and `research.md`
+2. **Task Derivation**: Converts LO coverage and assessment needs into concrete authoring tasks
 3. **Parallelization**: Marks independent tasks `[P]` and outlines safe parallel groups
-4. **Output**: Writes `tasks.md` in the feature directory, ready for execution by a Task agent
+4. **Output**: Writes `sequence.md` in the unit directory for `/lcs.author`
 
-### Example: Building a Chat Feature
+### Example: Building a Learning Unit
 
 Here's how these commands transform the traditional development workflow:
 
@@ -120,36 +120,36 @@ Total: ~12 hours of documentation work
 **SDD with Commands Approach:**
 
 ```bash
-# Step 1: Create the feature specification (5 minutes)
-/lcs.specify Real-time chat system with message history and user presence
+# Step 1: Create the unit brief (5 minutes)
+/lcs.define Build a unit on API versioning for new backend engineers
 
 # This automatically:
 # - Creates branch "003-chat-system"
-# - Generates specs/003-chat-system/spec.md
+# - Generates specs/003-api-versioning/brief.md
 # - Populates it with structured requirements
 
-# Step 2: Generate implementation plan (5 minutes)
-/lcs.plan WebSocket for real-time messaging, PostgreSQL for history, Redis for presence
+# Step 2: Generate learning design (5 minutes)
+/lcs.design Self-paced, 90 minutes, 2 modules, formative quizzes plus one summative assessment
 
 # Step 3: Generate executable tasks (5 minutes)
-/lcs.tasks
+/lcs.sequence
 
 # This automatically creates:
-# - specs/003-chat-system/plan.md
-# - specs/003-chat-system/research.md (WebSocket library comparisons)
-# - specs/003-chat-system/data-model.md (Message and User schemas)
-# - specs/003-chat-system/contracts/ (WebSocket events, REST endpoints)
-# - specs/003-chat-system/quickstart.md (Key validation scenarios)
-# - specs/003-chat-system/tasks.md (Task list derived from the plan)
+# - specs/003-api-versioning/design.md
+# - specs/003-api-versioning/research.md
+# - specs/003-api-versioning/content-model.md
+# - specs/003-api-versioning/assessment-map.md
+# - specs/003-api-versioning/delivery-guide.md
+# - specs/003-api-versioning/sequence.md
 ```
 
 In 15 minutes, you have:
 
-- A complete feature specification with user stories and acceptance criteria
-- A detailed implementation plan with technology choices and rationale
-- API contracts and data models ready for code generation
-- Comprehensive test scenarios for both automated and manual testing
-- All documents properly versioned in a feature branch
+- A complete unit brief with measurable learning outcomes
+- A detailed learning design with assessment and facilitation strategy
+- A production sequence aligned to outcomes and quality gates
+- Audit/rubric readiness before authoring output assets
+- All documents properly versioned in a unit branch
 
 ### The Power of Structured Automation
 
@@ -241,7 +241,7 @@ The implementation template enforces test-first development:
 
 ```text
 ### File Creation Order
-1. Create `contracts/` with API specifications
+1. Create `assessment-map/` with API specifications
 2. Create test files in order: contract → integration → e2e → unit
 3. Create source files to make tests pass
 ```
@@ -273,7 +273,7 @@ The templates transform the LLM from a creative writer into a disciplined specif
 
 ## The Constitutional Foundation: Enforcing Architectural Discipline
 
-At the heart of SDD lies a constitution—a set of immutable principles that govern how specifications become code. The constitution (`memory/constitution.md`) acts as the architectural DNA of the system, ensuring that every generated implementation maintains consistency, simplicity, and quality.
+At the heart of SDD lies a constitution—a set of immutable principles that govern how specifications become code. The constitution (`memory/charter.md`) acts as the architectural DNA of the system, ensuring that every generated implementation maintains consistency, simplicity, and quality.
 
 ### The Nine Articles of Development
 

@@ -224,11 +224,11 @@ vim .lcs/extensions/jira/jira-config.yml
 
 Some extensions provide hooks that execute after core commands:
 
-**Example**: Jira extension hooks into `/lcs.tasks`
+**Example**: Jira extension hooks into `/lcs.sequence`
 
 ```text
 # Run core command
-> /lcs.tasks
+> /lcs.sequence
 
 # Output includes:
 ## Extension Hooks
@@ -821,7 +821,7 @@ Document extension usage in your project:
 ## Working with Jira
 
 After creating tasks, sync to Jira:
-1. Run `/lcs.tasks` to generate tasks
+1. Run `/lcs.sequence` to generate tasks
 2. Run `/lcs.jira.specstoissues` to create Jira issues
 3. Run `/lcs.jira.sync-status` to update status
 ```

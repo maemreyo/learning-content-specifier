@@ -140,9 +140,9 @@ project/
 │  └──────────────────────────────────────────────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Core Commands                                   │   │
-│  │  - /lcs.specify                              │   │
-│  │  - /lcs.tasks                                │   │
-│  │  - /lcs.implement                            │   │
+│  │  - /lcs.define                              │   │
+│  │  - /lcs.sequence                                │   │
+│  │  - /lcs.author                            │   │
 │  └─────────┬────────────────────────────────────────┘   │
 └────────────┼────────────────────────────────────────────┘
              │ Hook Points (after_tasks, after_implement)
@@ -213,7 +213,7 @@ requires:
 
   # Core scripts required
   scripts:
-    - "check-prerequisites.sh"
+    - "check-workflow-prereqs.sh"
 
 # What this extension provides (REQUIRED)
 provides:
@@ -272,14 +272,14 @@ config_schema:
 
 # Integration hooks (OPTIONAL)
 hooks:
-  # Hook fired after /lcs.tasks completes
+  # Hook fired after /lcs.sequence completes
   after_tasks:
     command: "lcs.jira.specstoissues"
     optional: true
     prompt: "Create Jira issues from tasks?"
     description: "Automatically create Jira hierarchy after task generation"
 
-  # Hook fired after /lcs.implement completes
+  # Hook fired after /lcs.author completes
   after_implement:
     command: "lcs.jira.sync-status"
     optional: true
@@ -441,8 +441,8 @@ tools:
   - 'jira-mcp-server/epic_create'
   - 'jira-mcp-server/story_create'
 scripts:
-  sh: ../../scripts/bash/check-prerequisites.sh --json
-  ps: ../../scripts/powershell/check-prerequisites.ps1 -Json
+  sh: ../../scripts/bash/check-workflow-prereqs.sh --json
+  ps: ../../scripts/powershell/check-workflow-prereqs.ps1 -Json
 ---
 
 # Command implementation
@@ -451,7 +451,7 @@ $ARGUMENTS
 
 ## Steps
 1. Load jira-config.yml
-2. Parse spec.md and tasks.md
+2. Parse brief.md and sequence.md
 3. Create Jira items
 ```
 
@@ -466,8 +466,8 @@ tools:
   - 'jira-mcp-server/epic_create'
   - 'jira-mcp-server/story_create'
 scripts:
-  sh: .lcs/scripts/bash/check-prerequisites.sh --json
-  ps: .lcs/scripts/powershell/check-prerequisites.ps1 -Json
+  sh: .lcs/scripts/bash/check-workflow-prereqs.sh --json
+  ps: .lcs/scripts/powershell/check-workflow-prereqs.ps1 -Json
 ---
 
 # Command implementation (copied from extension)
@@ -476,7 +476,7 @@ $ARGUMENTS
 
 ## Steps
 1. Load jira-config.yml from .lcs/extensions/jira/
-2. Parse spec.md and tasks.md
+2. Parse brief.md and sequence.md
 3. Create Jira items
 ```
 
@@ -502,8 +502,8 @@ tools = [
 ]
 
 [command.script]
-sh = ".lcs/scripts/bash/check-prerequisites.sh --json"
-ps = ".lcs/scripts/powershell/check-prerequisites.ps1 -Json"
+sh = ".lcs/scripts/bash/check-workflow-prereqs.sh --json"
+ps = ".lcs/scripts/powershell/check-workflow-prereqs.ps1 -Json"
 
 [command.template]
 content = """
@@ -513,7 +513,7 @@ content = """
 
 ## Steps
 1. Load jira-config.yml from .lcs/extensions/jira/
-2. Parse spec.md and tasks.md
+2. Parse brief.md and sequence.md
 3. Create Jira items
 """
 ```
@@ -754,7 +754,7 @@ hooks:
 
 ### Hook Execution
 
-**In core command** (e.g., `templates/commands/tasks.md`):
+**In core command** (e.g., `templates/commands/sequence.md`):
 
 Add at end of command:
 
@@ -1323,7 +1323,7 @@ CLI verifies signature before extraction.
 
 **Strategy**:
 
-1. **Core commands unchanged**: `/lcs.tasks`, `/lcs.implement`, etc. remain in core
+1. **Core commands unchanged**: `/lcs.sequence`, `/lcs.author`, etc. remain in core
 
 2. **Optional extensions**: Users opt-in to extensions
 
@@ -1361,7 +1361,7 @@ CLI verifies signature before extraction.
 
 ```bash
 # Old (core command)
-/lcs.taskstoissues
+/lcs.sequencetoissues
 
 # New (extension command)
 lcs extension add github-projects

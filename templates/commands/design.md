@@ -1,16 +1,16 @@
 ---
-description: Execute the implementation planning workflow using the plan template to generate design artifacts.
-handoffs: 
-  - label: Create Tasks
-    agent: lcs.tasks
-    prompt: Break the plan into tasks
+description: Generate learning design artifacts from the unit brief and charter.
+handoffs:
+  - label: Build Production Sequence
+    agent: lcs.sequence
+    prompt: Create a production sequence from design artifacts.
     send: true
-  - label: Create Checklist
-    agent: lcs.checklist
-    prompt: Create a checklist for the following domain...
+  - label: Generate Rubric
+    agent: lcs.rubric
+    prompt: Generate hard-gate rubric for this unit.
 scripts:
-  sh: scripts/bash/setup-plan.sh --json
-  ps: scripts/powershell/setup-plan.ps1 -Json
+  sh: scripts/bash/setup-design.sh --json
+  ps: scripts/powershell/setup-design.ps1 -Json
 agent_scripts:
   sh: scripts/bash/update-agent-context.sh __AGENT__
   ps: scripts/powershell/update-agent-context.ps1 -AgentType __AGENT__
@@ -22,74 +22,19 @@ agent_scripts:
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+## Workflow
 
-## Outline
-
-1. **Setup**: Run `{SCRIPT}` from repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
-
-2. **Load context**: Read FEATURE_SPEC and `/memory/constitution.md`. Load IMPL_PLAN template (already copied).
-
-3. **Execute plan workflow**: Follow the structure in IMPL_PLAN template to:
-   - Fill Technical Context (mark unknowns as "NEEDS CLARIFICATION")
-   - Fill Constitution Check section from constitution
-   - Evaluate gates (ERROR if violations unjustified)
-   - Phase 0: Generate research.md (resolve all NEEDS CLARIFICATION)
-   - Phase 1: Generate data-model.md, contracts/, quickstart.md
-   - Phase 1: Update agent context by running the agent script
-   - Re-evaluate Constitution Check post-design
-
-4. **Stop and report**: Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generated artifacts.
-
-## Phases
-
-### Phase 0: Outline & Research
-
-1. **Extract unknowns from Technical Context** above:
-   - For each NEEDS CLARIFICATION → research task
-   - For each dependency → best practices task
-   - For each integration → patterns task
-
-2. **Generate and dispatch research agents**:
-
-   ```text
-   For each unknown in Technical Context:
-     Task: "Research {unknown} for {feature context}"
-   For each technology choice:
-     Task: "Find best practices for {tech} in {domain}"
-   ```
-
-3. **Consolidate findings** in `research.md` using format:
-   - Decision: [what was chosen]
-   - Rationale: [why chosen]
-   - Alternatives considered: [what else evaluated]
-
-**Output**: research.md with all NEEDS CLARIFICATION resolved
-
-### Phase 1: Design & Contracts
-
-**Prerequisites:** `research.md` complete
-
-1. **Extract entities from feature spec** → `data-model.md`:
-   - Entity name, fields, relationships
-   - Validation rules from requirements
-   - State transitions if applicable
-
-2. **Generate API contracts** from functional requirements:
-   - For each user action → endpoint
-   - Use standard REST/GraphQL patterns
-   - Output OpenAPI/GraphQL schema to `/contracts/`
-
-3. **Agent context update**:
-   - Run `{AGENT_SCRIPT}`
-   - These scripts detect which AI agent is in use
-   - Update the appropriate agent-specific context file
-   - Add only new technology from current plan
-   - Preserve manual additions between markers
-
-**Output**: data-model.md, /contracts/*, quickstart.md, agent-specific file
-
-## Key rules
-
-- Use absolute paths
-- ERROR on gate failures or unresolved clarifications
+1. Run `{SCRIPT}` and parse `BRIEF_FILE`, `DESIGN_FILE`, `UNIT_DIR`, `BRANCH`, `HAS_GIT`.
+2. Load `BRIEF_FILE`, `.lcs/memory/charter.md`, and `.lcs/templates/design-template.md`.
+3. Create/update:
+   - `design.md`
+   - `content-model.md`
+   - `assessment-map.md`
+   - `delivery-guide.md`
+4. Enforce charter gates in design output:
+   - objective-activity-assessment alignment
+   - pedagogy consistency
+   - accessibility/readability coverage
+   - metadata completeness
+5. Run `{AGENT_SCRIPT}` to refresh agent context from design metadata.
+6. Report generated artifacts and any unresolved blockers.
