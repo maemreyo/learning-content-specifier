@@ -201,12 +201,115 @@ Author hard-stop condition:
   - `creator_ready`
   - `ops_ready`
 
+## 7) Decision contracts (normative) for open questions
+
+This section answers the three operational questions directly and defines deterministic behavior.
+
+### A) How does the system decide the content model?
+
+The system MUST materialize `Course -> Module -> Lesson` from constraints, not free-form drafting.
+
+Mandatory inputs:
+
+- `brief.md` (LOs, audience, duration, modality, constraints)
+- `charter.md` (hard policy constraints)
+- Existing unit artifacts (if any)
+
+Deterministic steps:
+
+1. Parse LO statements into outcome objects (`lo_id`, verb, evidence type, priority).
+2. Estimate effort per LO (`concept_load`, `practice_load`, `assessment_load`) and compute required minutes.
+3. Build dependency graph between LOs; fail if cyclic.
+4. Cluster LOs into modules by dependency + topical cohesion.
+5. Split modules into lessons using duration budget constraints.
+6. Emit `content-model.md` and machine-readable `content-model.json`.
+
+Hard constraints:
+
+- Every LO appears in at least one lesson and at least one assessment item.
+- No orphan LO.
+- Total estimated minutes MUST be within agreed tolerance (default `-10%` to `+15%` of brief budget), otherwise `BLOCK`.
+- Dependency graph MUST be acyclic.
+
+### B) How does the system choose pedagogy and when does it research the web?
+
+Pedagogy selection MUST be scored and auditable.
+
+Candidate method set (minimum):
+
+- direct instruction
+- worked examples
+- retrieval practice
+- problem-based learning
+- project-based learning
+- case-based learning
+- peer instruction
+- simulation/lab
+
+Scoring model (0-5 each):
+
+- learner fit (entry level, language, constraints)
+- outcome fit (knowledge transfer vs performance)
+- evidence fit (assessment validity and feasibility)
+- delivery fit (time, modality, class size)
+- accessibility fit (UDL + WCAG implications)
+
+Selection rule:
+
+- pick 1 primary method (highest weighted score)
+- optionally pick up to 2 secondary methods if score delta <= threshold
+- persist method scores and rationale in `design-decisions.json`
+
+Evidence/source hierarchy:
+
+1. local artifacts first (`brief`, `charter`, existing docs)
+2. vetted web sources second (official standards, peer-reviewed/recognized guidance)
+3. model prior knowledge last
+
+Web research is REQUIRED when:
+
+- domain/tooling is time-sensitive,
+- confidence score below threshold,
+- artifact signals conflict (e.g., assessment style mismatches LO evidence),
+- user requests validation.
+
+### C) What output standard should future apps consume?
+
+Adopt `LCS Artifact Contract v1` with `manifest-first` consumption.
+
+Required files:
+
+- `specs/<unit>/brief.json`
+- `specs/<unit>/design.json`
+- `specs/<unit>/sequence.json`
+- `specs/<unit>/audit-report.json`
+- `specs/<unit>/outputs/manifest.json`
+
+`outputs/manifest.json` minimum fields:
+
+- `contract_version` (e.g., `1.0.0`)
+- `unit_id`, `title`, `locale`, `generated_at`
+- `outcomes[]` (`lo_id`, `priority`, `evidence_refs`)
+- `artifacts[]` (`id`, `type`, `path`, `media_type`, `checksum`)
+- `gate_status` (`PASS|BLOCK`) + severity counters
+- `interop` object for optional mappings (`case`, `qti`, `lti`, `xapi`, `cmi5`)
+
+Contract policy:
+
+- JSON Schema 2020-12 validation required.
+- Major version bump for breaking field changes.
+- Minor version for additive backward-compatible fields.
+- Patch for non-structural corrections.
+
+Consumer rule:
+
+- downstream apps MUST read `outputs/manifest.json` as the only entrypoint and resolve all files by manifest references (not by path guessing).
+
 ## Gaps still open (to clarify before implementation)
 
-1. Confidence scoring formula for pedagogy decisions.
-2. Minimum metadata set for `outputs/manifest.json` accepted by all future consumers.
-3. Which interoperability mappings are mandatory in v1 vs optional adapters.
-4. Performance benchmark protocol (unit sizes, p50/p95, rework cost).
+1. Final weights for pedagogy scoring dimensions by domain (K-12, higher-ed, corporate training).
+2. Mandatory-vs-optional interop mappings in v1 (`case/qti/lti/xapi/cmi5` profile set).
+3. Performance benchmark protocol (unit sizes, p50/p95 latency, rework rate).
 
 ## Recommended implementation plan (greenfield)
 
