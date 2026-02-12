@@ -655,7 +655,38 @@ def download_template_from_github(ai_assistant: str, download_dir: Path, *, scri
             headers=_github_auth_headers(github_token),
         )
         status = response.status_code
-        if status != 200:
+        if status == 404:
+            releases_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases"
+            releases_response = client.get(
+                releases_url,
+                timeout=30,
+                follow_redirects=True,
+                headers=_github_auth_headers(github_token),
+            )
+            if releases_response.status_code != 200:
+                error_msg = _format_rate_limit_error(releases_response.status_code, releases_response.headers, releases_url)
+                if debug:
+                    error_msg += f"\n\n[dim]Response body (truncated 500):[/dim]\n{releases_response.text[:500]}"
+                raise RuntimeError(error_msg)
+
+            try:
+                releases_data = releases_response.json()
+            except ValueError as je:
+                raise RuntimeError(
+                    f"Failed to parse releases JSON: {je}\nRaw (truncated 400): {releases_response.text[:400]}"
+                )
+
+            if not isinstance(releases_data, list) or not releases_data:
+                raise RuntimeError(f"No releases found for {repo_owner}/{repo_name}")
+
+            non_draft = [r for r in releases_data if not r.get("draft", False)]
+            if not non_draft:
+                raise RuntimeError(f"No non-draft releases found for {repo_owner}/{repo_name}")
+
+            stable = [r for r in non_draft if not r.get("prerelease", False)]
+            release_data = stable[0] if stable else non_draft[0]
+
+        elif status != 200:
             # Format detailed error message with rate-limit info
             error_msg = _format_rate_limit_error(status, response.headers, api_url)
             if debug:
@@ -710,7 +741,12 @@ def download_template_from_github(ai_assistant: str, download_dir: Path, *, scri
                 # Handle rate-limiting on download as well
                 error_msg = _format_rate_limit_error(response.status_code, response.headers, download_url)
                 if debug:
-                    error_msg += f"\n\n[dim]Response body (truncated 400):[/dim]\n{response.text[:400]}"
+                    try:
+                        response.read()
+                        body_preview = response.text[:400]
+                    except Exception:
+                        body_preview = "<failed to read response body>"
+                    error_msg += f"\n\n[dim]Response body (truncated 400):[/dim]\n{body_preview}"
                 raise RuntimeError(error_msg)
             total_size = int(response.headers.get('content-length', 0))
             with open(zip_path, 'wb') as f:

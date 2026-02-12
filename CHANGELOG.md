@@ -7,6 +7,18 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-02-12
+
+### Fixed
+
+- Fixed template fetch failure for repositories without a GitHub “latest” release by falling back to the releases list endpoint
+
+## [0.1.3] - 2026-02-12
+
+### Fixed
+
+- Fixed template download failure when `--debug` is enabled by properly reading streaming HTTP response content before previewing the error body
+
 ## [0.1.2] - 2026-02-12
 
 ### Fixed

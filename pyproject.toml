@@ -1,6 +1,6 @@
 [project]
 name = "lcs-cli"
-version = "0.1.2"
+version = "0.1.4"
 description = "LCS CLI. A tool to bootstrap your projects for Spec-Driven Development."
 requires-python = ">=3.11"
 dependencies = [
