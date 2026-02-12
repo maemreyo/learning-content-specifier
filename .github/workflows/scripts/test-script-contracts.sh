@@ -5,6 +5,10 @@ ROOT="$(pwd)"
 UNIT="999-ci-contract"
 UNIT_DIR="$ROOT/specs/$UNIT"
 
+extract_json_line() {
+  sed -n '/^[[:space:]]*{.*}[[:space:]]*$/p' | tail -n1
+}
+
 mkdir -p "$UNIT_DIR/rubrics" "$UNIT_DIR/outputs"
 : > "$UNIT_DIR/brief.md"
 : > "$UNIT_DIR/design.md"
@@ -26,7 +30,11 @@ export LCS_UNIT="$UNIT"
 tmp_nogit="$(pwd)/tmp-contract-test-$$"
 mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/specs"
 cp templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
-json_define=$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/scripts/bash/create-new-unit.sh" --json "temporary unit for contract test" || echo '{"UNIT_NAME":"999-ci-contract","BRIEF_FILE":"specs/999-ci-contract/brief.md","UNIT_NUM":"999"}')
+json_define_raw="$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/scripts/bash/create-new-unit.sh" --json "temporary unit for contract test" 2>&1 || true)"
+json_define="$(printf '%s\n' "$json_define_raw" | extract_json_line)"
+if [[ -z "$json_define" ]]; then
+  json_define='{"UNIT_NAME":"999-ci-contract","BRIEF_FILE":"specs/999-ci-contract/brief.md","UNIT_NUM":"999"}'
+fi
 uv run python3 - <<'PY' "$json_define"
 import json,sys
 obj=json.loads(sys.argv[1])
@@ -41,7 +49,13 @@ assert brief_json.exists(), f"missing {brief_json}"
 PY
 rm -rf "$tmp_nogit"
 
-json_setup=$(scripts/bash/setup-design.sh --json)
+json_setup_raw="$(scripts/bash/setup-design.sh --json 2>&1)"
+json_setup="$(printf '%s\n' "$json_setup_raw" | extract_json_line)"
+if [[ -z "$json_setup" ]]; then
+  echo "setup-design.sh did not emit JSON output" >&2
+  echo "$json_setup_raw" >&2
+  exit 1
+fi
 uv run python3 - <<'PY' "$json_setup"
 import json,sys
 obj=json.loads(sys.argv[1])
@@ -67,14 +81,26 @@ obj["gate_status"]={"decision":"PASS","open_critical":0,"open_high":0}
 json.dump(obj, open(path,"w"), indent=2)
 PY
 
-contract_json=$(scripts/bash/validate-artifact-contracts.sh --json --unit-dir "$UNIT_DIR")
+contract_json_raw="$(scripts/bash/validate-artifact-contracts.sh --json --unit-dir "$UNIT_DIR" 2>&1)"
+contract_json="$(printf '%s\n' "$contract_json_raw" | extract_json_line)"
+if [[ -z "$contract_json" ]]; then
+  echo "validate-artifact-contracts.sh did not emit JSON output" >&2
+  echo "$contract_json_raw" >&2
+  exit 1
+fi
 uv run python3 - <<'PY' "$contract_json"
 import json,sys
 obj=json.loads(sys.argv[1])
 assert obj["STATUS"] == "PASS", obj
 PY
 
-json_paths=$(scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check)
+json_paths_raw="$(scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check 2>&1)"
+json_paths="$(printf '%s\n' "$json_paths_raw" | extract_json_line)"
+if [[ -z "$json_paths" ]]; then
+  echo "check-workflow-prereqs.sh did not emit JSON output" >&2
+  echo "$json_paths_raw" >&2
+  exit 1
+fi
 uv run python3 - <<'PY' "$json_paths"
 import json,sys
 obj=json.loads(sys.argv[1])
