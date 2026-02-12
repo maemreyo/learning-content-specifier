@@ -127,7 +127,7 @@ try {
 finally {
     Remove-Item Env:LCS_UNIT -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force (Join-Path $repoRoot 'specs/999-ci-contract-ps') -ErrorAction SilentlyContinue
-    if (Test-Path (Join-Path $repoRoot 'specs') -and -not (Get-ChildItem (Join-Path $repoRoot 'specs') -Force | Measure-Object).Count) {
+    if ((Test-Path (Join-Path $repoRoot 'specs')) -and -not (Get-ChildItem (Join-Path $repoRoot 'specs') -Force | Measure-Object).Count) {
         Remove-Item (Join-Path $repoRoot 'specs') -Force -ErrorAction SilentlyContinue
     }
 }
