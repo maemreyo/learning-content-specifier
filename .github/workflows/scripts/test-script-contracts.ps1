@@ -1,11 +1,17 @@
 #!/usr/bin/env pwsh
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = (& git rev-parse --show-toplevel 2>$null)
+$repoRoot = $env:GITHUB_WORKSPACE
+if (-not $repoRoot) {
+    $repoRoot = (& git rev-parse --show-toplevel 2>$null)
+}
 if (-not $repoRoot) {
     $repoRoot = (Get-Location).Path
 }
 $repoRoot = "$repoRoot".Trim()
+if (-not $repoRoot) {
+    throw 'Could not determine repository root.'
+}
 
 # 1) create-new-unit contract in temp non-git workspace
 $tempRoot = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-" + [guid]::NewGuid().ToString())
