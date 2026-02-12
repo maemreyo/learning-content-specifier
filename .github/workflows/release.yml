@@ -2,59 +2,123 @@ name: Create Release
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'memory/**'
-      - 'scripts/**'
-      - 'templates/**'
-      - '.github/workflows/**'
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v0.4.0)'
+        required: true
+        type: string
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      release_exists: ${{ steps.check_release.outputs.exists }}
+      version: ${{ steps.resolve_version.outputs.version }}
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Get latest tag
-        id: get_tag
+
+      - name: Resolve VERSION
+        id: resolve_version
         run: |
-          chmod +x .github/workflows/scripts/get-next-version.sh
-          .github/workflows/scripts/get-next-version.sh
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Strict release validation
+        run: |
+          chmod +x .github/workflows/scripts/validate-release-version.sh
+          .github/workflows/scripts/validate-release-version.sh "${{ steps.resolve_version.outputs.version }}"
+
       - name: Check if release already exists
         id: check_release
         run: |
           chmod +x .github/workflows/scripts/check-release-exists.sh
-          .github/workflows/scripts/check-release-exists.sh ${{ steps.get_tag.outputs.new_version }}
+          .github/workflows/scripts/check-release-exists.sh "${{ steps.resolve_version.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create release package variants
         if: steps.check_release.outputs.exists == 'false'
         run: |
           chmod +x .github/workflows/scripts/create-release-packages.sh
-          .github/workflows/scripts/create-release-packages.sh ${{ steps.get_tag.outputs.new_version }}
+          .github/workflows/scripts/create-release-packages.sh "${{ steps.resolve_version.outputs.version }}"
+
+      - name: Release packaging smoke
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          chmod +x .github/workflows/scripts/smoke-release-packages.sh
+          .github/workflows/scripts/smoke-release-packages.sh "${{ steps.resolve_version.outputs.version }}"
+
       - name: Generate release notes
         if: steps.check_release.outputs.exists == 'false'
-        id: release_notes
         run: |
           chmod +x .github/workflows/scripts/generate-release-notes.sh
-          .github/workflows/scripts/generate-release-notes.sh ${{ steps.get_tag.outputs.new_version }} ${{ steps.get_tag.outputs.latest_tag }}
-      - name: Create GitHub Release
+          .github/workflows/scripts/generate-release-notes.sh "${{ steps.resolve_version.outputs.version }}"
+
+      - name: Upload .genreleases artifact
         if: steps.check_release.outputs.exists == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: genreleases-${{ steps.resolve_version.outputs.version }}
+          path: .genreleases/*
+
+      - name: Upload release notes artifact
+        if: steps.check_release.outputs.exists == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ steps.resolve_version.outputs.version }}
+          path: release_notes.md
+
+  publish:
+    if: needs.build.outputs.release_exists == 'false'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve VERSION
+        id: resolve_version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download .genreleases artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: genreleases-${{ steps.resolve_version.outputs.version }}
+          path: .genreleases
+
+      - name: Download release notes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes-${{ steps.resolve_version.outputs.version }}
+          path: .
+
+      - name: Create GitHub Release
         run: |
           chmod +x .github/workflows/scripts/create-github-release.sh
-          .github/workflows/scripts/create-github-release.sh ${{ steps.get_tag.outputs.new_version }}
+          .github/workflows/scripts/create-github-release.sh "${{ steps.resolve_version.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Update version in pyproject.toml (for release artifacts only)
-        if: steps.check_release.outputs.exists == 'false'
-        run: |
-          chmod +x .github/workflows/scripts/update-version.sh
-          .github/workflows/scripts/update-version.sh ${{ steps.get_tag.outputs.new_version }}
 
