@@ -84,6 +84,7 @@ try {
     if ($setupObj.HAS_GIT.GetType().Name -ne 'Boolean') {
         throw 'setup-design HAS_GIT must be bool'
     }
+    $unitDir = [string]$setupObj.UNIT_DIR
 
     $auditJsonPath = Join-Path $unitDir 'audit-report.json'
     $auditObj = Get-Content -Path $auditJsonPath -Encoding utf8 | ConvertFrom-Json
