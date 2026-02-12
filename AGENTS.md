@@ -57,7 +57,7 @@ Follow these steps to add a new agent (using a hypothetical new agent as an exam
 
 **IMPORTANT**: Use the actual CLI tool name as the key, not a shortened version.
 
-Add the new agent to the `AGENT_CONFIG` dictionary in `src/specify_cli/__init__.py`. This is the **single source of truth** for all agent metadata:
+Add the new agent to the `AGENT_CONFIG` dictionary in `src/lcs_cli/__init__.py`. This is the **single source of truth** for all agent metadata:
 
 ```python
 AGENT_CONFIG = {
@@ -144,7 +144,7 @@ gh release create "$VERSION" \
 Add file variable:
 
 ```bash
-WINDSURF_FILE="$REPO_ROOT/.windsurf/rules/specify-rules.md"
+WINDSURF_FILE="$REPO_ROOT/.windsurf/rules/lcs-rules.md"
 ```
 
 Add to case statement:
@@ -166,7 +166,7 @@ esac
 Add file variable:
 
 ```powershell
-$windsurfFile = Join-Path $repoRoot '.windsurf/rules/specify-rules.md'
+$windsurfFile = Join-Path $repoRoot '.windsurf/rules/lcs-rules.md'
 ```
 
 Add to switch statement:
