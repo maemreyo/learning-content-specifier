@@ -1,267 +1,246 @@
-# LCS Learning Content Design Flow Improvements
+# LCS Flow Improvements Proposal (Greenfield, Learning-Content First)
 
-## Overview
+## Status
 
-This proposal outlines improvements to the LCS (Learning Content Specifier) core flow for designing learning courses, modules, and lessons. The current flow is sequential and bottlenecked at validation stages. This proposal introduces **parallel processing** and **incremental validation** to reduce execution time by 60-70% while maintaining quality gates.
+- Status: Proposal v2
+- Date: 2026-02-12
+- Scope: Greenfield system (no backward-compatibility requirement)
 
-## Flow Diagram
+## Executive Summary
 
-```mermaid
-graph TB
-    subgraph Planning["Planning Phase"]
-        1a["1a: Charter<br/>Governance source"]
-        1c["1c: Define<br/>Brief creation"]
-        1e["1e: Refine<br/>Ambiguity resolution"]
-    end
+This proposal reframes LCS as a deterministic learning-content production system.
 
-    subgraph Design["Design Phase - Hub"]
-        2a["2a: Design Setup<br/>Brief + Charter"]
-        2b["2b: Parallel Artifacts<br/>content-model<br/>assessment-map<br/>delivery-guide"]
-    end
+Core direction:
 
-    subgraph Artifacts["Artifact Generation"]
-        3a["3a: Sequence<br/>Task ordering"]
-        3c["3c: Rubric<br/>Quality gates"]
-    end
+1. Keep public command surface simple:
+   - `/lcs.charter -> /lcs.define -> /lcs.refine -> /lcs.design -> /lcs.sequence -> /lcs.rubric -> /lcs.audit -> /lcs.author -> /lcs.issueize`
+2. Run parallelism inside orchestration, not as extra public commands.
+3. Add role-aware, instructional quality contracts (teacher/creator/learner/ops), not only technical gates.
+4. Define machine-readable artifact standards so downstream apps can integrate reliably.
 
-    subgraph Validation["Validation System"]
-        4c["4c: Define Gate<br/>LO completeness"]
-        4d["4d: Design Gate<br/>LO-activity alignment"]
-        4e["4e: Sequence Gate<br/>LO coverage"]
-        4f["4f: Rubric Gate<br/>Structure check"]
-        5a["5a: Audit Setup<br/>Load artifacts"]
-        5c["5c: Cross-Validation<br/>Parallel checks"]
-        5e["5e: Gate Decision<br/>PASS or BLOCK"]
-    end
+## Why the previous structure is not enough
 
-    subgraph Authoring["Authoring & Publishing"]
-        6b["6b: Pre-flight Check<br/>Rubric + Audit"]
-        6f["6f: Execute Sequence<br/>Generate outputs"]
-        8a["8a: Issueize<br/>GitHub issues"]
-    end
+The previous version correctly identified sequential bottlenecks, but it still had these risks:
 
-    1a -->|propagates governance| 1c
-    1c -->|validates LOs| 4c
-    1c -->|refined brief feeds| 2a
-    1e -->|resolves ambiguity| 2a
-    1e -->|validates clarity| 4c
+- Over-exposes implementation details to users (`/lcs.design.*` subcommands), increasing complexity for teachers and creators.
+- Lacks a deterministic policy for selecting pedagogy.
+- Lacks a strong, standardized artifact API contract for other consuming systems.
+- Uses migration framing, while this system is greenfield.
 
-    2a -->|generates| 2b
-    2b -->|feeds| 3a
-    2b -->|feeds| 3c
-    2b -->|feeds| 4d
-    2b -->|feeds| 5a
+## Role-Based Requirements (Non-negotiable)
 
-    3a -->|validates coverage| 4e
-    3a -->|feeds| 5a
-    3c -->|validates structure| 4f
-    3c -->|feeds| 5a
+### Teacher perspective
 
-    4c -.->|incremental check| 5c
-    4d -.->|incremental check| 5c
-    4e -.->|incremental check| 5c
-    4f -.->|incremental check| 5c
+- Needs minimal command complexity and clear readiness signals.
+- Needs lesson timing realism and practical facilitation guidance.
 
-    5a -->|loads brief| 5c
-    5a -->|loads design| 5c
-    5a -->|loads sequence| 5c
-    5a -->|loads rubric| 5c
-    5c -->|determines| 5e
+### Learning creator / instructional designer perspective
 
-    5e -->|gates| 6b
-    3a -->|tasks to execute| 6f
-    6b -->|validates gates| 6f
-    6f -->|generates outputs| 8a
-    3a -->|task metadata| 8a
+- Needs explicit constructive alignment traceability (Outcome -> Activity -> Assessment).
+- Needs design rationale for modality/pedagogy decisions.
 
-    style Planning fill:#fcc2d7
-    style Design fill:#a5d8ff
-    style Artifacts fill:#ffec99
-    style Validation fill:#d0bfff
-    style Authoring fill:#b2f2bb
-```
+### Accessibility / inclusion perspective
 
-## Current Problems
+- Needs verifiable accessibility/readability checks mapped to outputs.
 
-### Sequential Bottlenecks
-- **Design phase**: Single command creates multiple artifacts sequentially
-- **Validation bottleneck**: Audit phase validates all artifacts in sequence
-- **No early feedback**: Quality issues discovered late in the process
+### Program/L&D ops perspective
 
-### Performance Issues
-- Large units take excessive time due to sequential processing
-- Audit phase becomes a major choke point
-- No parallel execution of independent tasks
+- Needs stable, machine-readable outputs for LMS/app analytics and automation.
 
-### Quality Assurance Gaps
-- Centralized validation leads to late discovery of issues
-- No incremental feedback during development
-- Difficult to iterate on design issues
+## Proposed Architecture
 
-## Proposed Solution
+## 1) Command Model (Public API remains simple)
 
-### 1. Parallel Processing Architecture
+Public commands remain unchanged.
 
-#### Split Design Command
-Replace single `/lcs.design` with parallel sub-commands:
-- `/lcs.design.content-model` - Creates content-model.md
-- `/lcs.design.assessment-map` - Creates assessment-map.md
-- `/lcs.design.delivery-guide` - Creates delivery-guide.md
+Parallelization happens inside these stages:
 
-#### Concurrent Sequence + Rubric Generation
-After design completion, sequence and rubric generation run in parallel:
-- Both depend on design artifacts but are independent
-- Reduces total execution time by 40-50%
+- `design` internally parallelizes creation of:
+  - `content-model.md`
+  - `assessment-map.md`
+  - `delivery-guide.md`
+- `audit` internally parallelizes artifact analysis, then merges into one deterministic decision.
 
-#### Parallel Audit Analysis
-Audit phase loads and validates artifacts in parallel:
-- Brief, design, sequence, rubric analyzed simultaneously
-- Consolidated report generation
+Reason: keeps user workflow simple while still reducing runtime.
 
-### 2. Incremental Validation System
+## 2) Decision Engine: How system determines `content model`
 
-#### Early Validation Gates
-Distribute quality checks across all phases:
+The system should not "guess" structure ad hoc. It should follow a policy stack:
 
-**Charter Phase:**
-- Gate G-CH-001: Validate completeness immediately
-- Gate G-CH-002: Check date formats and placeholders
+1. Charter constraints (hard rules)
+2. Brief constraints (audience, level, duration, modality)
+3. Outcome decomposition rules
+4. Domain evidence and pedagogy evidence (web-researched when needed)
 
-**Define Phase:**
-- Gate G-DF-001: Validate LO structure and measurability
-- Gate G-DF-002: Check accessibility requirements
+### Deterministic algorithm (proposal)
 
-**Refine Phase:**
-- Gate G-RF-001: Block on critical ambiguities
-- Gate G-RF-002: Resolve contradictions
+Input:
 
-**Design Phase:**
-- Gate G-DS-001: Validate LO-activity-assessment alignment
-- Gate G-DS-002: Check accessibility controls
+- `brief.md`
+- `charter.md`
+- optional domain context
 
-**Sequence Phase:**
-- Gate G-SQ-001: Validate LO coverage
-- Gate G-SQ-002: Check dependency ordering
+Steps:
 
-**Rubric Phase:**
-- Gate G-RB-001: Validate gate completeness
-- Gate G-RB-002: Check structure requirements
+1. Parse outcomes into skill units (knowledge, procedure, performance evidence).
+2. Estimate instructional load per outcome (time + complexity).
+3. Cluster outcomes into modules by conceptual dependency.
+4. Split modules into lessons by a max duration budget and dependency order.
+5. Emit `content-model` with explicit references to LO IDs.
 
-#### Pre-flight Author Validation
-Author phase includes comprehensive checks:
-- Audit status verification (PASS required)
-- Rubric completeness validation
-- Feedback loop for blockers with actionable fixes
+Output constraints:
 
-### 3. Enhanced Scripts and Templates
+- Every lesson must map to at least one LO.
+- No LO may be orphaned.
+- Duration sum must match budget tolerance.
 
-#### Modified Scripts
-- `setup-design.sh`: Support parallel artifact generation
-- `check-workflow-prereqs.sh`: Extended with `--validate-stage` flags
-- `validate-author-gates.sh`: New script for pre-flight checks
+## 3) Decision Engine: How system chooses pedagogy
 
-#### New Command Templates
-- Split design templates for parallel execution
-- Enhanced validation logic in each phase
-- Progress tracking with sequence checkboxes
+Question addressed:
 
-## Implementation Details
+- "Dạy theo phương pháp nào?"
 
-### Phase 1: Planning Phase Improvements
-- Add early validation to charter/define/refine
-- Implement parallel artifact loading in scripts
-- Create feedback mechanisms for clarification requests
+### Recommended policy
 
-### Phase 2: Design Phase Parallelization
-- Split design command into 3 parallel sub-commands
-- Modify setup-design.sh for dependency tracking
-- Ensure atomic operations and rollback capability
+Pedagogy is selected by "fit scoring", not fixed templates.
 
-### Phase 3: Validation Distribution
-- Implement incremental gates across all commands
-- Create validation scripts for each phase
-- Establish clear failure modes and recovery paths
+Scoring dimensions:
 
-### Phase 4: Audit Optimization
-- Parallel artifact loading and cross-validation
-- Consolidated reporting with severity-based decisions
-- Maintain blocking behavior for critical issues
+- Learner profile fit (prior knowledge, constraints, language, modality).
+- Outcome type fit (recall, conceptual transfer, performance task).
+- Evidence fit (assessment feasibility and validity).
+- Delivery constraints (time, synchronous/asynchronous, class size).
 
-### Phase 5: Author Enhancement
-- Comprehensive pre-flight validation
-- Feedback loops with actionable blocker descriptions
-- Progress tracking with visual indicators
+### Source-of-truth hierarchy
 
-## Benefits Analysis
+1. Local artifacts (charter + brief + existing unit docs) as primary.
+2. Web research as dynamic evidence layer when confidence is low or domain is changing.
+3. No hidden static DB assumptions in core decision logic.
 
-### Performance Improvements
-- **60-70% reduction** in total execution time for large units
-- **Parallel execution** of independent design artifacts
-- **Early failure detection** prevents downstream rework
+### Web-research trigger policy
 
-### Quality Assurance
-- **Continuous validation** catches issues immediately
-- **Incremental feedback** enables iterative improvement
-- **Distributed gates** ensure comprehensive coverage
+Must trigger web research if any of these are true:
 
-### Developer Experience
-- **Faster iteration cycles** with parallel processing
-- **Clear feedback loops** with actionable error messages
-- **Progress tracking** with visual completion indicators
+- Domain appears time-sensitive (regulation, platform, tooling, standards).
+- Team confidence score below threshold.
+- Conflicting pedagogy signals across artifacts.
+- User explicitly asks to validate with current external evidence.
 
-### Maintainability
-- **Atomic operations** with proper rollback
-- **Modular validation** easier to test and maintain
-- **Clear separation** of concerns in parallel branches
+### Recommended teaching-method baseline
 
-## Migration Strategy
+For most creator workflows, prefer evidence-backed defaults and then adapt:
 
-### Backward Compatibility
-- Existing sequential flow remains functional
-- New parallel commands are opt-in
-- Audit maintains same blocking behavior
+- Active learning activities.
+- Retrieval practice opportunities.
+- Spaced reinforcement (if multi-session).
+- Scaffolding/worked examples for novices.
 
-### Gradual Rollout
-1. **Phase 1**: Early validation in planning phases (low risk)
-2. **Phase 2**: Parallel design artifact generation (medium risk)
-3. **Phase 3**: Incremental validation system (medium risk)
-4. **Phase 4**: Parallel audit optimization (low risk)
-5. **Phase 5**: Enhanced author validation (low risk)
+These are defaults, not hard-coded dogma.
 
-### Testing Strategy
-- Unit tests for individual validation gates
-- Integration tests for parallel execution
-- Performance benchmarks for timing improvements
-- Compatibility tests with existing workflows
+## 4) Output Standard: Artifact Contract for downstream apps
 
-## Risk Assessment
+Question addressed:
 
-### Technical Risks
-- **Race conditions** in parallel execution (mitigated by dependency ordering)
-- **Script complexity** increase (mitigated by modular design)
-- **Validation inconsistencies** (mitigated by centralized gate definitions)
+- "Chuẩn đầu ra thế nào để app khác consume?"
 
-### Operational Risks
-- **Learning curve** for new command structure (mitigated by documentation)
-- **Debugging complexity** with parallel flows (mitigated by logging)
-- **Performance regression** (mitigated by benchmarks)
+### Proposal: LCS Artifact Contract v1
 
-## Conclusion
+For each unit:
 
-The proposed improvements transform LCS from a bottlenecked sequential system into a high-performance parallel workflow with continuous quality assurance. The changes maintain all existing quality gates while significantly improving execution speed and developer experience.
+- Human-readable markdown artifacts (authoring UX)
+- Machine-readable JSON sidecars (integration API)
 
-The modular implementation allows for gradual rollout and maintains backward compatibility, ensuring minimal disruption to existing workflows.
+Required machine-readable files:
 
-**Recommended Next Steps:**
-1. Implement early validation in planning phases
-2. Prototype parallel design artifact generation
-3. Establish incremental validation framework
-4. Measure performance improvements
-5. Plan production deployment
+- `specs/<unit>/brief.json`
+- `specs/<unit>/design.json`
+- `specs/<unit>/sequence.json`
+- `specs/<unit>/rubrics/<name>.json`
+- `specs/<unit>/audit-report.json`
+- `specs/<unit>/outputs/manifest.json`
 
----
+### Schema strategy
 
-**Status**: Proposal  
-**Authors**: Cascade AI Assistant  
-**Date**: 2026-02-12  
-**Version**: 1.0
+- Use JSON Schema 2020-12 for validation.
+- Publish versioned schema IDs: `lcs.artifact.<type>.v1`.
+- Add compatibility policy: major/minor/patch for contract evolution.
+
+### Suggested interoperability standards mapping
+
+- Competency/outcome exchange: 1EdTech CASE alignment IDs where relevant.
+- Assessment portability: 1EdTech QTI mapping when assessment items are exported.
+- Learning event telemetry: xAPI/cmi5-compatible statement mapping for runtime analytics.
+- Platform integration: LTI 1.3 / LTI services when launching tools into LMS.
+- Discoverability metadata: schema.org `LearningResource` fields for public catalogs.
+
+## 5) Validation and gates (distributed + deterministic)
+
+Keep distributed gates, but add instructional quality gates.
+
+Required gate families:
+
+1. Alignment gate: LO -> Activity -> Assessment integrity.
+2. Pedagogy fit gate: method-to-audience suitability.
+3. Accessibility/readability gate: WCAG + plain-language checks.
+4. Workload realism gate: estimated vs target duration sanity.
+5. Metadata completeness gate: downstream integration fields complete.
+6. Cross-artifact consistency gate: no contradictions across brief/design/sequence/rubric.
+
+Author hard-stop condition:
+
+- Any unresolved CRITICAL/HIGH OR unresolved rubric blocker => `BLOCK`.
+
+## 6) Proposal changes vs previous version
+
+- Remove backward-compatibility/migration rollout section.
+- Keep single `/lcs.design` public command; move parallelism internally.
+- Add explicit decision engines for content model and pedagogy.
+- Add standardized artifact API contract (JSON + schema versioning).
+- Add role-readiness outputs in audit:
+  - `teacher_ready`
+  - `creator_ready`
+  - `ops_ready`
+
+## Gaps still open (to clarify before implementation)
+
+1. Confidence scoring formula for pedagogy decisions.
+2. Minimum metadata set for `outputs/manifest.json` accepted by all future consumers.
+3. Which interoperability mappings are mandatory in v1 vs optional adapters.
+4. Performance benchmark protocol (unit sizes, p50/p95, rework cost).
+
+## Recommended implementation plan (greenfield)
+
+1. Implement deterministic schemas (`*.json` + JSON Schema).
+2. Implement internal-parallel design orchestrator.
+3. Implement web-research trigger policy and source citation in `design`/`audit`.
+4. Extend audit output with role-readiness and machine-readable decision objects.
+5. Add contract tests for artifact JSON and schema validation.
+
+## Research Basis (used for this proposal)
+
+- Constructive alignment (UNSW):
+  - https://www.teaching.unsw.edu.au/aligning-assessment-learning-outcomes
+- UDL 3.0 (CAST):
+  - https://udlguidelines.cast.org/
+- WCAG 2.2:
+  - https://www.w3.org/TR/WCAG22/
+- Plain language (NIH):
+  - https://www.nih.gov/institutes-nih/nih-office-director/office-communications-public-liaison/clear-communication/plain-language-nih
+- OpenAI prompt engineering (structure, examples, context, retrieval):
+  - https://developers.openai.com/api/docs/guides/prompt-engineering
+- Anthropic prompting clarity + XML structuring:
+  - https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/be-clear-and-direct
+  - https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/use-xml-tags
+- Competency standard exchange (1EdTech CASE):
+  - https://www.1edtech.org/standards/case
+- Assessment portability (1EdTech QTI):
+  - https://www.1edtech.org/standards/qti
+- LMS integration (1EdTech LTI):
+  - https://www.1edtech.org/standards/lti
+- Learning telemetry interoperability:
+  - https://github.com/adlnet/xAPI-Spec
+  - https://aicc.github.io/CMI-5_Spec_Current/
+- JSON Schema spec:
+  - https://json-schema.org/specification
+- OpenAPI spec versions:
+  - https://spec.openapis.org/oas/
