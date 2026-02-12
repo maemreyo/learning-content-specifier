@@ -121,7 +121,7 @@ Total: ~12 hours of documentation work
 
 ```bash
 # Step 1: Create the feature specification (5 minutes)
-/lcs.lcs Real-time chat system with message history and user presence
+/lcs.specify Real-time chat system with message history and user presence
 
 # This automatically:
 # - Creates branch "003-chat-system"

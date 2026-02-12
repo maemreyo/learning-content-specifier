@@ -105,7 +105,7 @@ Use the **`/lcs.constitution`** command to create your project's governing princ
 Use the **`/lcs.specify`** command to describe what you want to build. Focus on the **what** and **why**, not the tech stack.
 
 ```bash
-/lcs.lcs Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.
+/lcs.specify Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.
 ```
 
 ### 4. Create a technical implementation plan
@@ -359,7 +359,7 @@ lcs init --here --force
 
 ![LCS CLI bootstrapping a new project in the terminal](./media/specify_cli.gif)
 
-You will be prompted to select the AI agent you are using. You can also proactively lcs it directly in the terminal:
+You will be prompted to select the AI agent you are using. You can also proactively specify it directly in the terminal:
 
 ```bash
 lcs init <project_name> --ai claude
