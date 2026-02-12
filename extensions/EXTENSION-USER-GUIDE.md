@@ -340,7 +340,7 @@ Configuration is merged in this order (highest priority last):
 1. **Extension defaults** (from `extension.yml`)
 2. **Project config** (`jira-config.yml`)
 3. **Local overrides** (`jira-config.local.yml`)
-4. **Environment variables** (`SPECKIT_JIRA_*`)
+4. **Environment variables** (`LCS_JIRA_*`)
 
 ### Example: Jira Configuration
 
@@ -365,7 +365,7 @@ project:
 **Environment variable**:
 
 ```bash
-export SPECKIT_JIRA_PROJECT_KEY="DEVTEST"
+export LCS_JIRA_PROJECT_KEY="DEVTEST"
 ```
 
 Final resolved config uses `DEVTEST` from environment variable.
@@ -386,7 +386,7 @@ settings:
 
 # Hook configuration
 hooks:
-  after_tasks:
+  after_sequence:
     - extension: jira
       command: lcs.jira.specstoissues
       enabled: true
@@ -396,21 +396,21 @@ hooks:
 
 ### Core Environment Variables
 
-In addition to extension-specific environment variables (`SPECKIT_{EXT_ID}_*`), learning-content-specifier supports core environment variables:
+In addition to extension-specific environment variables (`LCS_{EXT_ID}_*`), learning-content-specifier supports core environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SPECKIT_CATALOG_URL`       | Override the extension catalog URL | GitHub-hosted catalog |
+| `LCS_CATALOG_URL`       | Override the extension catalog URL | GitHub-hosted catalog |
 | `GH_TOKEN` / `GITHUB_TOKEN` | GitHub API token for downloads     | None                  |
 
 #### Example: Using a custom catalog for testing
 
 ```bash
 # Point to a local or alternative catalog
-export SPECKIT_CATALOG_URL="http://localhost:8000/catalog.json"
+export LCS_CATALOG_URL="http://localhost:8000/catalog.json"
 
 # Or use a staging catalog
-export SPECKIT_CATALOG_URL="https://example.com/staging/catalog.json"
+export LCS_CATALOG_URL="https://example.com/staging/catalog.json"
 ```
 
 ---
@@ -448,7 +448,7 @@ Create a `catalog.json` file with your extensions:
       "repository": "https://github.com/your-org/learning-content-specifier-jira",
       "license": "MIT",
       "requires": {
-        "speckit_version": ">=0.1.0",
+        "lcs_version": ">=0.1.0",
         "tools": [
           {"name": "atlassian-mcp-server", "required": true}
         ]
@@ -470,7 +470,7 @@ Create a `catalog.json` file with your extensions:
       "repository": "https://github.internal.your-org.com/learning-content-specifier-internal",
       "license": "Proprietary",
       "requires": {
-        "speckit_version": ">=0.1.0"
+        "lcs_version": ">=0.1.0"
       },
       "provides": {
         "commands": 2
@@ -501,7 +501,7 @@ Options for hosting your catalog:
 
 ```bash
 # In ~/.bashrc, ~/.zshrc, or CI pipeline
-export SPECKIT_CATALOG_URL="https://your-org.com/learning-content-specifier/catalog.json"
+export LCS_CATALOG_URL="https://your-org.com/learning-content-specifier/catalog.json"
 ```
 
 ##### Option B: Per-project configuration
@@ -509,7 +509,7 @@ export SPECKIT_CATALOG_URL="https://your-org.com/learning-content-specifier/cata
 Create `.env` or set in your shell before running learning-content-specifier commands:
 
 ```bash
-SPECKIT_CATALOG_URL="https://your-org.com/learning-content-specifier/catalog.json" lcs extension search
+LCS_CATALOG_URL="https://your-org.com/learning-content-specifier/catalog.json" lcs extension search
 ```
 
 #### 4. Verify Configuration
@@ -536,7 +536,7 @@ Required fields for each extension entry:
 | `description` | string | No | Brief description |
 | `author` | string | No | Author/organization |
 | `license` | string | No | SPDX license identifier |
-| `requires.speckit_version` | string | No | Version constraint |
+| `requires.lcs_version` | string | No | Version constraint |
 | `requires.tools` | array | No | Required external tools |
 | `provides.commands` | number | No | Number of commands |
 | `provides.hooks` | number | No | Number of hooks |
@@ -599,7 +599,7 @@ Test new extensions before publishing:
 python -m http.server 8000 --directory ./my-catalog/
 
 # Point learning-content-specifier to local catalog
-export SPECKIT_CATALOG_URL="http://localhost:8000/catalog.json"
+export LCS_CATALOG_URL="http://localhost:8000/catalog.json"
 
 # Test installation
 lcs extension add my-new-extension
@@ -779,7 +779,7 @@ Use environment variables for CI/CD:
 ```bash
 # .github/workflows/deploy.yml
 env:
-  SPECKIT_JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT }}
+  LCS_JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT }}
 
 - name: Create Jira Issues
   run: lcs extension add jira && ...

@@ -69,7 +69,7 @@ extension:
   homepage: "https://github.com/your-org/learning-content-specifier-your-extension"
 
 requires:
-  speckit_version: ">=0.1.0"    # Required learning-content-specifier version
+  lcs_version: ">=0.1.0"    # Required learning-content-specifier version
 
 provides:
   commands:                       # List all commands
@@ -163,7 +163,7 @@ Edit `extensions/catalog.json` and add your extension:
       "changelog": "https://github.com/your-org/learning-content-specifier-your-extension/blob/main/CHANGELOG.md",
       "license": "MIT",
       "requires": {
-        "speckit_version": ">=0.1.0",
+        "lcs_version": ">=0.1.0",
         "tools": [
           {
             "name": "required-mcp-tool",
@@ -491,7 +491,7 @@ A: Extensions should be free and open-source. Commercial support/services are al
   "changelog": "string (optional, valid URL)",
   "license": "string (required)",
   "requires": {
-    "speckit_version": "string (required, version specifier)",
+    "lcs_version": "string (required, version specifier)",
     "tools": [
       {
         "name": "string (required)",

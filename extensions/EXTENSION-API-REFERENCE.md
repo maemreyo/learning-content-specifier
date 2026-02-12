@@ -33,7 +33,7 @@ extension:
   homepage: string     # Optional, valid URL
 
 requires:
-  speckit_version: string  # Required, version specifier (>=X.Y.Z)
+  lcs_version: string  # Required, version specifier (>=X.Y.Z)
   tools:                   # Optional, array of tool requirements
     - name: string         # Tool name
       version: string      # Optional, version specifier
@@ -53,7 +53,7 @@ provides:
       required: boolean  # Default: false
 
 hooks:                   # Optional, event hooks
-  event_name:            # e.g., "after_tasks", "after_implement"
+  event_name:            # e.g., "after_sequence", "after_author"
     command: string      # Command to execute
     optional: boolean    # Default: true
     prompt: string       # Prompt text for optional hooks
@@ -85,7 +85,7 @@ defaults:                # Optional, default configuration values
 - **Examples**: `1.0.0`, `0.9.5`, `2.1.3`
 - **Invalid**: `v1.0`, `1.0`, `1.0.0-beta`
 
-#### `requires.speckit_version`
+#### `requires.lcs_version`
 
 - **Type**: string
 - **Format**: Version specifier
@@ -108,7 +108,7 @@ defaults:                # Optional, default configuration values
 #### `hooks`
 
 - **Type**: object
-- **Keys**: Event names (e.g., `after_tasks`, `after_implement`, `before_commit`)
+- **Keys**: Event names (e.g., `after_sequence`, `after_author`, `before_commit`)
 - **Description**: Hooks that execute at lifecycle events
 - **Events**: Defined by core learning-content-specifier commands
 
@@ -133,7 +133,7 @@ manifest.id                        # str: Extension ID
 manifest.name                      # str: Extension name
 manifest.version                   # str: Version
 manifest.description               # str: Description
-manifest.requires_speckit_version  # str: Required learning-content-specifier version
+manifest.requires_lcs_version  # str: Required learning-content-specifier version
 manifest.commands                  # List[Dict]: Command definitions
 manifest.hooks                     # Dict: Hook definitions
 ```
@@ -214,14 +214,14 @@ manager = ExtensionManager(project_root)
 # Install from directory
 manifest = manager.install_from_directory(
     source_dir: Path,
-    speckit_version: str,
+    lcs_version: str,
     register_commands: bool = True
 )  # Returns: ExtensionManifest
 
 # Install from ZIP
 manifest = manager.install_from_zip(
     zip_path: Path,
-    speckit_version: str
+    lcs_version: str
 )  # Returns: ExtensionManifest
 
 # Remove extension
@@ -239,7 +239,7 @@ manifest = manager.get_extension(extension_id: str)  # Optional[ExtensionManifes
 # Check compatibility
 manager.check_compatibility(
     manifest: ExtensionManifest,
-    speckit_version: str
+    lcs_version: str
 )  # Raises: CompatibilityError if incompatible
 ```
 
@@ -452,17 +452,17 @@ field_mappings:
 1. **Extension Defaults** (from `extension.yml` `defaults` section)
 2. **Project Config** (`{extension-id}-config.yml`)
 3. **Local Override** (`{extension-id}-config.local.yml`, gitignored)
-4. **Environment Variables** (`SPECKIT_{EXTENSION}_*`)
+4. **Environment Variables** (`LCS_{EXTENSION}_*`)
 
 ### Environment Variable Pattern
 
-Format: `SPECKIT_{EXTENSION}_{KEY}`
+Format: `LCS_{EXTENSION}_{KEY}`
 
 Examples:
 
-- `SPECKIT_JIRA_PROJECT_KEY`
-- `SPECKIT_LINEAR_API_KEY`
-- `SPECKIT_GITHUB_TOKEN`
+- `LCS_JIRA_PROJECT_KEY`
+- `LCS_LINEAR_API_KEY`
+- `LCS_GITHUB_TOKEN`
 
 ---
 
@@ -474,7 +474,7 @@ Examples:
 
 ```yaml
 hooks:
-  after_tasks:
+  after_sequence:
     command: "lcs.jira.specstoissues"
     optional: true
     prompt: "Create Jira issues from tasks?"
@@ -486,8 +486,8 @@ hooks:
 
 Standard events (defined by core):
 
-- `after_tasks` - After task generation
-- `after_implement` - After implementation
+- `after_sequence` - After task generation
+- `after_author` - After implementation
 - `before_commit` - Before git commit
 - `after_commit` - After git commit
 
@@ -497,7 +497,7 @@ Standard events (defined by core):
 
 ```yaml
 hooks:
-  after_tasks:
+  after_sequence:
     - extension: jira
       command: lcs.jira.specstoissues
       enabled: true

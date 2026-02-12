@@ -2,91 +2,37 @@
 
 ## Prerequisites
 
-- **Linux/macOS** (or Windows; PowerShell scripts now supported without WSL)
-- AI coding agent: [Claude Code](https://www.anthropic.com/claude-code), [GitHub Copilot](https://code.visualstudio.com/), [Codebuddy CLI](https://www.codebuddy.ai/cli) or [Gemini CLI](https://github.com/google-gemini/gemini-cli)
-- [uv](https://docs.astral.sh/uv/) for package management
-- [Python 3.11+](https://www.python.org/downloads/)
-- [Git](https://git-scm.com/downloads)
+- Python 3.11+
+- `uv`
+- Git
+- One supported AI agent (see `AGENTS.md`)
 
-## Installation
-
-### Initialize a New Project
-
-The easiest way to get started is to initialize a new project:
+## Install and Initialize
 
 ```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME>
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME> --ai claude
 ```
 
-Or initialize in the current directory:
+Initialize in current directory:
 
 ```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init .
-# or use the --here flag
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init --here
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init --here --ai claude
 ```
 
-### Choose AI Agent
+## Script Variant
 
-You can choose your AI agent during initialization:
+- `--script sh` for Bash/Zsh
+- `--script ps` for PowerShell
+
+## Verify
 
 ```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai claude
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai gemini
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai copilot
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai codebuddy
+lcs check
 ```
 
-### Choose Script Type (Shell vs PowerShell)
+Your project should include:
 
-All automation scripts now have both Bash (`.sh`) and PowerShell (`.ps1`) variants.
-
-Auto behavior:
-
-- Windows default: `ps`
-- Other OS default: `sh`
-- Interactive mode: you'll be prompted unless you pass `--script`
-
-Force a specific script type:
-
-```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --script sh
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --script ps
-```
-
-### Ignore Agent Tools Check
-
-If you prefer to get the templates without checking for the right tools:
-
-```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <project_name> --ai claude --ignore-agent-tools
-```
-
-## Verification
-
-After initialization, you should see the following commands available in your AI agent:
-
-- `/lcs.define` - Create specifications
-- `/lcs.design` - Generate implementation plans  
-- `/lcs.sequence` - Break down into actionable tasks
-
-The `.lcs/scripts` directory will contain both `.sh` and `.ps1` scripts.
-
-## Troubleshooting
-
-### Git Credential Manager on Linux
-
-If you're having issues with Git authentication on Linux, you can install Git Credential Manager:
-
-```bash
-#!/usr/bin/env bash
-set -e
-echo "Downloading Git Credential Manager v2.6.1..."
-wget https://github.com/git-ecosystem/git-credential-manager/releases/download/v2.6.1/gcm-linux_amd64.2.6.1.deb
-echo "Installing Git Credential Manager..."
-sudo dpkg -i gcm-linux_amd64.2.6.1.deb
-echo "Configuring Git to use GCM..."
-git config --global credential.helper manager
-echo "Cleaning up..."
-rm gcm-linux_amd64.2.6.1.deb
-```
+- agent command files
+- `.lcs/templates/`
+- `.lcs/scripts/`
+- `.lcs/memory/charter.md`

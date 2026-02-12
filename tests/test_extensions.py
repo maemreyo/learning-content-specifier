@@ -66,7 +66,7 @@ def valid_manifest_data():
             ]
         },
         "hooks": {
-            "after_tasks": {
+            "after_sequence": {
                 "command": "lcs.test.hello",
                 "optional": True,
                 "prompt": "Run test?",
@@ -184,6 +184,32 @@ class TestExtensionManifest:
             yaml.dump(valid_manifest_data, f)
 
         with pytest.raises(ValidationError, match="Invalid command name"):
+            ExtensionManifest(manifest_path)
+
+    def test_rejects_legacy_requires_key(self, temp_dir, valid_manifest_data):
+        """Manifest must use requires.lcs_version."""
+        import yaml
+
+        valid_manifest_data["requires"] = {"speckit_version": ">=0.2.0"}
+        manifest_path = temp_dir / "extension.yml"
+        with open(manifest_path, 'w') as f:
+            yaml.dump(valid_manifest_data, f)
+
+        with pytest.raises(ValidationError, match="requires.lcs_version"):
+            ExtensionManifest(manifest_path)
+
+    def test_rejects_legacy_hook_event(self, temp_dir, valid_manifest_data):
+        """Legacy hook events are not accepted in clean-break mode."""
+        import yaml
+
+        valid_manifest_data["hooks"] = {
+            "after_tasks": {"command": "lcs.test.hello"}
+        }
+        manifest_path = temp_dir / "extension.yml"
+        with open(manifest_path, 'w') as f:
+            yaml.dump(valid_manifest_data, f)
+
+        with pytest.raises(ValidationError, match="Invalid hook event"):
             ExtensionManifest(manifest_path)
 
     def test_no_commands(self, temp_dir, valid_manifest_data):
@@ -418,6 +444,14 @@ $ARGUMENTS
         assert frontmatter["tools"] == ["tool1", "tool2"]
         assert "Command body" in body
         assert "$ARGUMENTS" in body
+
+    def test_agent_mapping_includes_codex_and_cursor_agent(self):
+        """Agent mapping must align with CLI/AGENTS conventions."""
+        registrar = CommandRegistrar()
+        assert "codex" in registrar.AGENT_CONFIGS
+        assert registrar.AGENT_CONFIGS["codex"]["dir"] == ".codex/commands"
+        assert "cursor-agent" in registrar.AGENT_CONFIGS
+        assert registrar.AGENT_CONFIGS["cursor-agent"]["dir"] == ".cursor/commands"
 
     def test_parse_frontmatter_no_frontmatter(self):
         """Test parsing content without frontmatter."""

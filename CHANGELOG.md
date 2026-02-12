@@ -7,6 +7,28 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-12
+
+### Changed
+
+- **Breaking**: Enforced clean-break extension manifest schema with `requires.lcs_version` and rejected legacy `requires.speckit_version`.
+- **Breaking**: Enforced clean-break hook event model; accepted only `after_<core_command>` events (including `after_sequence` and `after_author`).
+- Rewrote all core command templates with strict sections (`Intent`, `Mandatory Rules`, `Hard Gates`, `Failure Modes`, `Output Contract`, `Examples`).
+- Added deterministic authoring gate validator scripts:
+  - `scripts/bash/validate-author-gates.sh`
+  - `scripts/powershell/validate-author-gates.ps1`
+- Standardized paths-only prereq contract to `UNIT_*` keys and added `--skip-branch-check` support for charter initialization on `main`.
+- Hardened `setup-design` scripts to avoid unintended `design.md` overwrite unless force-reset is requested.
+- Aligned release package agent directories with `AGENTS.md` for `codex`, `kilocode`, `auggie`, `roo`.
+- Fixed release packaging path rewrite bug that could emit invalid `.lcs.lcs/...` paths.
+- Updated VS Code/devcontainer command recommendations to new command set.
+- Added migration governance docs:
+  - `docs/system/migration/learning-content-migration-matrix.md`
+  - `docs/system/migration/terminology.md`
+  - `docs/system/migration/extensions-migration-notes.md`
+- Added CI smoke scripts for script contracts, release packaging, and docs link integrity.
+- Updated project/docs narrative to learning-content-first workflow and fixed broken docs references.
+
 ## [0.2.0] - 2026-02-12
 
 ### Changed

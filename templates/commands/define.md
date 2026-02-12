@@ -13,25 +13,50 @@ scripts:
   ps: scripts/powershell/create-new-unit.ps1 -Json "{ARGS}"
 ---
 
-## User Input
+## Intent
+
+Transform a raw learning-content request into a complete `brief.md` contract.
+
+## Inputs
 
 ```text
 $ARGUMENTS
 ```
 
-Use the input as the unit request. Do not ask the user to repeat it unless empty.
+## Mandatory Rules (YOU MUST / MUST NOT)
 
-## Workflow
+- YOU MUST run `{SCRIPT}` exactly once.
+- YOU MUST populate all mandatory sections from `.lcs/templates/brief-template.md`.
+- YOU MUST express learning outcomes as observable, measurable outcomes.
+- YOU MUST keep content implementation-agnostic and learner-centric.
+- YOU MUST NOT leave ambiguous gaps without explicit assumptions.
 
-1. Run `{SCRIPT}` once to create/select the numbered unit directory and get JSON output.
-2. Parse JSON: `UNIT_NAME`, `BRIEF_FILE`, `UNIT_NUM`.
-3. Load `.lcs/templates/brief-template.md` and populate all mandatory sections.
-4. Focus on:
-   - audience and context
-   - measurable learning outcomes
-   - scope boundaries
-   - content + accessibility requirements
-   - success metrics and assumptions
-5. Keep brief implementation-agnostic and learner-centric.
-6. Save to `BRIEF_FILE`.
-7. Report completion with unit name, file path, and suggested next command (`/lcs.refine` or `/lcs.design`).
+## Execution Steps
+
+1. Run `{SCRIPT}` and parse `UNIT_NAME`, `BRIEF_FILE`, `UNIT_NUM`.
+2. Load `.lcs/templates/brief-template.md`.
+3. Write brief sections: audience/context, outcomes, scope boundaries, requirements, accessibility/readability, metrics, risks.
+4. Save to `BRIEF_FILE`.
+5. Return completion summary and next command options.
+
+## Hard Gates
+
+- Gate G-DF-001: each LO contains statement, evidence, and acceptance criteria.
+- Gate G-DF-002: accessibility/readability requirements are explicit.
+- Gate G-DF-003: success metrics are measurable.
+
+## Failure Modes
+
+- Empty request: stop and ask for minimum unit intent.
+- Missing template: stop with path to expected template.
+- Non-measurable outcomes: stop and revise LO wording.
+
+## Output Contract
+
+- Artifact: `specs/<unit>/brief.md`.
+- Completion report: `UNIT_NAME`, `BRIEF_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
+
+## Examples
+
+- Success: 3 measurable LOs with evidence and acceptance criteria.
+- Fail: LO written as vague aspiration without observable behavior.

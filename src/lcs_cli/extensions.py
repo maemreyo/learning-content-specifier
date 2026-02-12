@@ -41,6 +41,17 @@ class ExtensionManifest:
 
     SCHEMA_VERSION = "1.0"
     REQUIRED_FIELDS = ["schema_version", "extension", "requires", "provides"]
+    ALLOWED_HOOK_EVENTS = {
+        "after_charter",
+        "after_define",
+        "after_refine",
+        "after_design",
+        "after_sequence",
+        "after_rubric",
+        "after_audit",
+        "after_author",
+        "after_issueize",
+    }
 
     def __init__(self, manifest_path: Path):
         """Load and validate extension manifest.
@@ -118,6 +129,17 @@ class ExtensionManifest:
                 raise ValidationError(
                     f"Invalid command name '{cmd['name']}': "
                     "must follow pattern 'lcs.{extension}.{command}'"
+                )
+
+        # Validate hook event names (clean break)
+        hooks = self.data.get("hooks", {})
+        if hooks and not isinstance(hooks, dict):
+            raise ValidationError("Invalid hooks section: expected mapping")
+        for hook_name in hooks:
+            if hook_name not in self.ALLOWED_HOOK_EVENTS:
+                raise ValidationError(
+                    f"Invalid hook event '{hook_name}'. "
+                    f"Allowed events: {', '.join(sorted(self.ALLOWED_HOOK_EVENTS))}"
                 )
 
     @property
@@ -599,7 +621,7 @@ class CommandRegistrar:
             "args": "$ARGUMENTS",
             "extension": ".md"
         },
-        "cursor": {
+        "cursor-agent": {
             "dir": ".cursor/commands",
             "format": "markdown",
             "args": "$ARGUMENTS",
@@ -613,6 +635,12 @@ class CommandRegistrar:
         },
         "opencode": {
             "dir": ".opencode/command",
+            "format": "markdown",
+            "args": "$ARGUMENTS",
+            "extension": ".md"
+        },
+        "codex": {
+            "dir": ".codex/commands",
             "format": "markdown",
             "args": "$ARGUMENTS",
             "extension": ".md"
@@ -1535,7 +1563,7 @@ class HookExecutor:
         """Get all registered hooks for a specific event.
 
         Args:
-            event_name: Name of the event (e.g., 'after_tasks')
+            event_name: Name of the event (e.g., 'after_sequence')
 
         Returns:
             List of hook configurations
@@ -1687,7 +1715,7 @@ class HookExecutor:
         This method is designed to be called by AI agents after core commands complete.
 
         Args:
-            event_name: Name of the event (e.g., 'after_spec', 'after_tasks')
+            event_name: Name of the event (e.g., 'after_define', 'after_sequence')
 
         Returns:
             Dictionary with hook information:
@@ -1784,5 +1812,4 @@ class HookExecutor:
                     hook["enabled"] = False
 
         self.save_project_config(config)
-
 

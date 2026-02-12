@@ -121,7 +121,6 @@ $briefFile = Join-Path $unitDir 'brief.md'
 if (Test-Path $template) { Copy-Item $template $briefFile -Force } else { New-Item -ItemType File -Path $briefFile -Force | Out-Null }
 
 $env:LCS_UNIT = $unitName
-$env:LCS_FEATURE = $unitName
 
 if ($Json) {
     [PSCustomObject]@{ UNIT_NAME=$unitName; BRIEF_FILE=$briefFile; UNIT_NUM=$unitNum } | ConvertTo-Json -Compress

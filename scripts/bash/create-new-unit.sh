@@ -150,7 +150,6 @@ else
 fi
 
 export LCS_UNIT="$UNIT_NAME"
-export LCS_FEATURE="$UNIT_NAME"
 
 if $JSON_MODE; then
     printf '{"UNIT_NAME":"%s","BRIEF_FILE":"%s","UNIT_NUM":"%s"}\n' "$UNIT_NAME" "$BRIEF_FILE" "$UNIT_NUM"

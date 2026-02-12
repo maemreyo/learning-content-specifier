@@ -9,29 +9,47 @@ scripts:
   ps: scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly
 ---
 
-## User Input
+## Intent
+
+Convert high-impact ambiguity into explicit brief clarifications before design.
+
+## Inputs
 
 ```text
 $ARGUMENTS
 ```
 
-## Goal
+## Mandatory Rules (YOU MUST / MUST NOT)
 
-Improve brief precision for high-impact decisions before design.
+- YOU MUST ask only questions that materially affect design or gate outcomes.
+- YOU MUST persist accepted clarifications back into `brief.md` immediately.
+- YOU MUST append clarification history with date.
+- YOU MUST NOT ask redundant or low-impact questions.
 
-## Workflow
+## Execution Steps
 
-1. Run `{SCRIPT}` once and parse `UNIT_DIR`, `BRIEF_FILE` (paths-only payload).
-2. Load brief and scan for missing/ambiguous areas:
-   - outcome measurability
-   - audience constraints
-   - pedagogy assumptions
-   - assessment evidence expectations
-   - accessibility/readability requirements
-3. Ask targeted clarification questions only where ambiguity materially changes design.
-4. After each accepted answer:
-   - append under `## Clarifications` with session date
-   - update the most relevant section directly
-   - remove contradictory wording
-5. Save brief after each integrated answer.
-6. Report: number of clarifications, sections updated, and readiness for `/lcs.design`.
+1. Run `{SCRIPT}` and parse `UNIT_DIR`, `UNIT_BRIEF_FILE`.
+2. Inspect ambiguity hotspots: outcome measurability, audience constraints, pedagogy assumptions, assessment evidence, accessibility requirements.
+3. Ask targeted clarifications and integrate accepted answers under `## Clarifications`.
+4. Reconcile contradictory wording in the main brief sections.
+5. Save and report readiness for `/lcs.design`.
+
+## Hard Gates
+
+- Gate G-RF-001: no unresolved critical ambiguity affecting LO or assessment coverage.
+- Gate G-RF-002: contradictions removed between original brief and clarifications.
+
+## Failure Modes
+
+- Brief missing: stop and request `/lcs.define` first.
+- Clarification conflicts unresolved: stop and require explicit user decision.
+
+## Output Contract
+
+- Updated `specs/<unit>/brief.md`.
+- Report includes: clarification count, sections touched, unresolved blockers.
+
+## Examples
+
+- Success: ambiguity on evidence resolved and mapped to LO acceptance.
+- Fail: unresolved conflict between audience level and difficulty target.

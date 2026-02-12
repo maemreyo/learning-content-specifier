@@ -1,164 +1,42 @@
-# Quick Start Guide
+# Quick Start
 
-This guide will help you get started with Spec-Driven Development using LCS.
-
-> [!NOTE]
-> All automation scripts now provide both Bash (`.sh`) and PowerShell (`.ps1`) variants. The `lcs` CLI auto-selects based on OS unless you pass `--script sh|ps`.
-
-## The 6-Step Process
-
-> [!TIP]
-> **Context Awareness**: LCS commands automatically detect the active feature based on your current Git branch (e.g., `001-feature-name`). To switch between different specifications, simply switch Git branches.
-
-### Step 1: Install LCS
-
-**In your terminal**, run the `lcs` CLI command to initialize your project:
+## 1. Initialize
 
 ```bash
-# Create a new project directory
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME>
-
-# OR initialize in the current directory
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init .
+uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME> --ai claude
 ```
 
-Pick script type explicitly (optional):
-
-```bash
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME> --script ps  # Force PowerShell
-uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs init <PROJECT_NAME> --script sh  # Force POSIX shell
-```
-
-### Step 2: Define Your Constitution
-
-**In your AI Agent's chat interface**, use the `/lcs.charter` slash command to establish the core rules and principles for your project. You should provide your project's specific principles as arguments.
-
-```markdown
-/lcs.charter This project follows a "Library-First" approach. All features must be implemented as standalone libraries first. We use TDD strictly. We prefer functional programming patterns.
-```
-
-### Step 3: Create the Spec
-
-**In the chat**, use the `/lcs.define` slash command to describe what you want to build. Focus on the **what** and **why**, not the tech stack.
-
-```markdown
-/lcs.define Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.
-```
-
-### Step 4: Refine the Spec
-
-**In the chat**, use the `/lcs.refine` slash command to identify and resolve ambiguities in your specification. You can provide specific focus areas as arguments.
-
-```bash
-/lcs.refine Focus on security and performance requirements.
-```
-
-### Step 5: Create a Technical Implementation Plan
-
-**In the chat**, use the `/lcs.design` slash command to provide your tech stack and architecture choices.
-
-```markdown
-/lcs.design The application uses Vite with minimal number of libraries. Use vanilla HTML, CSS, and JavaScript as much as possible. Images are not uploaded anywhere and metadata is stored in a local SQLite database.
-```
-
-### Step 6: Break Down and Implement
-
-**In the chat**, use the `/lcs.sequence` slash command to create an actionable task list.
-
-```markdown
-/lcs.sequence
-```
-
-Optionally, validate the plan with `/lcs.audit`:
-
-```markdown
-/lcs.audit
-```
-
-Then, use the `/lcs.author` slash command to execute the plan.
-
-```markdown
-/lcs.author
-```
-
-## Detailed Example: Building Taskify
-
-Here's a complete example of building a team productivity platform:
-
-### Step 1: Define Constitution
-
-Initialize the project's constitution to set ground rules:
-
-```markdown
-/lcs.charter Taskify is a "Security-First" application. All user inputs must be validated. We use a microservices architecture. Code must be fully documented.
-```
-
-### Step 2: Define Requirements with `/lcs.define`
+## 2. Run the command chain
 
 ```text
-Develop Taskify, a team productivity platform. It should allow users to create projects, add team members,
-assign tasks, comment and move tasks between boards in Kanban style. In this initial phase for this feature,
-let's call it "Create Taskify," let's have multiple users but the users will be declared ahead of time, predefined.
-I want five users in two different categories, one product manager and four engineers. Let's create three
-different sample projects. Let's have the standard Kanban columns for the status of each task, such as "To Do,"
-"In Progress," "In Review," and "Done." There will be no login for this application as this is just the very
-first testing thing to ensure that our basic features are set up.
-```
-
-### Step 3: Refine the Specification
-
-Use the `/lcs.refine` command to interactively resolve any ambiguities in your specification. You can also provide specific details you want to ensure are included.
-
-```bash
-/lcs.refine I want to clarify the task card details. For each task in the UI for a task card, you should be able to change the current status of the task between the different columns in the Kanban work board. You should be able to leave an unlimited number of comments for a particular card. You should be able to, from that task card, assign one of the valid users.
-```
-
-You can continue to refine the spec with more details using `/lcs.refine`:
-
-```bash
-/lcs.refine When you first launch Taskify, it's going to give you a list of the five users to pick from. There will be no password required. When you click on a user, you go into the main view, which displays the list of projects. When you click on a project, you open the Kanban board for that project. You're going to see the columns. You'll be able to drag and drop cards back and forth between different columns. You will see any cards that are assigned to you, the currently logged in user, in a different color from all the other ones, so you can quickly see yours. You can edit any comments that you make, but you can't edit comments that other people made. You can delete any comments that you made, but you can't delete comments anybody else made.
-```
-
-### Step 4: Validate the Spec
-
-Validate the specification checklist using the `/lcs.rubric` command:
-
-```bash
+/lcs.charter
+/lcs.define Build a learning unit for ...
+/lcs.refine
+/lcs.design
+/lcs.sequence
 /lcs.rubric
-```
-
-### Step 5: Generate Technical Plan with `/lcs.design`
-
-Be specific about your tech stack and technical requirements:
-
-```bash
-/lcs.design We are going to generate this using .NET Aspire, using Postgres as the database. The frontend should use Blazor server with drag-and-drop task boards, real-time updates. There should be a REST API created with a projects API, tasks API, and a notifications API.
-```
-
-### Step 6: Validate and Implement
-
-Have your AI agent audit the implementation plan using `/lcs.audit`:
-
-```bash
 /lcs.audit
-```
-
-Finally, implement the solution:
-
-```bash
 /lcs.author
 ```
 
-## Key Principles
+## 3. Confirm artifacts
 
-- **Be explicit** about what you're building and why
-- **Don't focus on tech stack** during specification phase
-- **Iterate and refine** your specifications before implementation
-- **Validate** the plan before coding begins
-- **Let the AI agent handle** the implementation details
+Expected under `specs/<###-slug>/`:
 
-## Next Steps
+- `brief.md`
+- `design.md`
+- `sequence.md`
+- `content-model.md`
+- `assessment-map.md`
+- `delivery-guide.md`
+- `rubrics/`
+- `audit-report.md`
+- `outputs/`
 
-- Read the [complete methodology](../spec-driven.md) for in-depth guidance
-- Check out [more examples](../templates) in the repository
-- Explore the [source code on GitHub](https://github.com/maemreyo/learning-content-specifier)
+## Hard Gate Rule
+
+Do not run `/lcs.author` unless:
+
+- rubric items are resolved with evidence,
+- audit decision is `PASS`,
+- open `CRITICAL/HIGH` count is zero.

@@ -20,3 +20,41 @@ jobs:
           globs: |
             '**/*.md'
             !extensions/**/*.md
+
+  tests-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Run unit tests
+        run: uv run pytest -q
+
+      - name: Script contract smoke
+        run: |
+          chmod +x .github/workflows/scripts/test-script-contracts.sh
+          .github/workflows/scripts/test-script-contracts.sh
+
+      - name: Release packaging smoke
+        run: |
+          chmod +x .github/workflows/scripts/create-release-packages.sh
+          chmod +x .github/workflows/scripts/smoke-release-packages.sh
+          .github/workflows/scripts/smoke-release-packages.sh v9.9.9
+
+      - name: Docs link check
+        run: |
+          chmod +x .github/workflows/scripts/check-doc-links.sh
+          .github/workflows/scripts/check-doc-links.sh
+
+      - name: Legacy token guard
+        run: |
+          chmod +x .github/workflows/scripts/legacy-token-guard.sh
+          .github/workflows/scripts/legacy-token-guard.sh

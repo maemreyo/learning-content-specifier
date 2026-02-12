@@ -61,9 +61,9 @@ New-Item -ItemType Directory -Path $GenReleasesDir -Force | Out-Null
 function Rewrite-Paths {
     param([string]$Content)
     
-    $Content = $Content -replace '(/?)\bmemory/', '.lcs/memory/'
-    $Content = $Content -replace '(/?)\bscripts/', '.lcs/scripts/'
-    $Content = $Content -replace '(/?)\btemplates/', '.lcs/templates/'
+    $Content = $Content -replace '(^|[\s\"''(])memory/', '$1.lcs/memory/'
+    $Content = $Content -replace '(^|[\s\"''(])scripts/', '$1.lcs/scripts/'
+    $Content = $Content -replace '(^|[\s\"''(])templates/', '$1.lcs/templates/'
     return $Content
 }
 
@@ -109,12 +109,21 @@ function Generate-Commands {
             $agentScriptCommand = $matches[1].Trim()
         }
         
+        # Extract gate_script command from YAML frontmatter if present
+        $gateScriptCommand = ""
+        if ($fileContent -match "(?ms)gate_scripts:.*?^\s*${ScriptVariant}:\s*(.+?)$") {
+            $gateScriptCommand = $matches[1].Trim()
+        }
+        
         # Replace {SCRIPT} placeholder with the script command
         $body = $fileContent -replace '\{SCRIPT\}', $scriptCommand
         
         # Replace {AGENT_SCRIPT} placeholder with the agent script command if found
         if (-not [string]::IsNullOrEmpty($agentScriptCommand)) {
             $body = $body -replace '\{AGENT_SCRIPT\}', $agentScriptCommand
+        }
+        if (-not [string]::IsNullOrEmpty($gateScriptCommand)) {
+            $body = $body -replace '\{GATE_SCRIPT\}', $gateScriptCommand
         }
         
         # Remove the scripts: and agent_scripts: sections from frontmatter
@@ -137,7 +146,7 @@ function Generate-Commands {
             }
             
             if ($inFrontmatter) {
-                if ($line -match '^(scripts|agent_scripts):$') {
+                if ($line -match '^(scripts|agent_scripts|gate_scripts):$') {
                     $skipScripts = $true
                     continue
                 }
@@ -312,19 +321,19 @@ function Build-Variant {
             Generate-Commands -Agent 'windsurf' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'codex' {
-            $cmdDir = Join-Path $baseDir ".codex/prompts"
+            $cmdDir = Join-Path $baseDir ".codex/commands"
             Generate-Commands -Agent 'codex' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'kilocode' {
-            $cmdDir = Join-Path $baseDir ".kilocode/workflows"
+            $cmdDir = Join-Path $baseDir ".kilocode/rules"
             Generate-Commands -Agent 'kilocode' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'auggie' {
-            $cmdDir = Join-Path $baseDir ".augment/commands"
+            $cmdDir = Join-Path $baseDir ".augment/rules"
             Generate-Commands -Agent 'auggie' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'roo' {
-            $cmdDir = Join-Path $baseDir ".roo/commands"
+            $cmdDir = Join-Path $baseDir ".roo/rules"
             Generate-Commands -Agent 'roo' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'codebuddy' {

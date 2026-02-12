@@ -1,14 +1,13 @@
 {
     "chat.promptFilesRecommendations": {
-        "lcs.constitution": true,
-        "lcs.specify": true,
-        "lcs.plan": true,
-        "lcs.tasks": true,
-        "lcs.implement": true
+        "lcs.charter": true,
+        "lcs.define": true,
+        "lcs.design": true,
+        "lcs.sequence": true,
+        "lcs.author": true
     },
     "chat.tools.terminal.autoApprove": {
         ".lcs/scripts/bash/": true,
         ".lcs/scripts/powershell/": true
     }
 }
-

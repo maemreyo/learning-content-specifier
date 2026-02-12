@@ -1,5 +1,7 @@
 # RFC: LCS Extension System
 
+> Historical design document. Legacy terms/events may appear here for archival context.
+
 **Status**: Draft
 **Author**: Stats Perform Engineering
 **Created**: 2026-01-28

@@ -11,7 +11,6 @@ function Get-RepoRoot {
 
 function Get-CurrentBranch {
     if ($env:LCS_UNIT) { return $env:LCS_UNIT }
-    if ($env:LCS_FEATURE) { return $env:LCS_FEATURE }
 
     try {
         $result = git rev-parse --abbrev-ref HEAD 2>$null

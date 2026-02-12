@@ -28,13 +28,13 @@ extension:
   license: "MIT"
 
 requires:
-  speckit_version: ">=0.1.0"            # Minimum learning-content-specifier version
+  lcs_version: ">=0.1.0"            # Minimum learning-content-specifier version
   tools:                                # Optional: External tools required
     - name: "my-tool"
       required: true
       version: ">=1.0.0"
   commands:                             # Optional: Core commands needed
-    - "lcs.tasks"
+    - "lcs.sequence"
 
 provides:
   commands:
@@ -50,7 +50,7 @@ provides:
       required: false
 
 hooks:                                  # Optional: Integration hooks
-  after_tasks:
+  after_sequence:
     command: "lcs.my-ext.hello"
     optional: true
     prompt: "Run hello command?"
@@ -165,7 +165,7 @@ Compatibility requirements.
 
 **Required sub-fields**:
 
-- `speckit_version`: Semantic version specifier (e.g., ">=0.1.0,<2.0.0")
+- `lcs_version`: Semantic version specifier (e.g., ">=0.1.0,<2.0.0")
 
 **Optional sub-fields**:
 
@@ -196,8 +196,8 @@ Integration hooks for automatic execution.
 
 Available hook points:
 
-- `after_tasks`: After `/lcs.sequence` completes
-- `after_implement`: After `/lcs.author` completes (future)
+- `after_sequence`: After `/lcs.sequence` completes
+- `after_author`: After `/lcs.author` completes (future)
 
 Hook object:
 
@@ -311,7 +311,7 @@ In your command, load config with layered precedence:
 1. Extension defaults (`extension.yml` → `defaults`)
 2. Project config (`.lcs/extensions/my-ext/my-ext-config.yml`)
 3. Local overrides (`.lcs/extensions/my-ext/my-ext-config.local.yml` - gitignored)
-4. Environment variables (`SPECKIT_MY_EXT_*`)
+4. Environment variables (`LCS_MY_EXT_*`)
 
 **Example loading script**:
 
@@ -323,8 +323,8 @@ EXT_DIR=".lcs/extensions/my-ext"
 config=$(yq eval '.' "$EXT_DIR/my-ext-config.yml" -o=json)
 
 # Apply env overrides
-if [ -n "${SPECKIT_MY_EXT_API_KEY:-}" ]; then
-  config=$(echo "$config" | jq ".api.api_key = \"$SPECKIT_MY_EXT_API_KEY\"")
+if [ -n "${LCS_MY_EXT_API_KEY:-}" ]; then
+  config=$(echo "$config" | jq ".api.api_key = \"$LCS_MY_EXT_API_KEY\"")
 fi
 
 echo "$config"
@@ -522,7 +522,7 @@ extension:
   version: "1.0.0"
   description: "Minimal example"
 requires:
-  speckit_version: ">=0.1.0"
+  lcs_version: ">=0.1.0"
 provides:
   commands:
     - name: "lcs.minimal.hello"
@@ -581,7 +581,7 @@ Extension that runs automatically:
 ```yaml
 # extension.yml
 hooks:
-  after_tasks:
+  after_sequence:
     command: "lcs.auto.analyze"
     optional: false  # Always run
     description: "Analyze tasks after generation"

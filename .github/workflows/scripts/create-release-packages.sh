@@ -32,9 +32,9 @@ rm -rf "$GENRELEASES_DIR"/* || true
 
 rewrite_paths() {
   sed -E \
-    -e 's@(/?)memory/@.lcs/memory/@g' \
-    -e 's@(/?)scripts/@.lcs/scripts/@g' \
-    -e 's@(/?)templates/@.lcs/templates/@g' \
+    -e 's@(^|[[:space:]"'"'"'(])memory/@\1.lcs/memory/@g' \
+    -e 's@(^|[[:space:]"'"'"'(])scripts/@\1.lcs/scripts/@g' \
+    -e 's@(^|[[:space:]"'"'"'(])templates/@\1.lcs/templates/@g' \
     -e 's@\.specify\.lcs/@.lcs/@g'
 }
 
@@ -43,7 +43,7 @@ generate_commands() {
   mkdir -p "$output_dir"
   for template in templates/commands/*.md; do
     [[ -f "$template" ]] || continue
-    local name description script_command agent_script_command body
+    local name description script_command agent_script_command gate_script_command body
     name=$(basename "$template" .md)
     
     # Normalize line endings
@@ -68,6 +68,17 @@ generate_commands() {
       }
       in_agent_scripts && /^[a-zA-Z]/ { in_agent_scripts=0 }
     ')
+
+    # Extract gate_script command from YAML frontmatter if present
+    gate_script_command=$(printf '%s\n' "$file_content" | awk '
+      /^gate_scripts:$/ { in_gate_scripts=1; next }
+      in_gate_scripts && /^[[:space:]]*'"$script_variant"':[[:space:]]*/ {
+        sub(/^[[:space:]]*'"$script_variant"':[[:space:]]*/, "")
+        print
+        exit
+      }
+      in_gate_scripts && /^[a-zA-Z]/ { in_gate_scripts=0 }
+    ')
     
     # Replace {SCRIPT} placeholder with the script command
     body=$(printf '%s\n' "$file_content" | sed "s|{SCRIPT}|${script_command}|g")
@@ -76,12 +87,16 @@ generate_commands() {
     if [[ -n $agent_script_command ]]; then
       body=$(printf '%s\n' "$body" | sed "s|{AGENT_SCRIPT}|${agent_script_command}|g")
     fi
+    if [[ -n $gate_script_command ]]; then
+      body=$(printf '%s\n' "$body" | sed "s|{GATE_SCRIPT}|${gate_script_command}|g")
+    fi
     
-    # Remove the scripts: and agent_scripts: sections from frontmatter while preserving YAML structure
+    # Remove script sections from frontmatter while preserving YAML structure
     body=$(printf '%s\n' "$body" | awk '
       /^---$/ { print; if (++dash_count == 1) in_frontmatter=1; else in_frontmatter=0; next }
       in_frontmatter && /^scripts:$/ { skip_scripts=1; next }
       in_frontmatter && /^agent_scripts:$/ { skip_scripts=1; next }
+      in_frontmatter && /^gate_scripts:$/ { skip_scripts=1; next }
       in_frontmatter && /^[a-zA-Z].*:/ && skip_scripts { skip_scripts=0 }
       in_frontmatter && skip_scripts && /^[[:space:]]/ { next }
       { print }
@@ -196,17 +211,17 @@ build_variant() {
       mkdir -p "$base_dir/.windsurf/workflows"
       generate_commands windsurf md "\$ARGUMENTS" "$base_dir/.windsurf/workflows" "$script" ;;
     codex)
-      mkdir -p "$base_dir/.codex/prompts"
-      generate_commands codex md "\$ARGUMENTS" "$base_dir/.codex/prompts" "$script" ;;
+      mkdir -p "$base_dir/.codex/commands"
+      generate_commands codex md "\$ARGUMENTS" "$base_dir/.codex/commands" "$script" ;;
     kilocode)
-      mkdir -p "$base_dir/.kilocode/workflows"
-      generate_commands kilocode md "\$ARGUMENTS" "$base_dir/.kilocode/workflows" "$script" ;;
+      mkdir -p "$base_dir/.kilocode/rules"
+      generate_commands kilocode md "\$ARGUMENTS" "$base_dir/.kilocode/rules" "$script" ;;
     auggie)
-      mkdir -p "$base_dir/.augment/commands"
-      generate_commands auggie md "\$ARGUMENTS" "$base_dir/.augment/commands" "$script" ;;
+      mkdir -p "$base_dir/.augment/rules"
+      generate_commands auggie md "\$ARGUMENTS" "$base_dir/.augment/rules" "$script" ;;
     roo)
-      mkdir -p "$base_dir/.roo/commands"
-      generate_commands roo md "\$ARGUMENTS" "$base_dir/.roo/commands" "$script" ;;
+      mkdir -p "$base_dir/.roo/rules"
+      generate_commands roo md "\$ARGUMENTS" "$base_dir/.roo/rules" "$script" ;;
     codebuddy)
       mkdir -p "$base_dir/.codebuddy/commands"
       generate_commands codebuddy md "\$ARGUMENTS" "$base_dir/.codebuddy/commands" "$script" ;;

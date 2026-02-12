@@ -102,8 +102,8 @@ Override configuration with environment variables:
 
 ```bash
 # Override connection settings
-export SPECKIT_MY_EXTENSION_CONNECTION_URL="https://custom-api.com"
-export SPECKIT_MY_EXTENSION_CONNECTION_API_KEY="custom-key"
+export LCS_MY_EXTENSION_CONNECTION_URL="https://custom-api.com"
+export LCS_MY_EXTENSION_CONNECTION_API_KEY="custom-key"
 ```
 
 ## Examples
