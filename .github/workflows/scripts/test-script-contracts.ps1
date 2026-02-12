@@ -1,15 +1,24 @@
 #!/usr/bin/env pwsh
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = $env:GITHUB_WORKSPACE
-if (-not $repoRoot) {
-    $repoRoot = (& git rev-parse --show-toplevel 2>$null)
+$repoRoot = $null
+if ($PSScriptRoot) {
+    $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
 }
-if (-not $repoRoot) {
+if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
+    $repoRoot = $env:GITHUB_WORKSPACE
+}
+if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
+    $gitRoot = (& git rev-parse --show-toplevel 2>$null)
+    if ($gitRoot) {
+        $repoRoot = (@($gitRoot) | Where-Object { $_ -and "$_".Trim() } | Select-Object -First 1)
+    }
+}
+if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
     $repoRoot = (Get-Location).Path
 }
 $repoRoot = "$repoRoot".Trim()
-if (-not $repoRoot) {
+if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
     throw 'Could not determine repository root.'
 }
 
