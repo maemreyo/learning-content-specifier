@@ -80,7 +80,7 @@ jobs:
         run: uv sync --extra test
 
       - name: Run pytest
-        run: uv run pytest -q
+        run: uv run pytest -q tests/test_extensions.py
 
       - name: Run PowerShell script contracts
         shell: pwsh

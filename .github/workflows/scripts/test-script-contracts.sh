@@ -5,14 +5,15 @@ ROOT="$(pwd)"
 UNIT="999-ci-contract"
 UNIT_DIR="$ROOT/specs/$UNIT"
 
-extract_json_line() {
-  python3 -c '
+normalize_json() {
+  local raw="${1:-}"
+  python3 - "$raw" <<'PY'
 import json
 import sys
 
-text = sys.stdin.read()
+text = sys.argv[1]
 decoder = json.JSONDecoder()
-last = None
+candidates = []
 
 for i, ch in enumerate(text):
     if ch not in "{[":
@@ -21,14 +22,20 @@ for i, ch in enumerate(text):
         obj, end = decoder.raw_decode(text[i:])
     except Exception:
         continue
+    candidates.append((i, end, obj))
+
+for i, end, obj in candidates:
     if text[i + end :].strip() == "":
         print(json.dumps(obj))
         sys.exit(0)
-    last = obj
 
-if last is not None:
-    print(json.dumps(last))
-'
+if candidates:
+    _, _, obj = max(candidates, key=lambda item: item[1])
+    print(json.dumps(obj))
+    sys.exit(0)
+
+sys.exit(1)
+PY
 }
 
 rm -rf "$UNIT_DIR"
@@ -56,7 +63,7 @@ cp templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
 tmp_unit_number="$(date +%s)"
 used_define_fallback=false
 json_define_raw="$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/scripts/bash/create-new-unit.sh" --json --number "$tmp_unit_number" "temporary unit for contract test" 2>&1 || true)"
-json_define="$(printf '%s\n' "$json_define_raw" | extract_json_line)"
+json_define="$(normalize_json "$json_define_raw" || true)"
 if [[ -z "$json_define" ]]; then
   used_define_fallback=true
   json_define='{"UNIT_NAME":"999-ci-contract","BRIEF_FILE":"specs/999-ci-contract/brief.md","UNIT_NUM":"999"}'
@@ -78,7 +85,7 @@ fi
 rm -rf "$tmp_nogit"
 
 json_setup_raw="$(scripts/bash/setup-design.sh --json 2>&1)"
-json_setup="$(printf '%s\n' "$json_setup_raw" | extract_json_line)"
+json_setup="$(normalize_json "$json_setup_raw" || true)"
 if [[ -z "$json_setup" ]]; then
   echo "setup-design.sh did not emit JSON output" >&2
   echo "$json_setup_raw" >&2
@@ -110,7 +117,7 @@ json.dump(obj, open(path,"w"), indent=2)
 PY
 
 contract_json_raw="$(scripts/bash/validate-artifact-contracts.sh --json --unit-dir "$UNIT_DIR" 2>&1)"
-contract_json="$(printf '%s\n' "$contract_json_raw" | extract_json_line)"
+contract_json="$(normalize_json "$contract_json_raw" || true)"
 if [[ -z "$contract_json" ]]; then
   echo "validate-artifact-contracts.sh did not emit JSON output" >&2
   echo "$contract_json_raw" >&2
@@ -123,7 +130,7 @@ assert obj["STATUS"] == "PASS", obj
 PY
 
 json_paths_raw="$(scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check 2>&1)"
-json_paths="$(printf '%s\n' "$json_paths_raw" | extract_json_line)"
+json_paths="$(normalize_json "$json_paths_raw" || true)"
 if [[ -z "$json_paths" ]]; then
   echo "check-workflow-prereqs.sh did not emit JSON output" >&2
   echo "$json_paths_raw" >&2
