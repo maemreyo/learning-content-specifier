@@ -27,13 +27,13 @@ tmp_nogit="$(mktemp -d)"
 mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/specs"
 cp templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
 json_define=$(cd "$tmp_nogit" && bash "$ROOT/scripts/bash/create-new-unit.sh" --json "temporary unit for contract test")
-python3 - <<'PY' "$json_define"
+uv run python3 - <<'PY' "$json_define"
 import json,sys
 obj=json.loads(sys.argv[1])
 for k in ["UNIT_NAME","BRIEF_FILE","UNIT_NUM"]:
     assert k in obj, f"missing {k}"
 PY
-python3 - <<'PY' "$json_define"
+uv run python3 - <<'PY' "$json_define"
 import json,sys, pathlib
 obj=json.loads(sys.argv[1])
 brief_json = pathlib.Path(obj["BRIEF_FILE"]).with_suffix(".json")
@@ -42,14 +42,14 @@ PY
 rm -rf "$tmp_nogit"
 
 json_setup=$(scripts/bash/setup-design.sh --json)
-python3 - <<'PY' "$json_setup"
+uv run python3 - <<'PY' "$json_setup"
 import json,sys
 obj=json.loads(sys.argv[1])
 for k in ["BRIEF_FILE","DESIGN_FILE","UNIT_DIR","BRANCH","HAS_GIT"]:
     assert k in obj, f"missing {k}"
 assert isinstance(obj["HAS_GIT"], bool), "HAS_GIT must be bool"
 PY
-python3 - <<'PY' "$UNIT_DIR/audit-report.json"
+uv run python3 - <<'PY' "$UNIT_DIR/audit-report.json"
 import json,sys
 path=sys.argv[1]
 obj=json.load(open(path))
@@ -59,7 +59,7 @@ obj["open_high"]=0
 obj["findings"]=[]
 json.dump(obj, open(path,"w"), indent=2)
 PY
-python3 - <<'PY' "$UNIT_DIR/outputs/manifest.json"
+uv run python3 - <<'PY' "$UNIT_DIR/outputs/manifest.json"
 import json,sys
 path=sys.argv[1]
 obj=json.load(open(path))
@@ -68,14 +68,14 @@ json.dump(obj, open(path,"w"), indent=2)
 PY
 
 contract_json=$(scripts/bash/validate-artifact-contracts.sh --json --unit-dir "$UNIT_DIR")
-python3 - <<'PY' "$contract_json"
+uv run python3 - <<'PY' "$contract_json"
 import json,sys
 obj=json.loads(sys.argv[1])
 assert obj["STATUS"] == "PASS", obj
 PY
 
 json_paths=$(scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check)
-python3 - <<'PY' "$json_paths"
+uv run python3 - <<'PY' "$json_paths"
 import json,sys
 obj=json.loads(sys.argv[1])
 for k in [
@@ -115,7 +115,7 @@ for k in [
     assert k in obj, f"missing {k}"
 PY
 
-  pwsh -NoLogo -NoProfile -File scripts/powershell/validate-author-gates.ps1 -Json | python3 - <<'PY'
+  pwsh -NoLogo -NoProfile -File scripts/powershell/validate-author-gates.ps1 -Json | uv run python3 - <<'PY'
 import json,sys
 obj=json.loads(sys.stdin.read())
 assert obj["STATUS"] == "PASS"
