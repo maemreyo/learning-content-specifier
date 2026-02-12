@@ -195,8 +195,8 @@ extension:
 
 # Compatibility requirements (REQUIRED)
 requires:
-  # Spec-kit version (semantic version range)
-  speckit_version: ">=0.1.0,<2.0.0"
+  # LCS version (semantic version range)
+  lcs_version: ">=0.1.0,<2.0.0"
 
   # External tools required by extension
   tools:
@@ -526,7 +526,7 @@ content = """
 
 ### Registration Code
 
-**Location**: `src/specify_cli/extensions.py`
+**Location**: `src/lcs_cli/extensions.py`
 
 ```python
 def register_extension_commands(
@@ -542,7 +542,7 @@ def register_extension_commands(
         return
 
     ext_id = manifest['extension']['id']
-    ext_dir = project_path / ".specify" / "extensions" / ext_id
+    ext_dir = project_path / ".lcs" / "extensions" / ext_id
     agent_commands_dir = project_path / agent_config['folder'].rstrip('/') / "commands"
     agent_commands_dir.mkdir(parents=True, exist_ok=True)
 
@@ -882,7 +882,7 @@ def should_execute_hook(hook: dict, config: dict) -> bool:
       "changelog": "https://github.com/statsperform/learning-content-specifier-jira/blob/main/CHANGELOG.md",
       "license": "MIT",
       "requires": {
-        "speckit_version": ">=0.1.0,<2.0.0",
+        "lcs_version": ">=0.1.0,<2.0.0",
         "tools": [
           {
             "name": "jira-mcp-server",
@@ -904,7 +904,7 @@ def should_execute_hook(hook: dict, config: dict) -> bool:
       "download_url": "https://github.com/example/learning-content-specifier-linear/releases/download/v0.9.0/learning-content-specifier-linear-0.9.0.zip",
       "repository": "https://github.com/example/learning-content-specifier-linear",
       "requires": {
-        "speckit_version": ">=0.1.0"
+        "lcs_version": ">=0.1.0"
       },
       "tags": ["issue-tracking", "linear"],
       "verified": false
