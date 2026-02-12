@@ -58,3 +58,24 @@ jobs:
         run: |
           chmod +x .github/workflows/scripts/legacy-token-guard.sh
           .github/workflows/scripts/legacy-token-guard.sh
+
+  powershell-contracts:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Run pytest
+        run: uv run pytest -q
+
+      - name: Run PowerShell script contracts
+        shell: pwsh
+        run: .github/workflows/scripts/test-script-contracts.ps1
