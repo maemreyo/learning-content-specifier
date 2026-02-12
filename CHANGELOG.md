@@ -7,13 +7,17 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.1] - 2026-02-12
+## [0.1.2] - 2026-02-12
+
+### Fixed
+
+- Fixed asset naming pattern mismatch in LCS CLI that prevented template downloads
+- Updated `DEFAULT_TEMPLATE_ASSET_PREFIX` to match actual GitHub release asset names
+- Added missing `truststore` dependency to inline script metadata
 
 ### Changed
 
-- Rebranded CLI and templates from LCS/Specify to LCS.
-- Updated CLI entrypoint to `lcs` and aligned user-facing messages.
-- Updated project runtime paths for extensions to use `.lcs/`.
+- Updated inline script dependencies to include `truststore>=0.10.4`
 
 ## [0.1.0] - 2026-01-28
 
