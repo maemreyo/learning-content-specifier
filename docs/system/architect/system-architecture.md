@@ -1,3 +1,5 @@
+> Detailed learning-content architecture: `docs/system/architect/lcs-learning-content-system-detailed-diagram.md`
+
 ```mermaid
 graph TB
     User[Developer + AI Agent]

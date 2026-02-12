@@ -1,3 +1,5 @@
+> Detailed version: `docs/system/architect/lcs-learning-content-system-detailed-diagram.md`
+
 ```mermaid
 flowchart LR
     A[/lcs.charter/] --> B[/lcs.define/]
