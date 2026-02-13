@@ -5,6 +5,7 @@ set -euo pipefail
 JSON_MODE=false
 SHORT_NAME=""
 UNIT_NUMBER=""
+CHECKOUT_BRANCH=false
 ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -21,8 +22,12 @@ while [[ $# -gt 0 ]]; do
             UNIT_NUMBER="${2:-}"
             shift 2
             ;;
+        --checkout-branch)
+            CHECKOUT_BRANCH=true
+            shift
+            ;;
         --help|-h)
-            echo "Usage: $0 [--json] [--short-name <name>] [--number N] <unit_description>"
+            echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>"
             exit 0
             ;;
         *)
@@ -33,7 +38,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 UNIT_DESCRIPTION="${ARGS[*]:-}"
-[[ -z "$UNIT_DESCRIPTION" ]] && { echo "Usage: $0 [--json] [--short-name <name>] [--number N] <unit_description>" >&2; exit 1; }
+[[ -z "$UNIT_DESCRIPTION" ]] && { echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>" >&2; exit 1; }
 
 clean_name() {
     echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//'
@@ -133,7 +138,12 @@ UNIT_NUM="$(printf "%03d" "$((10#$UNIT_NUMBER))")"
 UNIT_NAME="${UNIT_NUM}-${UNIT_SUFFIX}"
 
 if [[ "$HAS_GIT" == true ]]; then
-    git checkout -b "$UNIT_NAME" >/dev/null
+    if [[ "$CHECKOUT_BRANCH" == true ]]; then
+        git checkout -b "$UNIT_NAME" >/dev/null
+    else
+        >&2 echo "[lcs] Info: Branch auto-checkout disabled. Staying on current branch."
+        >&2 echo "[lcs] Info: Run 'git checkout -b $UNIT_NAME' manually if you want branch-per-unit."
+    fi
 else
     >&2 echo "[lcs] Warning: Git repository not detected; skipped branch creation for $UNIT_NAME"
 fi

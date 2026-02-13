@@ -14,6 +14,7 @@ if ($Help) {
 
 . "$PSScriptRoot/common.ps1"
 $paths = Get-UnitPathsEnv
+$contractVersion = Get-ContractVersion
 
 if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
 
@@ -47,7 +48,7 @@ $briefChecksum = (Get-FileHash -Path $paths.BRIEF_FILE -Algorithm SHA256).Hash.T
 if ($ForceReset -or -not (Test-Path $paths.BRIEF_JSON_FILE)) {
     @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "title": "$unitId",
   "audience": {
@@ -78,7 +79,7 @@ if ($ForceReset -or -not (Test-Path $paths.BRIEF_JSON_FILE)) {
 if ($ForceReset -or -not (Test-Path $paths.DESIGN_JSON_FILE)) {
     @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "generated_at": "$nowUtc",
   "instructional_strategy": {
@@ -129,7 +130,7 @@ if ($ForceReset -or -not (Test-Path $paths.DESIGN_JSON_FILE)) {
 if ($ForceReset -or -not (Test-Path $paths.CONTENT_MODEL_JSON_FILE)) {
     @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "course": {
     "id": "course-01",
@@ -165,6 +166,7 @@ if ($ForceReset -or -not (Test-Path $paths.CONTENT_MODEL_JSON_FILE)) {
 if ($ForceReset -or -not (Test-Path $paths.DESIGN_DECISIONS_FILE)) {
     @"
 {
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "profile": "corporate-lnd-v1",
   "weights": {
@@ -213,7 +215,7 @@ if ($ForceReset -or -not (Test-Path $paths.DESIGN_DECISIONS_FILE)) {
 if ($ForceReset -or -not (Test-Path $paths.SEQUENCE_JSON_FILE)) {
     @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "tasks": []
 }
@@ -223,7 +225,7 @@ if ($ForceReset -or -not (Test-Path $paths.SEQUENCE_JSON_FILE)) {
 if ($ForceReset -or -not (Test-Path $paths.AUDIT_REPORT_JSON_FILE)) {
     @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "gate_decision": "BLOCK",
   "open_critical": 0,
@@ -241,7 +243,7 @@ if ($ForceReset -or -not (Test-Path $paths.AUDIT_REPORT_JSON_FILE)) {
 if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
     @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitId",
   "title": "$unitId",
   "locale": "en-US",

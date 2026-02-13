@@ -53,6 +53,31 @@ finally {
     Remove-Item -Recurse -Force $tempRoot -ErrorAction SilentlyContinue
 }
 
+# 1b) create-new-unit should not auto-checkout branch in git repo by default
+$tempGit = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-git-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Path $tempGit -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tempGit '.lcs/templates') -Force | Out-Null
+Copy-Item (Join-Path $repoRoot 'factory/templates/brief-template.md') (Join-Path $tempGit '.lcs/templates/brief-template.md') -Force
+Push-Location $tempGit
+try {
+    git init | Out-Null
+    git config user.email ci@example.com
+    git config user.name CI
+    '' | Set-Content '.gitkeep'
+    git add .gitkeep
+    git commit -m init | Out-Null
+    $startBranch = (git rev-parse --abbrev-ref HEAD).Trim()
+    & $createNewUnitScript -Json -Number 997 "verify no auto branch switch" | Out-Null
+    $endBranch = (git rev-parse --abbrev-ref HEAD).Trim()
+    if ($startBranch -ne $endBranch) {
+        throw "create-new-unit.ps1 unexpectedly switched branch: $startBranch -> $endBranch"
+    }
+}
+finally {
+    Pop-Location
+    Remove-Item -Recurse -Force $tempGit -ErrorAction SilentlyContinue
+}
+
 # 2) setup/check/validate contracts in repo workspace
 $unit = '999-ci-contract-ps'
 $unitDir = Join-Path $repoRoot "specs/$unit"
@@ -85,6 +110,21 @@ try {
         throw 'setup-design HAS_GIT must be bool'
     }
     $unitDir = [string]$setupObj.UNIT_DIR
+    $contractVersion = (Get-Content -Path (Join-Path $repoRoot 'contracts/index.json') -Encoding utf8 | ConvertFrom-Json).contract_version
+    foreach ($target in @(
+        (Join-Path $unitDir 'brief.json'),
+        (Join-Path $unitDir 'design.json'),
+        (Join-Path $unitDir 'content-model.json'),
+        (Join-Path $unitDir 'design-decisions.json'),
+        (Join-Path $unitDir 'sequence.json'),
+        (Join-Path $unitDir 'audit-report.json'),
+        (Join-Path $unitDir 'outputs/manifest.json')
+    )) {
+        $payload = Get-Content -Path $target -Encoding utf8 | ConvertFrom-Json
+        if ($payload.contract_version -ne $contractVersion) {
+            throw "contract_version mismatch in ${target}. actual=$($payload.contract_version) expected=$contractVersion"
+        }
+    }
 
     $auditJsonPath = Join-Path $unitDir 'audit-report.json'
     $auditObj = Get-Content -Path $auditJsonPath -Encoding utf8 | ConvertFrom-Json

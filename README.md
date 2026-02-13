@@ -47,6 +47,8 @@ lcs init . --ai codex
 
 This will scaffold `.lcs/`, command files for your selected agent, templates, and workflow scripts so you can start authoring learning content immediately.
 
+Note: unit creation no longer auto-switches Git branch. If you want branch-per-unit, run `git checkout -b <unit-name>` manually (or use script flag `--checkout-branch`).
+
 ## Core Command Flow
 
 `/lcs.charter -> /lcs.define -> /lcs.refine -> /lcs.design -> /lcs.sequence -> /lcs.rubric -> /lcs.audit -> /lcs.author -> /lcs.issueize`
@@ -145,4 +147,5 @@ See `AGENTS.md` for the canonical matrix, conventions, and folder mappings.
 - `docs/upgrade.md`
 - `contracts/docs/README.md`
 - `docs/system/architect/lcs-output-consumer-standalone-blueprint.md`
+- `docs/system/architect/specifier-consumer-interaction.md`
 - `spec-driven.md`

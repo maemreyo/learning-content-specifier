@@ -38,30 +38,47 @@ get_current_branch() {
         return
     fi
 
-    if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
-        git rev-parse --abbrev-ref HEAD
-        return
-    fi
-
-    local repo_root specs_dir latest_unit="" highest=0
+    local repo_root specs_dir latest_unit=""
     repo_root="$(get_repo_root)"
     specs_dir="$repo_root/specs"
 
-    if [[ -d "$specs_dir" ]]; then
-        for dir in "$specs_dir"/*; do
-            [[ -d "$dir" ]] || continue
-            local name number
-            name="$(basename "$dir")"
-            if [[ "$name" =~ ^([0-9]{3})- ]]; then
-                number=$((10#${BASH_REMATCH[1]}))
-                if [[ "$number" -gt "$highest" ]]; then
-                    highest="$number"
-                    latest_unit="$name"
+    get_latest_unit_from_specs() {
+        local candidate=""
+        local max_num=0
+        if [[ -d "$specs_dir" ]]; then
+            for dir in "$specs_dir"/*; do
+                [[ -d "$dir" ]] || continue
+                local name number
+                name="$(basename "$dir")"
+                if [[ "$name" =~ ^([0-9]{3})- ]]; then
+                    number=$((10#${BASH_REMATCH[1]}))
+                    if [[ "$number" -gt "$max_num" ]]; then
+                        max_num="$number"
+                        candidate="$name"
+                    fi
                 fi
-            fi
-        done
+            done
+        fi
+        [[ -n "$candidate" ]] && echo "$candidate"
+    }
+
+    if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
+        local branch
+        branch="$(git rev-parse --abbrev-ref HEAD)"
+        if [[ "$branch" =~ ^[0-9]{3}- ]]; then
+            echo "$branch"
+            return
+        fi
+        latest_unit="$(get_latest_unit_from_specs || true)"
+        if [[ -n "$latest_unit" ]]; then
+            echo "$latest_unit"
+            return
+        fi
+        echo "$branch"
+        return
     fi
 
+    latest_unit="$(get_latest_unit_from_specs || true)"
     [[ -n "$latest_unit" ]] && echo "$latest_unit" || echo "main"
 }
 
@@ -155,3 +172,39 @@ PATHS
 
 check_file() { [[ -f "$1" ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
 check_dir() { [[ -d "$1" && -n $(ls -A "$1" 2>/dev/null) ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
+
+get_contract_version() {
+    local repo_root index_file py
+    repo_root="$(get_repo_root)"
+    index_file="$repo_root/contracts/index.json"
+
+    if [[ ! -f "$index_file" ]]; then
+        echo "ERROR: Missing contract index: $index_file" >&2
+        return 1
+    fi
+
+    py="python3"
+    if ! command -v "$py" >/dev/null 2>&1; then
+        py="python"
+    fi
+    if ! command -v "$py" >/dev/null 2>&1; then
+        echo "ERROR: python3/python is required to read contract_version" >&2
+        return 1
+    fi
+
+    "$py" - "$index_file" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+index_file = Path(sys.argv[1])
+payload = json.loads(index_file.read_text(encoding="utf-8"))
+version = str(payload.get("contract_version", "")).strip()
+if not version:
+    raise SystemExit(f"contracts/index.json missing contract_version: {index_file}")
+if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+    raise SystemExit(f"Invalid contract_version '{version}' in {index_file} (expected X.Y.Z)")
+print(version)
+PY
+}

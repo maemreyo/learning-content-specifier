@@ -33,24 +33,39 @@ function Resolve-PythonTool {
 function Get-CurrentBranch {
     if ($env:LCS_UNIT) { return $env:LCS_UNIT }
 
-    try {
-        $result = git rev-parse --abbrev-ref HEAD 2>$null
-        if ($LASTEXITCODE -eq 0) { return $result }
-    } catch {}
+    function Get-LatestUnitFromSpecs {
+        param([string]$RepoRoot)
+        $specsDir = Join-Path $RepoRoot 'specs'
+        if (-not (Test-Path $specsDir)) { return $null }
 
-    $repoRoot = Get-RepoRoot
-    $specsDir = Join-Path $repoRoot 'specs'
-    if (Test-Path $specsDir) {
-        $latest = ''
-        $highest = 0
+        $latest = $null
+        $highest = -1
         Get-ChildItem -Path $specsDir -Directory | ForEach-Object {
             if ($_.Name -match '^(\d{3})-') {
                 $num = [int]$matches[1]
-                if ($num -gt $highest) { $highest = $num; $latest = $_.Name }
+                if ($num -gt $highest) {
+                    $highest = $num
+                    $latest = $_.Name
+                }
             }
         }
-        if ($latest) { return $latest }
+        return $latest
     }
+
+    $repoRoot = Get-RepoRoot
+    try {
+        $result = git rev-parse --abbrev-ref HEAD 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $branch = (@($result) | Where-Object { $_ -and "$_".Trim() } | Select-Object -First 1)
+            if ($branch -match '^[0-9]{3}-') { return $branch }
+            $latest = Get-LatestUnitFromSpecs -RepoRoot $repoRoot
+            if ($latest) { return $latest }
+            return $branch
+        }
+    } catch {}
+
+    $latestFallback = Get-LatestUnitFromSpecs -RepoRoot $repoRoot
+    if ($latestFallback) { return $latestFallback }
 
     return 'main'
 }
@@ -151,4 +166,22 @@ function Test-FileExists {
     }
     Write-Output "  ✗ $Description"
     return $false
+}
+
+function Get-ContractVersion {
+    $repoRoot = Get-RepoRoot
+    $indexPath = Join-Path $repoRoot 'contracts/index.json'
+    if (-not (Test-Path -Path $indexPath -PathType Leaf)) {
+        throw "Missing contract index: $indexPath"
+    }
+
+    $payload = Get-Content -Path $indexPath -Raw -Encoding utf8 | ConvertFrom-Json
+    $version = [string]$payload.contract_version
+    if (-not $version) {
+        throw "contracts/index.json missing contract_version"
+    }
+    if ($version -notmatch '^\d+\.\d+\.\d+$') {
+        throw "Invalid contract_version '$version' in contracts/index.json (expected X.Y.Z)"
+    }
+    return $version
 }

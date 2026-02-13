@@ -20,6 +20,7 @@ source "$SCRIPT_DIR/common.sh"
 
 eval "$(get_unit_paths)"
 check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
+CONTRACT_VERSION="$(get_contract_version)"
 
 compute_sha256() {
     local target_file="$1"
@@ -77,7 +78,7 @@ BRIEF_CHECKSUM="$(compute_sha256 "$BRIEF_FILE")"
 if [[ "$FORCE_RESET" == "true" || ! -f "$BRIEF_JSON_FILE" ]]; then
     cat > "$BRIEF_JSON_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "title": "$UNIT_ID",
   "audience": {
@@ -108,7 +109,7 @@ fi
 if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_JSON_FILE" ]]; then
     cat > "$DESIGN_JSON_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "generated_at": "$NOW_UTC",
   "instructional_strategy": {
@@ -159,7 +160,7 @@ fi
 if [[ "$FORCE_RESET" == "true" || ! -f "$CONTENT_MODEL_JSON_FILE" ]]; then
     cat > "$CONTENT_MODEL_JSON_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "course": {
     "id": "course-01",
@@ -195,6 +196,7 @@ fi
 if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_DECISIONS_FILE" ]]; then
     cat > "$DESIGN_DECISIONS_FILE" <<EOF
 {
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "profile": "corporate-lnd-v1",
   "weights": {
@@ -243,7 +245,7 @@ fi
 if [[ "$FORCE_RESET" == "true" || ! -f "$SEQUENCE_JSON_FILE" ]]; then
     cat > "$SEQUENCE_JSON_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "tasks": []
 }
@@ -253,7 +255,7 @@ fi
 if [[ "$FORCE_RESET" == "true" || ! -f "$AUDIT_REPORT_JSON_FILE" ]]; then
     cat > "$AUDIT_REPORT_JSON_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "gate_decision": "BLOCK",
   "open_critical": 0,
@@ -271,7 +273,7 @@ fi
 if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
     cat > "$MANIFEST_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_ID",
   "title": "$UNIT_ID",
   "locale": "en-US",

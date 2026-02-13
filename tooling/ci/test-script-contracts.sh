@@ -84,6 +84,27 @@ PY
 fi
 rm -rf "$tmp_nogit"
 
+tmp_git="$(pwd)/tmp-contract-git-test-$$"
+mkdir -p "$tmp_git/.lcs/templates"
+cp factory/templates/brief-template.md "$tmp_git/.lcs/templates/brief-template.md"
+(
+  cd "$tmp_git"
+  git init >/dev/null 2>&1
+  git config user.email "ci@example.com"
+  git config user.name "CI"
+  touch .gitkeep
+  git add .gitkeep
+  git commit -m "init" >/dev/null 2>&1
+  start_branch="$(git rev-parse --abbrev-ref HEAD)"
+  bash "$ROOT/factory/scripts/bash/create-new-unit.sh" --json --number 997 "verify no auto branch switch" >/dev/null
+  end_branch="$(git rev-parse --abbrev-ref HEAD)"
+  [[ "$start_branch" == "$end_branch" ]] || {
+    echo "create-new-unit.sh unexpectedly switched branch: $start_branch -> $end_branch" >&2
+    exit 1
+  }
+)
+rm -rf "$tmp_git"
+
 json_setup_raw="$(factory/scripts/bash/setup-design.sh --json 2>&1)"
 json_setup="$(normalize_json "$json_setup_raw" || true)"
 if [[ -z "$json_setup" ]]; then
@@ -97,6 +118,28 @@ obj=json.loads(sys.argv[1])
 for k in ["BRIEF_FILE","DESIGN_FILE","UNIT_DIR","BRANCH","HAS_GIT"]:
     assert k in obj, f"missing {k}"
 assert isinstance(obj["HAS_GIT"], bool), "HAS_GIT must be bool"
+PY
+uv run python3 - <<'PY' "$ROOT" "$UNIT_DIR"
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+unit_dir = pathlib.Path(sys.argv[2])
+contract_version = json.loads((root / "contracts/index.json").read_text(encoding="utf-8"))["contract_version"]
+targets = [
+    unit_dir / "brief.json",
+    unit_dir / "design.json",
+    unit_dir / "content-model.json",
+    unit_dir / "design-decisions.json",
+    unit_dir / "sequence.json",
+    unit_dir / "audit-report.json",
+    unit_dir / "outputs/manifest.json",
+]
+for path in targets:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    actual = payload.get("contract_version")
+    assert actual == contract_version, f"{path} contract_version={actual} expected={contract_version}"
 PY
 uv run python3 - <<'PY' "$UNIT_DIR/audit-report.json"
 import json,sys

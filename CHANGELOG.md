@@ -7,6 +7,25 @@ All notable changes to the LCS CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Installer-first Specifier/Consumer boundary hardening:
+  - Added canonical integration spec: `docs/system/architect/specifier-consumer-interaction.md`.
+  - `setup-design` (bash + powershell) now stamps `contract_version` dynamically from `contracts/index.json` instead of hardcoded values.
+  - Added shared contract-version helpers in:
+    - `factory/scripts/bash/common.sh`
+    - `factory/scripts/powershell/common.ps1`
+  - Hardened CI script-contract checks to enforce version stamping parity across generated JSON artifacts.
+- Updated `factory/scripts/python/bootstrap_consumer.py` defaults to real upstream repos:
+  - consumer: `maemreyo/lcs-output-consumer`
+  - core: `maemreyo/learning-content-specifier`
+- Removed automatic branch switching in unit creation scripts:
+  - `create-new-unit.sh` and `create-new-unit.ps1` no longer auto-run `git checkout -b`.
+  - Optional explicit branch creation is available via `--checkout-branch` / `-CheckoutBranch`.
+  - Active-unit resolution now falls back to latest `specs/<###-slug>` when current Git branch is not a unit branch.
+
 ## [0.4.1] - 2026-02-12
 
 ### Changed

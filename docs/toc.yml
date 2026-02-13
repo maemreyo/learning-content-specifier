@@ -30,5 +30,7 @@
       href: ../contracts/docs/COMPATIBILITY-MATRIX.md
     - name: Standalone Consumer Blueprint
       href: system/architect/lcs-output-consumer-standalone-blueprint.md
+    - name: Specifier-Consumer Interaction Contract
+      href: system/architect/specifier-consumer-interaction.md
     - name: Tutoring Platform Blueprint
       href: system/architect/tutoring-platform-monorepo-blueprint.md

@@ -4,6 +4,7 @@ param(
     [switch]$Json,
     [string]$ShortName,
     [int]$Number = 0,
+    [switch]$CheckoutBranch,
     [switch]$Help,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnitDescription
@@ -11,12 +12,12 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($Help) {
-    Write-Host 'Usage: ./create-new-unit.ps1 [-Json] [-ShortName <name>] [-Number N] <unit description>'
+    Write-Host 'Usage: ./create-new-unit.ps1 [-Json] [-ShortName <name>] [-Number N] [-CheckoutBranch] <unit description>'
     exit 0
 }
 
 if (-not $UnitDescription -or $UnitDescription.Count -eq 0) {
-    Write-Error 'Usage: ./create-new-unit.ps1 [-Json] [-ShortName <name>] [-Number N] <unit description>'
+    Write-Error 'Usage: ./create-new-unit.ps1 [-Json] [-ShortName <name>] [-Number N] [-CheckoutBranch] <unit description>'
     exit 1
 }
 
@@ -129,7 +130,12 @@ $unitNum = ('{0:000}' -f $Number)
 $unitName = "$unitNum-$unitSuffix"
 
 if ($hasGit) {
-    try { git checkout -b $unitName | Out-Null } catch { Write-Warning "Failed to create git branch: $unitName" }
+    if ($CheckoutBranch) {
+        try { git checkout -b $unitName | Out-Null } catch { Write-Warning "Failed to create git branch: $unitName" }
+    } else {
+        Write-Warning '[lcs] Branch auto-checkout disabled. Staying on current branch.'
+        Write-Warning "[lcs] Run 'git checkout -b $unitName' manually if you want branch-per-unit."
+    }
 } else {
     Write-Warning "[lcs] Warning: Git repository not detected; skipped branch creation for $unitName"
 }
