@@ -40,6 +40,41 @@ done
 UNIT_DESCRIPTION="${ARGS[*]:-}"
 [[ -z "$UNIT_DESCRIPTION" ]] && { echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>" >&2; exit 1; }
 
+get_contract_version() {
+    local index_file py
+    index_file="$REPO_ROOT/contracts/index.json"
+    if [[ ! -f "$index_file" ]]; then
+        index_file="$REPO_ROOT/.lcs/contracts/index.json"
+    fi
+    if [[ ! -f "$index_file" ]]; then
+        echo "ERROR: Missing contract index. Checked: $REPO_ROOT/contracts/index.json and $REPO_ROOT/.lcs/contracts/index.json" >&2
+        return 1
+    fi
+
+    py="python3"
+    if ! command -v "$py" >/dev/null 2>&1; then
+        py="python"
+    fi
+    if ! command -v "$py" >/dev/null 2>&1; then
+        echo "ERROR: python3/python is required to read contract_version" >&2
+        return 1
+    fi
+
+    "$py" - "$index_file" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+index_file = Path(sys.argv[1])
+payload = json.loads(index_file.read_text(encoding="utf-8"))
+version = str(payload.get("contract_version", "")).strip()
+if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+    raise SystemExit(f"Invalid contract_version '{version}' in {index_file} (expected X.Y.Z)")
+print(version)
+PY
+}
+
 clean_name() {
     echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//'
 }
@@ -150,6 +185,7 @@ fi
 
 UNIT_DIR="$SPECS_DIR/$UNIT_NAME"
 mkdir -p "$UNIT_DIR"
+CONTRACT_VERSION="$(get_contract_version)"
 
 TEMPLATE="$REPO_ROOT/.lcs/templates/brief-template.md"
 BRIEF_FILE="$UNIT_DIR/brief.md"
@@ -163,7 +199,7 @@ fi
 if [[ ! -f "$BRIEF_JSON_FILE" ]]; then
     cat > "$BRIEF_JSON_FILE" <<EOF
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_NAME",
   "title": "$UNIT_NAME",
   "audience": {

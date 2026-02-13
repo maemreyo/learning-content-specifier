@@ -28,6 +28,7 @@ $tempRoot = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-" + [guid]::NewGuid().T
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $tempRoot '.lcs/templates') -Force | Out-Null
 Copy-Item (Join-Path $repoRoot 'factory/templates/brief-template.md') (Join-Path $tempRoot '.lcs/templates/brief-template.md') -Force
+Copy-Item -Recurse (Join-Path $repoRoot 'contracts') (Join-Path $tempRoot 'contracts') -Force
 $createNewUnitScript = Join-Path $repoRoot 'factory/scripts/powershell/create-new-unit.ps1'
 $setupDesignScript = Join-Path $repoRoot 'factory/scripts/powershell/setup-design.ps1'
 $validateContractsScript = Join-Path $repoRoot 'factory/scripts/powershell/validate-artifact-contracts.ps1'
@@ -47,6 +48,11 @@ try {
     if (-not (Test-Path $briefJson)) {
         throw "create-new-unit missing brief json sidecar: $briefJson"
     }
+    $contractVersion = (Get-Content -Path (Join-Path $tempRoot 'contracts/index.json') -Encoding utf8 | ConvertFrom-Json).contract_version
+    $briefPayload = Get-Content -Path $briefJson -Encoding utf8 | ConvertFrom-Json
+    if ($briefPayload.contract_version -ne $contractVersion) {
+        throw "create-new-unit brief.json contract_version mismatch. actual=$($briefPayload.contract_version) expected=$contractVersion"
+    }
 }
 finally {
     Pop-Location
@@ -58,6 +64,7 @@ $tempGit = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-git-" + [guid]::NewGuid(
 New-Item -ItemType Directory -Path $tempGit -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $tempGit '.lcs/templates') -Force | Out-Null
 Copy-Item (Join-Path $repoRoot 'factory/templates/brief-template.md') (Join-Path $tempGit '.lcs/templates/brief-template.md') -Force
+Copy-Item -Recurse (Join-Path $repoRoot 'contracts') (Join-Path $tempGit 'contracts') -Force
 Push-Location $tempGit
 try {
     git init | Out-Null

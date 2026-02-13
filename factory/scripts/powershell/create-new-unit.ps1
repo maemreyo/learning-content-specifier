@@ -81,6 +81,23 @@ function Get-HighestFromBranches() {
     return $highest
 }
 
+function Get-ContractVersion([string]$RepoRoot) {
+    $indexFile = Join-Path $RepoRoot 'contracts/index.json'
+    if (-not (Test-Path $indexFile -PathType Leaf)) {
+        $indexFile = Join-Path $RepoRoot '.lcs/contracts/index.json'
+    }
+    if (-not (Test-Path $indexFile -PathType Leaf)) {
+        throw "Missing contract index. Checked: $RepoRoot/contracts/index.json and $RepoRoot/.lcs/contracts/index.json"
+    }
+
+    $payload = Get-Content -Path $indexFile -Encoding utf8 | ConvertFrom-Json
+    $version = [string]$payload.contract_version
+    if (-not ($version -match '^\d+\.\d+\.\d+$')) {
+        throw "Invalid contract_version '$version' in $indexFile (expected X.Y.Z)"
+    }
+    return $version
+}
+
 $scriptBase = $PSScriptRoot
 if (-not $scriptBase -and $MyInvocation.MyCommand.Path) {
     $scriptBase = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -142,6 +159,7 @@ if ($hasGit) {
 
 $unitDir = Join-Path $specsDir $unitName
 New-Item -ItemType Directory -Path $unitDir -Force | Out-Null
+$contractVersion = Get-ContractVersion -RepoRoot $repoRoot
 
 $template = Join-Path $repoRoot '.lcs/templates/brief-template.md'
 $briefFile = Join-Path $unitDir 'brief.md'
@@ -151,7 +169,7 @@ if (Test-Path $template) { Copy-Item $template $briefFile -Force } else { New-It
 if (-not (Test-Path $briefJsonFile)) {
 @"
 {
-  "contract_version": "1.0.0",
+  "contract_version": "$contractVersion",
   "unit_id": "$unitName",
   "title": "$unitName",
   "audience": {

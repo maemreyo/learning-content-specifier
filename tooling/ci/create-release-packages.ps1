@@ -44,8 +44,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Validate version format
-if ($Version -notmatch '^v\d+\.\d+\.\d+$') {
-    Write-Error "Version must look like v0.0.0"
+if ($Version -notmatch '^v\d+\.\d+\.\d+(-[0-9A-Za-z\.-]+)?(\+[0-9A-Za-z\.-]+)?$') {
+    Write-Error "Version must look like v0.0.0 (supports pre-release/build metadata)"
     exit 1
 }
 
@@ -211,6 +211,13 @@ agent: $basename
     }
 }
 
+function Write-Sha256Sidecar {
+    param([string]$FilePath)
+    $hash = (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $sidecar = "$FilePath.sha256"
+    "$hash  $([System.IO.Path]::GetFileName($FilePath))" | Set-Content -Path $sidecar -Encoding utf8
+}
+
 function Build-Variant {
     param(
         [string]$Agent,
@@ -272,6 +279,13 @@ function Build-Variant {
             Copy-Item -Path $_.FullName -Destination $destFile -Force
         }
         Write-Host "Copied templates -> .lcs/templates"
+    }
+
+    if (Test-Path "contracts") {
+        $contractsDestDir = Join-Path $specDir "contracts"
+        New-Item -ItemType Directory -Path $contractsDestDir -Force | Out-Null
+        Copy-Item -Path "contracts/*" -Destination $contractsDestDir -Recurse -Force
+        Write-Host "Copied contracts -> .lcs/contracts"
     }
     
     # Generate agent-specific command files
@@ -362,6 +376,7 @@ function Build-Variant {
     # Create zip archive
     $zipFile = Join-Path $GenReleasesDir "learning-content-specifier-template-${Agent}-${Script}-${Version}.zip"
     Compress-Archive -Path "$baseDir/*" -DestinationPath $zipFile -Force
+    Write-Sha256Sidecar -FilePath $zipFile
     Write-Host "Created $zipFile"
 }
 
@@ -440,11 +455,15 @@ else {
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
+Write-Sha256Sidecar -FilePath (Join-Path $GenReleasesDir "lcs-contracts-${Version}.zip")
 
 Write-Host "`nArchives in ${GenReleasesDir}:"
 Get-ChildItem -Path $GenReleasesDir -Filter "learning-content-specifier-template-*-${Version}.zip" | ForEach-Object {
     Write-Host "  $($_.Name)"
 }
 Get-ChildItem -Path $GenReleasesDir -Filter "lcs-contracts-${Version}.zip" | ForEach-Object {
+    Write-Host "  $($_.Name)"
+}
+Get-ChildItem -Path $GenReleasesDir -Filter "*.sha256" | ForEach-Object {
     Write-Host "  $($_.Name)"
 }

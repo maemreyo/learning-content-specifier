@@ -22,13 +22,13 @@
     "docs_digest": [
       {
         "path": "contracts/docs/COMPATIBILITY-MATRIX.md",
-        "sha256": "10df7e3df8a348d7d3cbb41391c9741a20dac75286662dc1902f180bb3bad568",
-        "size_bytes": 1431
+        "sha256": "26e927ff737514c34c6514bba8a2e39ce55d51dc618682591a739aff61b4bf90",
+        "size_bytes": 1534
       },
       {
         "path": "contracts/docs/CONSUMER-API-V1.md",
-        "sha256": "accdefbde8c3df7eb9f3ade69fbb47dbc3af05168f1342ce5baed41a215ad9f9",
-        "size_bytes": 2042
+        "sha256": "ec3221aacdd0d25e4e1bdfdc9175c507a3135b966358dcd3b71ded4c1264dc19",
+        "size_bytes": 2297
       },
       {
         "path": "contracts/docs/README.md",

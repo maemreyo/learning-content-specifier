@@ -68,3 +68,20 @@ def test_contract_package_build_zip_contains_required_entries(tmp_path: Path):
     assert "contracts/schemas/manifest.schema.json" in names
     assert "contracts/docs/CONSUMER-API-V1.md" in names
     assert "contracts/fixtures/golden_path_snapshot.json" in names
+
+
+def test_contract_package_build_zip_accepts_prerelease_tag(tmp_path: Path):
+    version = "v9.9.9-rc.1"
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(ROOT / "factory/scripts/python/build_contract_package.py"),
+        "--verify",
+        "--package-version",
+        version,
+        "--output-dir",
+        str(tmp_path),
+    ]
+    subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True, text=True)
+    assert (tmp_path / f"lcs-contracts-{version}.zip").is_file()

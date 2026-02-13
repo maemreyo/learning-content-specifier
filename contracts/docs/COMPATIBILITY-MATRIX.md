@@ -20,6 +20,7 @@
 - Consumers MUST verify checksums before ingest.
 - Consumers MUST block ingest on incompatible major versions.
 - Consumers MUST use manifest-first resolution, no path guessing.
+- Consumers MUST namespace indexed units by `source_repo_id` to avoid cross-repo `unit_id` collisions.
 
 ## Three-Repo Compatibility Rules
 

@@ -18,8 +18,8 @@ if [[ $# -ne 1 ]]; then
   exit 1
 fi
 NEW_VERSION="$1"
-if [[ ! $NEW_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Version must look like v0.0.0" >&2
+if [[ ! $NEW_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?(\+[0-9A-Za-z\.-]+)?$ ]]; then
+  echo "Version must look like v0.0.0 (supports pre-release/build metadata)" >&2
   exit 1
 fi
 
@@ -37,6 +37,42 @@ rewrite_paths() {
     -e 's@(^|[[:space:]"'"'"'(])scripts/@\1.lcs/scripts/@g' \
     -e 's@(^|[[:space:]"'"'"'(])factory/templates/@\1.lcs/templates/@g' \
     -e 's@\.specify\.lcs/@.lcs/@g'
+}
+
+compute_sha256() {
+  local target_file="$1"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$target_file" | awk '{print $1}'
+    return
+  fi
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$target_file" | awk '{print $1}'
+    return
+  fi
+  if command -v openssl >/dev/null 2>&1; then
+    openssl dgst -sha256 "$target_file" | awk '{print $NF}'
+    return
+  fi
+  local py_bin="python3"
+  if ! command -v "$py_bin" >/dev/null 2>&1; then
+    py_bin="python"
+  fi
+  "$py_bin" - "$target_file" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+print(hashlib.sha256(path.read_bytes()).hexdigest())
+PY
+}
+
+write_sha256_sidecar() {
+  local target_file="$1"
+  local checksum_file="${target_file}.sha256"
+  local hash
+  hash="$(compute_sha256 "$target_file")"
+  printf "%s  %s\n" "$hash" "$(basename "$target_file")" > "$checksum_file"
 }
 
 generate_commands() {
@@ -174,6 +210,12 @@ build_variant() {
     done < <(find factory/templates -type f -not -path "factory/templates/commands/*" -not -name "vscode-settings.json")
     echo "Copied templates -> .lcs/templates"
   fi
+
+  if [[ -d contracts ]]; then
+    mkdir -p "$SPEC_DIR/contracts"
+    cp -r contracts/* "$SPEC_DIR/contracts/"
+    echo "Copied contracts -> .lcs/contracts"
+  fi
   
   # NOTE: We substitute {ARGS} internally. Outward tokens differ intentionally:
   #   * Markdown/prompt (claude, copilot, cursor-agent, opencode): $ARGUMENTS
@@ -242,7 +284,9 @@ build_variant() {
       generate_commands bob md "\$ARGUMENTS" "$base_dir/.bob/commands" "$script" ;;
   esac
   ( cd "$base_dir" && zip -r "../learning-content-specifier-template-${agent}-${script}-${NEW_VERSION}.zip" . )
-  echo "Created $GENRELEASES_DIR/learning-content-specifier-template-${agent}-${script}-${NEW_VERSION}.zip"
+  local zip_path="$GENRELEASES_DIR/learning-content-specifier-template-${agent}-${script}-${NEW_VERSION}.zip"
+  write_sha256_sidecar "$zip_path"
+  echo "Created $zip_path"
 }
 
 # Determine agent list
@@ -309,7 +353,9 @@ else
   fi
   "$PYTHON_BIN" factory/scripts/python/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
 fi
+write_sha256_sidecar "$GENRELEASES_DIR/lcs-contracts-${NEW_VERSION}.zip"
 
 echo "Archives in $GENRELEASES_DIR:"
 ls -1 "$GENRELEASES_DIR"/learning-content-specifier-template-*-"${NEW_VERSION}".zip
 ls -1 "$GENRELEASES_DIR"/lcs-contracts-"${NEW_VERSION}".zip
+ls -1 "$GENRELEASES_DIR"/*.sha256

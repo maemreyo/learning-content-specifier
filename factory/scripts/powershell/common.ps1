@@ -172,7 +172,10 @@ function Get-ContractVersion {
     $repoRoot = Get-RepoRoot
     $indexPath = Join-Path $repoRoot 'contracts/index.json'
     if (-not (Test-Path -Path $indexPath -PathType Leaf)) {
-        throw "Missing contract index: $indexPath"
+        $indexPath = Join-Path $repoRoot '.lcs/contracts/index.json'
+    }
+    if (-not (Test-Path -Path $indexPath -PathType Leaf)) {
+        throw "Missing contract index. Checked: $repoRoot/contracts/index.json and $repoRoot/.lcs/contracts/index.json"
     }
 
     $payload = Get-Content -Path $indexPath -Raw -Encoding utf8 | ConvertFrom-Json

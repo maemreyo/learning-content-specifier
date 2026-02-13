@@ -10,6 +10,8 @@ Request:
 
 ```json
 {
+  "source_repo_id": "repo.math",
+  "source_repo_ref": {"repo": "math-content", "branch": "main"},
   "repo_path": "/absolute/path/to/project",
   "unit_glob": "specs/*",
   "contract_version": "1.0.0"
@@ -29,7 +31,8 @@ Request:
 
 ```json
 {
-  "unit_path": "/absolute/path/to/project/specs/993-e2e-golden-path"
+  "unit_path": "/absolute/path/to/project/specs/993-e2e-golden-path",
+  "source_repo_id": "repo.math"
 }
 ```
 
@@ -44,20 +47,24 @@ Behavior:
 
 Supports filters:
 
+- `source_repo_id=<repo-id>`
 - `gate_status=PASS|BLOCK`
-- `entry_level=beginner|intermediate|advanced|mixed`
-- `modality=self-paced|instructor-led|blended|cohort-based|virtual-led|unspecified`
-- `duration_min`, `duration_max`
+- `offset`, `limit`
+- `sort=updated_at_desc|updated_at_asc|title_asc|title_desc`
 
-### `GET /v1/units/{unit_id}`
+### `GET /v1/repos/{source_repo_id}/units`
+
+Returns units for one producer repo namespace.
+
+### `GET /v1/repos/{source_repo_id}/units/{unit_id}`
 
 Returns normalized unit summary, ingest metadata, and latest validation status.
 
-### `GET /v1/units/{unit_id}/manifest`
+### `GET /v1/repos/{source_repo_id}/units/{unit_id}/manifest`
 
 Returns indexed `outputs/manifest.json` payload.
 
-### `GET /v1/units/{unit_id}/gates`
+### `GET /v1/repos/{source_repo_id}/units/{unit_id}/gates`
 
 Returns gate decision snapshot:
 
@@ -66,7 +73,7 @@ Returns gate decision snapshot:
 - rubric parse status
 - final author-eligibility status
 
-### `GET /v1/units/{unit_id}/artifacts`
+### `GET /v1/repos/{source_repo_id}/units/{unit_id}/artifacts`
 
 Returns resolved artifact list from manifest:
 

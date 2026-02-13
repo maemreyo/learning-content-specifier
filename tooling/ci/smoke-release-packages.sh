@@ -13,6 +13,7 @@ check_zip_path() {
 for agent in claude codex copilot kilocode auggie roo; do
   zip=".genreleases/learning-content-specifier-template-${agent}-sh-${VERSION}.zip"
   [[ -f "$zip" ]] || { echo "Missing package: $zip"; exit 1; }
+  [[ -f "${zip}.sha256" ]] || { echo "Missing checksum sidecar: ${zip}.sha256"; exit 1; }
 
   case "$agent" in
     claude) check_zip_path "$zip" ".claude/commands/lcs.define.md" ;;
@@ -31,6 +32,7 @@ done
 
 contract_zip=".genreleases/lcs-contracts-${VERSION}.zip"
 [[ -f "$contract_zip" ]] || { echo "Missing contract package: $contract_zip"; exit 1; }
+[[ -f "${contract_zip}.sha256" ]] || { echo "Missing checksum sidecar: ${contract_zip}.sha256"; exit 1; }
 check_zip_path "$contract_zip" "contracts/index.json"
 check_zip_path "$contract_zip" "contracts/schemas/manifest.schema.json"
 check_zip_path "$contract_zip" "contracts/docs/CONSUMER-API-V1.md"

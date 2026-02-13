@@ -96,6 +96,7 @@ uv run python factory/scripts/python/build_contract_package.py --sync --verify -
 Release artifact name:
 
 - `.genreleases/lcs-contracts-vX.Y.Z.zip`
+- `.genreleases/lcs-contracts-vX.Y.Z.zip.sha256` (required checksum sidecar for release-sync by default)
 
 Bootstrap standalone consumer repo from this LCS core repo:
 

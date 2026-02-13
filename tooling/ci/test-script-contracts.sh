@@ -60,6 +60,7 @@ export LCS_UNIT="$UNIT"
 tmp_nogit="$(pwd)/tmp-contract-test-$$"
 mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/specs"
 cp factory/templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
+cp -r contracts "$tmp_nogit/contracts"
 tmp_unit_number="$(date +%s)"
 used_define_fallback=false
 json_define_raw="$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/factory/scripts/bash/create-new-unit.sh" --json --number "$tmp_unit_number" "temporary unit for contract test" 2>&1 || true)"
@@ -75,11 +76,14 @@ for k in ["UNIT_NAME","BRIEF_FILE","UNIT_NUM"]:
     assert k in obj, f"missing {k}"
 PY
 if [[ "$used_define_fallback" != "true" ]]; then
-uv run python3 - <<'PY' "$json_define"
-import json,sys, pathlib
+uv run python3 - <<'PY' "$json_define" "$tmp_nogit/contracts/index.json"
+import json,sys,pathlib
 obj=json.loads(sys.argv[1])
+contract_version = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))["contract_version"]
 brief_json = pathlib.Path(obj["BRIEF_FILE"]).with_suffix(".json")
 assert brief_json.exists(), f"missing {brief_json}"
+payload = json.loads(brief_json.read_text(encoding="utf-8"))
+assert payload["contract_version"] == contract_version, f"brief.json contract_version mismatch: {payload['contract_version']} vs {contract_version}"
 PY
 fi
 rm -rf "$tmp_nogit"
@@ -87,6 +91,7 @@ rm -rf "$tmp_nogit"
 tmp_git="$(pwd)/tmp-contract-git-test-$$"
 mkdir -p "$tmp_git/.lcs/templates"
 cp factory/templates/brief-template.md "$tmp_git/.lcs/templates/brief-template.md"
+cp -r contracts "$tmp_git/contracts"
 (
   cd "$tmp_git"
   git init >/dev/null 2>&1

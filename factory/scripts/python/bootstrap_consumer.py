@@ -18,7 +18,7 @@ import httpx
 
 
 CHECKSUM_SIDECAR_SUFFIXES = (".sha256", ".sha256sum", ".sha256.txt")
-SEMVER_TAG_PATTERN = re.compile(r"^v\d+\.\d+\.\d+$")
+SEMVER_TAG_PATTERN = re.compile(r"^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 SEMVER_VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 DEFAULT_CONSUMER_CONTRACT_VERSION_FILE = (
     Path(__file__).resolve().parents[3] / "contracts" / "consumer-contract-version.txt"

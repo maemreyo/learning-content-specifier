@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover - fallback for older Python in local she
 INDEX_PATH = Path("contracts/index.json")
 CONTRACT_PACKAGE_SCHEMA_VERSION = "1.0"
 CONTRACT_VERSION = "1.0.0"
+SEMVER_TAG_PATTERN = re.compile(r"^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 
 SCHEMA_GLOBS = ("contracts/schemas/*.schema.json",)
 DOC_GLOBS = ("contracts/docs/*.md", "contracts/README.md")
@@ -148,8 +149,8 @@ def verify_index(index_file: Path, expected: dict[str, Any]) -> bool:
 
 
 def build_zip(repo_root: Path, package_version: str, output_dir: Path) -> Path:
-    if not re.match(r"^v\d+\.\d+\.\d+$", package_version):
-        raise ValueError("package version must match vX.Y.Z")
+    if not SEMVER_TAG_PATTERN.match(package_version):
+        raise ValueError("package version must match vX.Y.Z (supports pre-release/build metadata)")
 
     zip_path = output_dir / f"lcs-contracts-{package_version}.zip"
     output_dir.mkdir(parents=True, exist_ok=True)

@@ -177,9 +177,12 @@ get_contract_version() {
     local repo_root index_file py
     repo_root="$(get_repo_root)"
     index_file="$repo_root/contracts/index.json"
+    if [[ ! -f "$index_file" ]]; then
+        index_file="$repo_root/.lcs/contracts/index.json"
+    fi
 
     if [[ ! -f "$index_file" ]]; then
-        echo "ERROR: Missing contract index: $index_file" >&2
+        echo "ERROR: Missing contract index. Checked: $repo_root/contracts/index.json and $repo_root/.lcs/contracts/index.json" >&2
         return 1
     fi
 
