@@ -23,6 +23,10 @@ CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
 KEYWORD_HINTS = {
     "MCQ": ["multiple choice", "choose", "option", "vocabulary", "grammar", "mcq"],
+    "MATCHING_HEADINGS": ["main idea", "heading", "paragraph", "match headings", "theme"],
+    "MATCHING_INFORMATION": ["match information", "find detail", "which paragraph", "specific information", "locate information"],
+    "MULTIPLE_RESPONSE": ["choose two", "choose three", "select two", "multiple responses", "multi-select", "listening"],
+    "SENTENCE_COMPLETION": ["complete the sentence", "fill in the blank", "no more than", "incomplete sentence", "sentence completion"],
     "TFNG": ["true", "false", "not given", "evidence", "passage", "statement", "reading"],
     "SENTENCE_REWRITE": ["rewrite", "rephrase", "transform", "sentence", "meaning", "paraphrase"],
 }
@@ -256,6 +260,11 @@ def main() -> int:
 
     existing_selection = load_json(unit_dir / "template-selection.json")
     if not isinstance(existing_selection, dict):
+        existing_selection = None
+    elif str(existing_selection.get("selection_rationale", "")).strip().lower().startswith(
+        "deterministic weighted auto-select"
+    ):
+        # Avoid self-feedback loops that change ranking across reruns for the same inputs.
         existing_selection = None
 
     level = derive_level(brief, design)

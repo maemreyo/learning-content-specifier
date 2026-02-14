@@ -224,22 +224,44 @@ if ($ForceReset -or -not (Test-Path $paths.ASSESSMENT_BLUEPRINT_FILE)) {
     {
       "template_id": "mcq.v1",
       "exercise_type": "MCQ",
-      "ratio_percent": 40
+      "ratio_percent": 25
+    },
+    {
+      "template_id": "multiple-response.v1",
+      "exercise_type": "MULTIPLE_RESPONSE",
+      "ratio_percent": 20
     },
     {
       "template_id": "tfng.v1",
       "exercise_type": "TFNG",
-      "ratio_percent": 30
+      "ratio_percent": 20
+    },
+    {
+      "template_id": "matching-headings.v1",
+      "exercise_type": "MATCHING_HEADINGS",
+      "ratio_percent": 15
+    },
+    {
+      "template_id": "matching-information.v1",
+      "exercise_type": "MATCHING_INFORMATION",
+      "ratio_percent": 10
     },
     {
       "template_id": "sentence-rewrite.v1",
       "exercise_type": "SENTENCE_REWRITE",
-      "ratio_percent": 30
+      "ratio_percent": 10
     }
   ],
   "tolerance_percent": 10,
   "lo_mapping": {
-    "LO1": ["mcq.v1", "tfng.v1", "sentence-rewrite.v1"]
+    "LO1": [
+      "mcq.v1",
+      "multiple-response.v1",
+      "tfng.v1",
+      "matching-headings.v1",
+      "matching-information.v1",
+      "sentence-rewrite.v1"
+    ]
   }
 }
 "@ | Set-Content -Path $paths.ASSESSMENT_BLUEPRINT_FILE -Encoding utf8
@@ -267,28 +289,28 @@ if ($ForceReset -or -not (Test-Path $paths.TEMPLATE_SELECTION_FILE)) {
       "rationale": "Balanced starter item for broad LO coverage."
     },
     {
-      "template_id": "tfng.v1",
-      "exercise_type": "TFNG",
-      "score": 0.86,
+      "template_id": "multiple-response.v1",
+      "exercise_type": "MULTIPLE_RESPONSE",
+      "score": 0.88,
       "score_breakdown": {
-        "lo_fit": 0.9,
-        "level_fit": 0.8,
-        "duration_fit": 0.9,
-        "diversity_fit": 0.85
-      },
-      "rationale": "Supports evidence-based reading validation."
-    },
-    {
-      "template_id": "sentence-rewrite.v1",
-      "exercise_type": "SENTENCE_REWRITE",
-      "score": 0.84,
-      "score_breakdown": {
-        "lo_fit": 0.85,
-        "level_fit": 0.8,
-        "duration_fit": 0.8,
+        "lo_fit": 0.95,
+        "level_fit": 0.85,
+        "duration_fit": 0.85,
         "diversity_fit": 0.9
       },
-      "rationale": "Evaluates expressive accuracy and transformation skill."
+      "rationale": "Supports multi-select reasoning and discrimination quality."
+    },
+    {
+      "template_id": "tfng.v1",
+      "exercise_type": "TFNG",
+      "score": 0.85,
+      "score_breakdown": {
+        "lo_fit": 0.9,
+        "level_fit": 0.82,
+        "duration_fit": 0.9,
+        "diversity_fit": 0.83
+      },
+      "rationale": "Supports evidence-based reading validation."
     }
   ],
   "selection_rationale": "Default English starter selection; refine with unit-specific intent."

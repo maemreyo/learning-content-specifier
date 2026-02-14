@@ -58,8 +58,17 @@ def test_all_valid_examples_pass_schema_and_semantic_validator() -> None:
     ("filename", "expected_status", "expected_code", "expected_return_code"),
     [
         ("mcq.duplicate-distractor.json", "BLOCK", "TMP_MCQ_DUP_DISTRACTOR", 1),
-        ("tfng.not-given-direct-evidence.json", "PASS", "TMP_TFNG_NOT_GIVEN_EVIDENCE", 0),
+        ("mcq.rationale-mismatch.json", "BLOCK", "TMP_MCQ_RATIONALE_COVERAGE", 1),
+        ("matching-headings.invalid-map.json", "BLOCK", "TMP_MH_SECTION_DUP_MAP", 1),
+        ("matching-information.invalid-map.json", "BLOCK", "TMP_MI_STATEMENT_DUP_MAP", 1),
+        ("multiple-response.single-correct.json", "BLOCK", "TMP_MR_CORRECT_MIN", 1),
+        ("multiple-response.no-distractor.json", "BLOCK", "TMP_MR_NO_DISTRACTOR", 1),
+        ("multiple-response.rationale-mismatch.json", "BLOCK", "TMP_MR_RATIONALE_COVERAGE", 1),
+        ("sentence-completion.answer-limit.json", "BLOCK", "TMP_SC_ANSWER_LIMIT_EXCEEDED", 1),
+        ("tfng.not-given-direct-evidence.json", "BLOCK", "TMP_TFNG_NOT_GIVEN_EVIDENCE", 1),
+        ("tfng.label-evidence-mismatch.json", "BLOCK", "TMP_TFNG_LABEL_EVIDENCE_MISMATCH", 1),
         ("sentence-rewrite.single-reference.json", "BLOCK", "TMP_REWRITE_REFERENCE_MIN", 1),
+        ("sentence-rewrite.keyword-missing.json", "BLOCK", "TMP_REWRITE_KEYWORD_MISSING", 1),
     ],
 )
 def test_regression_examples_hold_expected_validator_behavior(
