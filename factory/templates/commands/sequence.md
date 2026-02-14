@@ -34,12 +34,13 @@ $ARGUMENTS
 - YOU MUST include explicit output file paths under `outputs/`.
 - YOU MUST include gate tasks before `/lcs.author` execution.
 - YOU MUST update both `sequence.md` and `sequence.json`.
+- YOU MUST propagate `template_id` metadata from `template-selection.json` into task metadata when task maps to an exercise type.
 - YOU MUST NOT emit ambiguous task descriptions.
 
 ## Execution Steps
 
 1. Run `{SCRIPT}` and parse `UNIT_DIR`, `AVAILABLE_DOCS`.
-2. Load `design.md`, `brief.md`, and optional docs.
+2. Load `design.md`, `brief.md`, `assessment-blueprint.json`, `template-selection.json`, and optional docs.
 3. Generate `sequence.md` using `.lcs/templates/sequence-template.md`.
 4. Generate/update `sequence.json` with deterministic task objects (`task_id`, dependencies, LO refs, target paths).
 5. Ensure dependencies and parallel flags are explicit.
@@ -51,6 +52,7 @@ $ARGUMENTS
 - Gate G-SQ-002: rubric/audit tasks are present and blocking.
 - Gate G-SQ-003: each task has deterministic file target.
 - Gate G-SQ-004: `sequence.json` is consistent with `sequence.md` task IDs.
+- Gate G-SQ-005: LO-to-template coverage in sequence is consistent with `assessment-blueprint.json`.
 
 ## Failure Modes
 

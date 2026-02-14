@@ -30,8 +30,10 @@
     "open_critical": 0,
     "open_high": 0,
     "artifact_ids": [
+      "assessment-blueprint-json",
       "brief-md",
-      "lesson-01-md"
+      "lesson-01-md",
+      "template-selection-json"
     ],
     "xapi_activity_count": 1,
     "xapi_template_count": 1

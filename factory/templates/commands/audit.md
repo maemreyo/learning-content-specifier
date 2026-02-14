@@ -32,6 +32,7 @@ $ARGUMENTS
 3. Validate cross-artifact consistency:
    - LO coverage alignment,
    - pedagogy consistency,
+   - template distribution compliance (`assessment-blueprint.json` vs `template-selection.json`),
    - accessibility/readability coverage,
    - metadata completeness,
    - manifest-first readiness.

@@ -82,6 +82,8 @@ def test_gate_validator_passes_when_no_blockers_exist():
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "PASS"
         assert payload["AUDIT_DECISION"] == "PASS"
+        assert "CONTRACT_RESPONSE_VERSION" in payload
+        assert "CONTRACT_PIPELINE" in payload
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 

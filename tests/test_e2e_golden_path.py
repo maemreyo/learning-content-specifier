@@ -216,6 +216,9 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         prereq_payload = _run_prereqs(env)
         contract_payload = _run_contract_validator(unit_dir, env)
         gate_payload = _run_gate_validator(env)
+        assert contract_payload["RESPONSE_VERSION"] == "1.0.0"
+        assert "AGENT_REPORT" in contract_payload
+        assert "rerun_command" in contract_payload["AGENT_REPORT"]
 
         brief_json = json.loads((unit_dir / "brief.json").read_text(encoding="utf-8"))
         design_json = json.loads((unit_dir / "design.json").read_text(encoding="utf-8"))

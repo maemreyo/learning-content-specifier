@@ -149,6 +149,8 @@ function Get-UnitPathsEnv {
         ASSESSMENT_MAP_FILE = Join-Path $unitDir 'assessment-map.md'
         DELIVERY_GUIDE_FILE = Join-Path $unitDir 'delivery-guide.md'
         DESIGN_DECISIONS_FILE = Join-Path $unitDir 'design-decisions.json'
+        ASSESSMENT_BLUEPRINT_FILE = Join-Path $unitDir 'assessment-blueprint.json'
+        TEMPLATE_SELECTION_FILE = Join-Path $unitDir 'template-selection.json'
         AUDIT_REPORT_FILE = Join-Path $unitDir 'audit-report.md'
         AUDIT_REPORT_JSON_FILE = Join-Path $unitDir 'audit-report.json'
         RUBRICS_DIR = Join-Path $unitDir 'rubrics'

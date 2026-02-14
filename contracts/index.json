@@ -83,6 +83,12 @@
         "path": "contracts/schemas/sequence.schema.json",
         "sha256": "7f732a8c8736af089141079cf64b610ea3ee66e39995538c0d13e8a975494e44",
         "size_bytes": 1418
+      },
+      {
+        "id": "lcs.validation.pipeline-response.v1",
+        "path": "contracts/schemas/validation-pipeline-response.schema.json",
+        "sha256": "2bd53c71f3f7ca0685db78ec6681b61a3ba03ff8c620494618596673a959fc8a",
+        "size_bytes": 3613
       }
     ]
   },

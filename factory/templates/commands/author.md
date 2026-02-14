@@ -25,6 +25,7 @@ $ARGUMENTS
 - YOU MUST write outputs only under `UNIT_DIR/outputs/`.
 - YOU MUST maintain `outputs/manifest.json` as the canonical entrypoint for downstream consumers.
 - YOU MUST mark completed sequence tasks as `[X]` in `sequence.md` and mirror progress in `sequence.json`.
+- YOU MUST use contract validator pipeline trace (`CONTRACT_PIPELINE`, `CONTRACT_BLOCKING_STEPS`, blockers) to report deterministic fix order.
 - YOU MUST NOT bypass rubric/audit blockers.
 
 ## Execution Steps

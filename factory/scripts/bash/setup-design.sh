@@ -21,6 +21,7 @@ source "$SCRIPT_DIR/common.sh"
 eval "$(get_unit_paths)"
 check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 CONTRACT_VERSION="$(get_contract_version)"
+SELECTOR_TOOL="$(resolve_python_tool generate_template_selection.py)"
 
 compute_sha256() {
     local target_file="$1"
@@ -242,6 +243,89 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_DECISIONS_FILE" ]]; then
 EOF
 fi
 
+if [[ "$FORCE_RESET" == "true" || ! -f "$ASSESSMENT_BLUEPRINT_FILE" ]]; then
+    cat > "$ASSESSMENT_BLUEPRINT_FILE" <<EOF
+{
+  "contract_version": "$CONTRACT_VERSION",
+  "unit_id": "$UNIT_ID",
+  "subject": "english",
+  "template_pack_version": "1.0.0",
+  "target_distribution": [
+    {
+      "template_id": "mcq.v1",
+      "exercise_type": "MCQ",
+      "ratio_percent": 40
+    },
+    {
+      "template_id": "tfng.v1",
+      "exercise_type": "TFNG",
+      "ratio_percent": 30
+    },
+    {
+      "template_id": "sentence-rewrite.v1",
+      "exercise_type": "SENTENCE_REWRITE",
+      "ratio_percent": 30
+    }
+  ],
+  "tolerance_percent": 10,
+  "lo_mapping": {
+    "LO1": ["mcq.v1", "tfng.v1", "sentence-rewrite.v1"]
+  }
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$TEMPLATE_SELECTION_FILE" ]]; then
+    cat > "$TEMPLATE_SELECTION_FILE" <<EOF
+{
+  "contract_version": "$CONTRACT_VERSION",
+  "unit_id": "$UNIT_ID",
+  "subject": "english",
+  "catalog_version": "1.0.0",
+  "top_k": 3,
+  "selected_templates": [
+    {
+      "template_id": "mcq.v1",
+      "exercise_type": "MCQ",
+      "score": 0.9,
+      "score_breakdown": {
+        "lo_fit": 1.0,
+        "level_fit": 0.9,
+        "duration_fit": 0.8,
+        "diversity_fit": 0.9
+      },
+      "rationale": "Balanced starter item for broad LO coverage."
+    },
+    {
+      "template_id": "tfng.v1",
+      "exercise_type": "TFNG",
+      "score": 0.86,
+      "score_breakdown": {
+        "lo_fit": 0.9,
+        "level_fit": 0.8,
+        "duration_fit": 0.9,
+        "diversity_fit": 0.85
+      },
+      "rationale": "Supports evidence-based reading validation."
+    },
+    {
+      "template_id": "sentence-rewrite.v1",
+      "exercise_type": "SENTENCE_REWRITE",
+      "score": 0.84,
+      "score_breakdown": {
+        "lo_fit": 0.85,
+        "level_fit": 0.8,
+        "duration_fit": 0.8,
+        "diversity_fit": 0.9
+      },
+      "rationale": "Evaluates expressive accuracy and transformation skill."
+    }
+  ],
+  "selection_rationale": "Default English starter selection; refine with unit-specific intent."
+}
+EOF
+fi
+
 if [[ "$FORCE_RESET" == "true" || ! -f "$SEQUENCE_JSON_FILE" ]]; then
     cat > "$SEQUENCE_JSON_FILE" <<EOF
 {
@@ -270,6 +354,50 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$AUDIT_REPORT_JSON_FILE" ]]; then
 EOF
 fi
 
+# Attempt deterministic template auto-select (English-first). If no template pack
+# is available for the current repo, the selector returns SKIP and scaffolds remain.
+selector_args=(
+    "$SELECTOR_TOOL"
+    --repo-root "$REPO_ROOT"
+    --unit-dir "$UNIT_DIR"
+    --json
+)
+if command -v uv >/dev/null 2>&1; then
+    selector_output="$(uv run python "${selector_args[@]}" 2>/dev/null || true)"
+else
+    PYTHON_BIN="python3"
+    if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+        PYTHON_BIN="python"
+    fi
+    selector_output="$("$PYTHON_BIN" "${selector_args[@]}" 2>/dev/null || true)"
+fi
+
+if [[ -n "$selector_output" ]]; then
+    PYTHON_PARSE_BIN="python3"
+    if ! command -v "$PYTHON_PARSE_BIN" >/dev/null 2>&1; then
+        PYTHON_PARSE_BIN="python"
+    fi
+    selector_status="$(
+        "$PYTHON_PARSE_BIN" - "$selector_output" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("")
+    raise SystemExit(0)
+print(str(payload.get("STATUS", "")).upper())
+PY
+    )"
+    if [[ "$selector_status" == "BLOCK" ]]; then
+        echo "ERROR: template selector blocked setup-design for $UNIT_DIR" >&2
+        exit 1
+    fi
+fi
+
+ASSESSMENT_BLUEPRINT_CHECKSUM="$(compute_sha256 "$ASSESSMENT_BLUEPRINT_FILE")"
+TEMPLATE_SELECTION_CHECKSUM="$(compute_sha256 "$TEMPLATE_SELECTION_FILE")"
+
 if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
     cat > "$MANIFEST_FILE" <<EOF
 {
@@ -292,6 +420,20 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
       "path": "brief.md",
       "media_type": "text/markdown",
       "checksum": "sha256:$BRIEF_CHECKSUM"
+    },
+    {
+      "id": "assessment-blueprint-json",
+      "type": "assessment-blueprint",
+      "path": "assessment-blueprint.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$ASSESSMENT_BLUEPRINT_CHECKSUM"
+    },
+    {
+      "id": "template-selection-json",
+      "type": "template-selection",
+      "path": "template-selection.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$TEMPLATE_SELECTION_CHECKSUM"
     }
   ],
   "gate_status": {

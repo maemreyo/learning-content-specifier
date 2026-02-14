@@ -15,6 +15,7 @@ if ($Help) {
 . "$PSScriptRoot/common.ps1"
 $paths = Get-UnitPathsEnv
 $contractVersion = Get-ContractVersion
+$selectorTool = Resolve-PythonTool -ToolName 'generate_template_selection.py'
 
 if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
 
@@ -212,6 +213,125 @@ if ($ForceReset -or -not (Test-Path $paths.DESIGN_DECISIONS_FILE)) {
 "@ | Set-Content -Path $paths.DESIGN_DECISIONS_FILE -Encoding utf8
 }
 
+if ($ForceReset -or -not (Test-Path $paths.ASSESSMENT_BLUEPRINT_FILE)) {
+    @"
+{
+  "contract_version": "$contractVersion",
+  "unit_id": "$unitId",
+  "subject": "english",
+  "template_pack_version": "1.0.0",
+  "target_distribution": [
+    {
+      "template_id": "mcq.v1",
+      "exercise_type": "MCQ",
+      "ratio_percent": 40
+    },
+    {
+      "template_id": "tfng.v1",
+      "exercise_type": "TFNG",
+      "ratio_percent": 30
+    },
+    {
+      "template_id": "sentence-rewrite.v1",
+      "exercise_type": "SENTENCE_REWRITE",
+      "ratio_percent": 30
+    }
+  ],
+  "tolerance_percent": 10,
+  "lo_mapping": {
+    "LO1": ["mcq.v1", "tfng.v1", "sentence-rewrite.v1"]
+  }
+}
+"@ | Set-Content -Path $paths.ASSESSMENT_BLUEPRINT_FILE -Encoding utf8
+}
+
+if ($ForceReset -or -not (Test-Path $paths.TEMPLATE_SELECTION_FILE)) {
+    @"
+{
+  "contract_version": "$contractVersion",
+  "unit_id": "$unitId",
+  "subject": "english",
+  "catalog_version": "1.0.0",
+  "top_k": 3,
+  "selected_templates": [
+    {
+      "template_id": "mcq.v1",
+      "exercise_type": "MCQ",
+      "score": 0.9,
+      "score_breakdown": {
+        "lo_fit": 1.0,
+        "level_fit": 0.9,
+        "duration_fit": 0.8,
+        "diversity_fit": 0.9
+      },
+      "rationale": "Balanced starter item for broad LO coverage."
+    },
+    {
+      "template_id": "tfng.v1",
+      "exercise_type": "TFNG",
+      "score": 0.86,
+      "score_breakdown": {
+        "lo_fit": 0.9,
+        "level_fit": 0.8,
+        "duration_fit": 0.9,
+        "diversity_fit": 0.85
+      },
+      "rationale": "Supports evidence-based reading validation."
+    },
+    {
+      "template_id": "sentence-rewrite.v1",
+      "exercise_type": "SENTENCE_REWRITE",
+      "score": 0.84,
+      "score_breakdown": {
+        "lo_fit": 0.85,
+        "level_fit": 0.8,
+        "duration_fit": 0.8,
+        "diversity_fit": 0.9
+      },
+      "rationale": "Evaluates expressive accuracy and transformation skill."
+    }
+  ],
+  "selection_rationale": "Default English starter selection; refine with unit-specific intent."
+}
+"@ | Set-Content -Path $paths.TEMPLATE_SELECTION_FILE -Encoding utf8
+}
+
+# Attempt deterministic template auto-select (English-first). If template pack is
+# not found, selector exits SKIP and current scaffolds remain.
+$selectorArgs = @(
+    $selectorTool,
+    '--repo-root', $paths.REPO_ROOT,
+    '--unit-dir', $paths.UNIT_DIR,
+    '--json'
+)
+
+$selectorRaw = ''
+if (Get-Command uv -ErrorAction SilentlyContinue) {
+    try {
+        $selectorRaw = (& uv run python @selectorArgs 2>$null)
+    } catch {
+        $selectorRaw = ''
+    }
+} else {
+    $selectorPython = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
+    try {
+        $selectorRaw = (& $selectorPython @selectorArgs 2>$null)
+    } catch {
+        $selectorRaw = ''
+    }
+}
+
+if ($selectorRaw) {
+    try {
+        $selectorObj = $selectorRaw | ConvertFrom-Json
+        if ([string]$selectorObj.STATUS -eq 'BLOCK') {
+            throw "template selector blocked setup-design for $($paths.UNIT_DIR)"
+        }
+    } catch {
+        throw
+    }
+}
+
 if ($ForceReset -or -not (Test-Path $paths.SEQUENCE_JSON_FILE)) {
     @"
 {
@@ -240,6 +360,9 @@ if ($ForceReset -or -not (Test-Path $paths.AUDIT_REPORT_JSON_FILE)) {
 "@ | Set-Content -Path $paths.AUDIT_REPORT_JSON_FILE -Encoding utf8
 }
 
+$assessmentBlueprintChecksum = (Get-FileHash -Path $paths.ASSESSMENT_BLUEPRINT_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+$templateSelectionChecksum = (Get-FileHash -Path $paths.TEMPLATE_SELECTION_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+
 if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
     @"
 {
@@ -262,6 +385,20 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
       "path": "brief.md",
       "media_type": "text/markdown",
       "checksum": "sha256:$briefChecksum"
+    },
+    {
+      "id": "assessment-blueprint-json",
+      "type": "assessment-blueprint",
+      "path": "assessment-blueprint.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$assessmentBlueprintChecksum"
+    },
+    {
+      "id": "template-selection-json",
+      "type": "template-selection",
+      "path": "template-selection.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$templateSelectionChecksum"
     }
   ],
   "gate_status": {

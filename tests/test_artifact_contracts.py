@@ -8,6 +8,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _template_pack_available() -> bool:
+    candidates = (
+        ROOT / ".lcs" / "template-pack" / "v1" / "catalog.json",
+        ROOT / "subjects" / "english" / ".lcs" / "template-pack" / "v1" / "catalog.json",
+        ROOT.parent / "subjects" / "english" / ".lcs" / "template-pack" / "v1" / "catalog.json",
+    )
+    return any(path.is_file() for path in candidates)
+
+
 def _run_setup_design(env: dict[str, str]) -> None:
     if os.name == "nt":
         cmd = [
@@ -78,6 +87,13 @@ def test_artifact_contract_validator_passes_for_generated_contracts():
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "PASS"
         assert len(payload["VALIDATED"]) >= 5
+        assert payload["RESPONSE_VERSION"] == "1.0.0"
+        assert payload["PIPELINE"]["mode"] == "collect-all-per-phase"
+        assert isinstance(payload["STEPS"], list) and len(payload["STEPS"]) >= 1
+        assert isinstance(payload["AGENT_REPORT"], dict)
+        if _template_pack_available():
+            template_rule_step = next(step for step in payload["STEPS"] if step["step_id"] == "TMP_RULE_001")
+            assert any(str(output).endswith("validate_template_pack.py") for output in template_rule_step["outputs"])
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 
@@ -99,6 +115,10 @@ def test_artifact_contract_validator_blocks_without_xapi_manifest_block():
         assert proc.returncode != 0
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "BLOCK"
+        assert isinstance(payload.get("AGENT_REPORT"), dict)
+        assert payload["AGENT_REPORT"]["blocking_steps"]
+        assert payload["AGENT_REPORT"]["ordered_fix_plan"]
+        assert "validate-artifact-contracts" in payload["AGENT_REPORT"]["rerun_command"]
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 
@@ -121,6 +141,30 @@ def test_artifact_contract_validator_blocks_with_unsupported_xapi_version():
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "BLOCK"
         assert any("interop/xapi/version" in msg for msg in payload["ERRORS"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_template_blueprint_schema_is_invalid():
+    unit_id = "996-artifact-contract-template-schema-invalid"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    if not (ROOT.parent / "subjects" / "english" / ".lcs" / "template-pack" / "v1" / "catalog.json").is_file():
+        return
+
+    try:
+        _run_setup_design(env)
+        blueprint_file = unit_dir / "assessment-blueprint.json"
+        blueprint = json.loads(blueprint_file.read_text(encoding="utf-8"))
+        blueprint["target_distribution"][0]["ratio_percent"] = "40"
+        blueprint_file.write_text(json.dumps(blueprint, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert any(item["code"] == "TMP_BLUEPRINT_RATIO_INVALID" for item in payload["FINDINGS"])
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 

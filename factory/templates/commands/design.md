@@ -30,7 +30,7 @@ $ARGUMENTS
 
 - YOU MUST preserve existing `design.md` content unless an explicit reset is requested.
 - YOU MUST generate and maintain `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
-- YOU MUST generate or update `design.json`, `content-model.json`, `design-decisions.json`, and `outputs/manifest.json`.
+- YOU MUST generate or update `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, and `outputs/manifest.json`.
 - YOU MUST apply Corporate L&D default pedagogy weights:
   - `outcome_fit=0.30`
   - `evidence_fit=0.25`
@@ -39,6 +39,8 @@ $ARGUMENTS
   - `accessibility_fit=0.10`
 - YOU MUST apply selection rule: max 2 secondary methods with `score_delta <= 0.40`.
 - YOU MUST mark research required when confidence `< 0.70`.
+- YOU MUST load subject template catalog (English-first) and produce weighted top-K template candidates.
+- YOU MUST include score breakdown (`lo_fit`, `level_fit`, `duration_fit`, `diversity_fit`) in `template-selection.json`.
 - YOU MUST NOT bypass charter constraints.
 
 ## Execution Steps
@@ -49,9 +51,11 @@ $ARGUMENTS
 4. Update decision contracts (`design.json`, `design-decisions.json`) with scored pedagogy rationale.
 5. If confidence `< 0.70` OR domain is time-sensitive OR artifacts conflict, add evidence references to `research.md` and `design-decisions.json`.
 6. Update `content-model.json` with module/lesson LO references and dependency graph cycle check.
-7. Ensure `outputs/manifest.json` remains valid and xAPI interop block exists.
-8. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
-9. Report artifacts and unresolved risks.
+7. Generate/update `assessment-blueprint.json` with template ratio targets and LO mapping.
+8. Generate/update `template-selection.json` with top-K candidates and final selected template set.
+9. Ensure `outputs/manifest.json` remains valid, xAPI interop block exists, and new template artifacts are registered.
+10. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
+11. Report artifacts and unresolved risks.
 
 ## Hard Gates
 
@@ -60,6 +64,7 @@ $ARGUMENTS
 - Gate G-DS-003: accessibility/readability controls are explicit.
 - Gate G-DS-004: duration estimate is within tolerance (`-10%` to `+15%`) or explicitly blocked.
 - Gate G-DS-005: `design.json`, `content-model.json`, `design-decisions.json`, and `outputs/manifest.json` are present.
+- Gate G-DS-006: `assessment-blueprint.json` and `template-selection.json` are present and machine-parseable.
 
 ## Failure Modes
 
@@ -72,6 +77,7 @@ $ARGUMENTS
 
 - Markdown: `design.md`, `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
 - JSON: `design.json`, `content-model.json`, `design-decisions.json`, `outputs/manifest.json`.
+- JSON: `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, `outputs/manifest.json`.
 - Execution summary includes `HAS_GIT` state, confidence score, and research trigger decision.
 
 ## Examples

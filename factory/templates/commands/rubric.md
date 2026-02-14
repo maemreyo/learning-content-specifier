@@ -21,6 +21,7 @@ $ARGUMENTS
 - YOU MUST use parseable gate lines containing `Gate ID`, `Status`, `Severity`, `Evidence`.
 - YOU MUST keep gate lines compatible with deterministic parser regex used by author gate scripts.
 - YOU MUST include gate groups: alignment, pedagogy, accessibility/readability, metadata.
+- YOU MUST include template compliance gates for schema and semantic rule conformance.
 - YOU MUST NOT mark PASS without evidence reference.
 
 ## Execution Steps

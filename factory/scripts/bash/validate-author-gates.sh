@@ -39,6 +39,9 @@ audit_open_critical=0
 audit_open_high=0
 contract_status="BLOCK"
 contract_summary="validation-not-run"
+contract_response_version=""
+contract_pipeline=""
+contract_blocking_steps=""
 blockers=()
 
 contract_output="$("$SCRIPT_DIR/validate-artifact-contracts.sh" --json --unit-dir "$UNIT_DIR" 2>/dev/null || true)"
@@ -52,19 +55,33 @@ import sys
 try:
     payload = json.loads(sys.argv[1])
 except Exception:
-    print("BLOCK\tinvalid-contract-validator-output")
+    print("BLOCK\tinvalid-contract-validator-output\t\t\t")
     raise SystemExit(0)
 
 status = str(payload.get("STATUS", "BLOCK")).upper()
 missing = len(payload.get("MISSING_FILES", [])) + len(payload.get("MISSING_SCHEMAS", []))
 errors = len(payload.get("ERRORS", []))
-print(f"{status}\tmissing={missing},errors={errors}")
+phase_summary = payload.get("PHASE_SUMMARY", {})
+open_critical = int(phase_summary.get("open_critical", 0)) if isinstance(phase_summary, dict) else 0
+open_high = int(phase_summary.get("open_high", 0)) if isinstance(phase_summary, dict) else 0
+blocking = open_critical + open_high
+response_version = str(payload.get("RESPONSE_VERSION", ""))
+pipeline = payload.get("PIPELINE", {})
+pipeline_name = str(pipeline.get("name", "")) if isinstance(pipeline, dict) else ""
+agent_report = payload.get("AGENT_REPORT", {})
+blocking_steps = agent_report.get("blocking_steps", []) if isinstance(agent_report, dict) else []
+blocking_steps_text = ",".join(str(item) for item in blocking_steps if isinstance(item, str))
+print(f"{status}\tmissing={missing},errors={errors},blockers={blocking}\t{response_version}\t{pipeline_name}\t{blocking_steps_text}")
 PY
 )"
-    IFS=$'\t' read -r contract_status contract_summary <<< "$parsed_contract"
+    IFS=$'\t' read -r contract_status contract_summary contract_response_version contract_pipeline contract_blocking_steps <<< "$parsed_contract"
 
     if [[ "$contract_status" != "PASS" ]]; then
-        blockers+=("Artifact contract validation is BLOCK ($contract_summary)")
+        block_detail="$contract_summary"
+        if [[ -n "$contract_blocking_steps" ]]; then
+            block_detail="$block_detail,steps=$contract_blocking_steps"
+        fi
+        blockers+=("Artifact contract validation is BLOCK ($block_detail)")
     fi
 fi
 
@@ -203,13 +220,16 @@ if [[ ${#blockers[@]} -gt 0 ]]; then
 fi
 
 if $JSON_MODE; then
-    printf '{"STATUS":"%s","UNIT_DIR":"%s","CONTRACT_STATUS":"%s","CONTRACT_SUMMARY":"%s","RUBRIC_UNCHECKED":%d,"RUBRIC_BLOCKERS":%d,"RUBRIC_PARSE_ERRORS":%d,"AUDIT_DECISION":"%s","AUDIT_OPEN_CRITICAL":%d,"AUDIT_OPEN_HIGH":%d,"BLOCKERS":"%s"}\n' \
-        "$status" "$UNIT_DIR" "$contract_status" "$contract_summary" "$rubric_unchecked" "$rubric_blockers" "$rubric_parse_errors" "$audit_decision" "$audit_open_critical" "$audit_open_high" "$blocker_text"
+    printf '{"STATUS":"%s","UNIT_DIR":"%s","CONTRACT_STATUS":"%s","CONTRACT_SUMMARY":"%s","CONTRACT_RESPONSE_VERSION":"%s","CONTRACT_PIPELINE":"%s","CONTRACT_BLOCKING_STEPS":"%s","RUBRIC_UNCHECKED":%d,"RUBRIC_BLOCKERS":%d,"RUBRIC_PARSE_ERRORS":%d,"AUDIT_DECISION":"%s","AUDIT_OPEN_CRITICAL":%d,"AUDIT_OPEN_HIGH":%d,"BLOCKERS":"%s"}\n' \
+        "$status" "$UNIT_DIR" "$contract_status" "$contract_summary" "$contract_response_version" "$contract_pipeline" "$contract_blocking_steps" "$rubric_unchecked" "$rubric_blockers" "$rubric_parse_errors" "$audit_decision" "$audit_open_critical" "$audit_open_high" "$blocker_text"
 else
     echo "STATUS: $status"
     echo "UNIT_DIR: $UNIT_DIR"
     echo "CONTRACT_STATUS: $contract_status"
     echo "CONTRACT_SUMMARY: $contract_summary"
+    echo "CONTRACT_RESPONSE_VERSION: $contract_response_version"
+    echo "CONTRACT_PIPELINE: $contract_pipeline"
+    echo "CONTRACT_BLOCKING_STEPS: $contract_blocking_steps"
     echo "RUBRIC_UNCHECKED: $rubric_unchecked"
     echo "RUBRIC_BLOCKERS: $rubric_blockers"
     echo "RUBRIC_PARSE_ERRORS: $rubric_parse_errors"

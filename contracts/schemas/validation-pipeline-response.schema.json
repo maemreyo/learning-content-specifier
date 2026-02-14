@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.validation.pipeline-response.v1",
+  "title": "LCS Validation Pipeline Response Envelope v1",
+  "type": "object",
+  "required": [
+    "STATUS",
+    "UNIT_DIR",
+    "RESPONSE_VERSION",
+    "PIPELINE",
+    "STEPS",
+    "FINDINGS",
+    "PHASE_SUMMARY",
+    "AGENT_REPORT"
+  ],
+  "properties": {
+    "STATUS": {
+      "type": "string",
+      "enum": ["PASS", "BLOCK"]
+    },
+    "UNIT_DIR": {
+      "type": "string",
+      "minLength": 1
+    },
+    "RESPONSE_VERSION": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "PIPELINE": {
+      "type": "object",
+      "required": ["name", "mode", "phases"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "mode": {
+          "type": "string",
+          "enum": ["collect-all-per-phase"]
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": true
+    },
+    "STEPS": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step_id", "phase", "status", "severity", "message"],
+        "properties": {
+          "step_id": {"type": "string", "minLength": 1},
+          "phase": {"type": "string", "minLength": 1},
+          "status": {
+            "type": "string",
+            "enum": ["PASS", "BLOCK", "WARN", "SKIP"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+          },
+          "message": {"type": "string", "minLength": 1},
+          "inputs": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "outputs": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "findings_ref": {
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0}
+          },
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "next_action": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "FINDINGS": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "category", "severity", "message", "status"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "category": {"type": "string", "minLength": 1},
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+          },
+          "path": {"type": "string"},
+          "rule_id": {"type": "string"},
+          "message": {"type": "string", "minLength": 1},
+          "details": {"type": "object"},
+          "status": {
+            "type": "string",
+            "enum": ["OPEN", "RESOLVED"]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "PHASE_SUMMARY": {
+      "type": "object"
+    },
+    "AGENT_REPORT": {
+      "type": "object",
+      "required": [
+        "summary_line",
+        "blocking_steps",
+        "top_issues",
+        "ordered_fix_plan",
+        "rerun_command"
+      ],
+      "properties": {
+        "summary_line": {"type": "string", "minLength": 1},
+        "blocking_steps": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "top_issues": {"type": "array"},
+        "ordered_fix_plan": {"type": "array"},
+        "rerun_command": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

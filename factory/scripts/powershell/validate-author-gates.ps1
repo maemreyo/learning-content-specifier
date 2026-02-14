@@ -40,6 +40,9 @@ $auditOpenCritical = 0
 $auditOpenHigh = 0
 $contractStatus = 'BLOCK'
 $contractSummary = 'validation-not-run'
+$contractResponseVersion = ''
+$contractPipeline = ''
+$contractBlockingSteps = ''
 $blockers = @()
 
 try {
@@ -48,9 +51,26 @@ try {
     $contractStatus = [string]$contractObj.STATUS
     $missingCount = @($contractObj.MISSING_FILES).Count + @($contractObj.MISSING_SCHEMAS).Count
     $errorCount = @($contractObj.ERRORS).Count
-    $contractSummary = "missing=$missingCount,errors=$errorCount"
+    $openCritical = 0
+    $openHigh = 0
+    if ($contractObj.PHASE_SUMMARY) {
+        $openCritical = [int]$contractObj.PHASE_SUMMARY.open_critical
+        $openHigh = [int]$contractObj.PHASE_SUMMARY.open_high
+    }
+    $contractSummary = "missing=$missingCount,errors=$errorCount,blockers=$($openCritical + $openHigh)"
+    $contractResponseVersion = [string]$contractObj.RESPONSE_VERSION
+    if ($contractObj.PIPELINE -and $contractObj.PIPELINE.name) {
+        $contractPipeline = [string]$contractObj.PIPELINE.name
+    }
+    if ($contractObj.AGENT_REPORT -and $contractObj.AGENT_REPORT.blocking_steps) {
+        $contractBlockingSteps = (@($contractObj.AGENT_REPORT.blocking_steps) | ForEach-Object { [string]$_ }) -join ','
+    }
     if ($contractStatus -ne 'PASS') {
-        $blockers += "Artifact contract validation is BLOCK ($contractSummary)"
+        $detail = $contractSummary
+        if ($contractBlockingSteps) {
+            $detail = "$detail,steps=$contractBlockingSteps"
+        }
+        $blockers += "Artifact contract validation is BLOCK ($detail)"
     }
 }
 catch {
@@ -164,6 +184,9 @@ $result = [PSCustomObject]@{
     UNIT_DIR = $paths.UNIT_DIR
     CONTRACT_STATUS = $contractStatus
     CONTRACT_SUMMARY = $contractSummary
+    CONTRACT_RESPONSE_VERSION = $contractResponseVersion
+    CONTRACT_PIPELINE = $contractPipeline
+    CONTRACT_BLOCKING_STEPS = $contractBlockingSteps
     RUBRIC_UNCHECKED = $rubricUnchecked
     RUBRIC_BLOCKERS = $rubricBlockers
     RUBRIC_PARSE_ERRORS = $rubricParseErrors
@@ -181,6 +204,9 @@ else {
     Write-Output "UNIT_DIR: $($result.UNIT_DIR)"
     Write-Output "CONTRACT_STATUS: $($result.CONTRACT_STATUS)"
     Write-Output "CONTRACT_SUMMARY: $($result.CONTRACT_SUMMARY)"
+    Write-Output "CONTRACT_RESPONSE_VERSION: $($result.CONTRACT_RESPONSE_VERSION)"
+    Write-Output "CONTRACT_PIPELINE: $($result.CONTRACT_PIPELINE)"
+    Write-Output "CONTRACT_BLOCKING_STEPS: $($result.CONTRACT_BLOCKING_STEPS)"
     Write-Output "RUBRIC_UNCHECKED: $($result.RUBRIC_UNCHECKED)"
     Write-Output "RUBRIC_BLOCKERS: $($result.RUBRIC_BLOCKERS)"
     Write-Output "RUBRIC_PARSE_ERRORS: $($result.RUBRIC_PARSE_ERRORS)"

@@ -6,9 +6,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from jsonschema import Draft202012Validator
 
@@ -25,6 +29,21 @@ REQUIRED_CONTRACTS = (
     ContractPair("sequence.json", "sequence.schema.json"),
     ContractPair("audit-report.json", "audit-report.schema.json"),
     ContractPair("outputs/manifest.json", "manifest.schema.json"),
+)
+
+RESPONSE_VERSION = "1.0.0"
+PIPELINE_NAME = "artifact-contract-validation.v1"
+PIPELINE_MODE = "collect-all-per-phase"
+PIPELINE_PHASES = (
+    "preflight",
+    "artifact_schema",
+    "artifact_consistency",
+    "template_catalog",
+    "template_schema",
+    "template_rules",
+    "rubric_audit",
+    "gate_eval",
+    "finalize",
 )
 
 
@@ -45,6 +64,33 @@ def _resolve_schemas_dir(repo_root: Path) -> Path | None:
         if candidate.is_dir():
             return candidate
     return None
+
+
+def _resolve_template_pack_dir(repo_root: Path) -> Path | None:
+    env_path = os.getenv("LCS_TEMPLATE_PACK_DIR", "").strip()
+    candidates: list[Path] = []
+    if env_path:
+        candidates.append(Path(env_path).expanduser())
+
+    candidates.extend(
+        [
+            repo_root / ".lcs" / "template-pack" / "v1",
+            repo_root / "subjects" / "english" / ".lcs" / "template-pack" / "v1",
+            repo_root.parent / "subjects" / "english" / ".lcs" / "template-pack" / "v1",
+        ]
+    )
+
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved.is_dir():
+            return resolved
+    return None
+
+
+def _normalize_template_id(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    return value.strip().lower()
 
 
 def _validate_json(artifact_path: Path, schema_path: Path) -> list[str]:
@@ -358,6 +404,691 @@ def _cross_artifact_checks(unit_dir: Path, artifacts: dict[str, dict | list]) ->
     return errors
 
 
+def _extract_path_hint(message: str) -> str:
+    if ":" not in message:
+        return ""
+    return message.split(":", 1)[0]
+
+
+def _build_finding(
+    *,
+    code: str,
+    category: str,
+    severity: str,
+    message: str,
+    path: str = "",
+    rule_id: str = "",
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "code": code,
+        "category": category,
+        "severity": severity,
+        "path": path,
+        "rule_id": rule_id,
+        "message": message,
+        "details": details or {},
+        "status": "OPEN",
+    }
+
+
+def _phase_status(findings: list[dict[str, Any]], default: str = "PASS") -> tuple[str, str]:
+    if not findings:
+        return default, "INFO"
+
+    if any(item["severity"] in {"CRITICAL", "HIGH"} for item in findings):
+        return "BLOCK", "HIGH"
+    if any(item["severity"] in {"MEDIUM", "LOW"} for item in findings):
+        return "WARN", "MEDIUM"
+    return "PASS", "INFO"
+
+
+def _build_step(
+    *,
+    step_id: str,
+    phase: str,
+    status: str,
+    severity: str,
+    message: str,
+    inputs: list[str] | None = None,
+    outputs: list[str] | None = None,
+    findings_ref: list[int] | None = None,
+    duration_ms: int = 0,
+    next_action: str = "",
+) -> dict[str, Any]:
+    return {
+        "step_id": step_id,
+        "phase": phase,
+        "status": status,
+        "severity": severity,
+        "message": message,
+        "inputs": inputs or [],
+        "outputs": outputs or [],
+        "findings_ref": findings_ref or [],
+        "duration_ms": duration_ms,
+        "next_action": next_action,
+    }
+
+
+def _normalize_severity(value: Any) -> str:
+    severity = str(value).strip().upper()
+    if severity in {"CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"}:
+        return severity
+    return "MEDIUM"
+
+
+def _dedupe_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in findings:
+        key = (str(item.get("code", "")), str(item.get("path", "")), str(item.get("message", "")))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+    return deduped
+
+
+def _validate_template_catalog(
+    *,
+    template_pack_dir: Path,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]], list[str]]:
+    findings: list[dict[str, Any]] = []
+    outputs: list[str] = []
+    catalog_path = template_pack_dir / "catalog.json"
+    if not catalog_path.is_file():
+        findings.append(
+            _build_finding(
+                code="TMP_CATALOG_MISSING",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="Template catalog is missing",
+                path=str(catalog_path),
+                rule_id="template-catalog-required",
+            )
+        )
+        return None, findings, outputs
+
+    payload = _load_json(catalog_path)
+    if not isinstance(payload, dict):
+        findings.append(
+            _build_finding(
+                code="TMP_CATALOG_INVALID_JSON",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="Template catalog is not valid JSON",
+                path=str(catalog_path),
+                rule_id="template-catalog-json",
+            )
+        )
+        return None, findings, outputs
+
+    templates = payload.get("templates", [])
+    if not isinstance(templates, list) or not templates:
+        findings.append(
+            _build_finding(
+                code="TMP_CATALOG_EMPTY",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="Template catalog must include at least one template entry",
+                path=str(catalog_path),
+                rule_id="template-catalog-non-empty",
+            )
+        )
+        return payload, findings, outputs
+
+    seen_template_ids: set[str] = set()
+    for index, item in enumerate(templates):
+        if not isinstance(item, dict):
+            findings.append(
+                _build_finding(
+                    code="TMP_CATALOG_ITEM_INVALID",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="Template catalog entry must be an object",
+                    path=f"{catalog_path}#/templates/{index}",
+                    rule_id="template-catalog-entry-object",
+                )
+            )
+            continue
+
+        template_id = _normalize_template_id(item.get("template_id"))
+        if not template_id:
+            findings.append(
+                _build_finding(
+                    code="TMP_CATALOG_TEMPLATE_ID_MISSING",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="Template catalog entry is missing template_id",
+                    path=f"{catalog_path}#/templates/{index}",
+                    rule_id="template-id-required",
+                )
+            )
+            continue
+
+        if template_id in seen_template_ids:
+            findings.append(
+                _build_finding(
+                    code="TMP_CATALOG_TEMPLATE_ID_DUPLICATE",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=f"Duplicate template_id '{template_id}'",
+                    path=f"{catalog_path}#/templates/{index}",
+                    rule_id="template-id-unique",
+                )
+            )
+            continue
+
+        seen_template_ids.add(template_id)
+
+        schema_ref = item.get("schema", "")
+        rules_ref = item.get("rules", "")
+        for label, rel_path in (("schema", schema_ref), ("rules", rules_ref)):
+            if not isinstance(rel_path, str) or not rel_path:
+                findings.append(
+                    _build_finding(
+                        code="TMP_CATALOG_REF_MISSING",
+                        category="TEMPLATE",
+                        severity="HIGH",
+                        message=f"Template '{template_id}' is missing {label} reference",
+                        path=f"{catalog_path}#/templates/{index}",
+                        rule_id="template-ref-required",
+                    )
+                )
+                continue
+            resolved = (template_pack_dir / rel_path).resolve()
+            if not resolved.is_file():
+                findings.append(
+                    _build_finding(
+                        code="TMP_CATALOG_REF_NOT_FOUND",
+                        category="TEMPLATE",
+                        severity="HIGH",
+                        message=f"Template '{template_id}' {label} reference does not exist",
+                        path=str(resolved),
+                        rule_id="template-ref-exists",
+                    )
+                )
+
+    outputs.append(str(catalog_path))
+    return payload, findings, outputs
+
+
+def _validate_blueprint_schema(
+    *,
+    unit_dir: Path,
+    catalog: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[str], dict[str, Any] | None, dict[str, Any] | None]:
+    findings: list[dict[str, Any]] = []
+    outputs: list[str] = []
+
+    blueprint_path = unit_dir / "assessment-blueprint.json"
+    selection_path = unit_dir / "template-selection.json"
+
+    if not blueprint_path.is_file() and not selection_path.is_file():
+        return findings, outputs, None, None
+
+    blueprint = _load_json(blueprint_path) if blueprint_path.is_file() else None
+    selection = _load_json(selection_path) if selection_path.is_file() else None
+
+    if blueprint_path.is_file() and not isinstance(blueprint, dict):
+        findings.append(
+            _build_finding(
+                code="TMP_BLUEPRINT_INVALID_JSON",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="assessment-blueprint.json must be a JSON object",
+                path=str(blueprint_path),
+                rule_id="blueprint-json-object",
+            )
+        )
+    if selection_path.is_file() and not isinstance(selection, dict):
+        findings.append(
+            _build_finding(
+                code="TMP_SELECTION_INVALID_JSON",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="template-selection.json must be a JSON object",
+                path=str(selection_path),
+                rule_id="selection-json-object",
+            )
+        )
+
+    template_ids = {
+        _normalize_template_id(item.get("template_id"))
+        for item in catalog.get("templates", [])
+        if isinstance(item, dict)
+    }
+
+    if isinstance(blueprint, dict):
+        outputs.append(str(blueprint_path))
+        dist = blueprint.get("target_distribution", [])
+        if not isinstance(dist, list) or not dist:
+            findings.append(
+                _build_finding(
+                    code="TMP_BLUEPRINT_DISTRIBUTION_MISSING",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="assessment-blueprint.json must include non-empty target_distribution",
+                    path=str(blueprint_path),
+                    rule_id="blueprint-target-distribution",
+                )
+            )
+        else:
+            for index, item in enumerate(dist):
+                if not isinstance(item, dict):
+                    findings.append(
+                        _build_finding(
+                            code="TMP_BLUEPRINT_DISTRIBUTION_ITEM_INVALID",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message="target_distribution item must be an object",
+                            path=f"{blueprint_path}#/target_distribution/{index}",
+                            rule_id="blueprint-distribution-item-object",
+                        )
+                    )
+                    continue
+                template_id = _normalize_template_id(item.get("template_id"))
+                ratio = item.get("ratio_percent")
+                if not template_id:
+                    findings.append(
+                        _build_finding(
+                            code="TMP_BLUEPRINT_TEMPLATE_ID_MISSING",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message="target_distribution item is missing template_id",
+                            path=f"{blueprint_path}#/target_distribution/{index}",
+                            rule_id="blueprint-template-id-required",
+                        )
+                    )
+                elif template_ids and template_id not in template_ids:
+                    findings.append(
+                        _build_finding(
+                            code="TMP_BLUEPRINT_TEMPLATE_UNKNOWN",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message=f"target_distribution template_id '{template_id}' is not in catalog",
+                            path=f"{blueprint_path}#/target_distribution/{index}",
+                            rule_id="blueprint-template-known",
+                        )
+                    )
+                if not isinstance(ratio, (int, float)):
+                    findings.append(
+                        _build_finding(
+                            code="TMP_BLUEPRINT_RATIO_INVALID",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message="ratio_percent must be numeric",
+                            path=f"{blueprint_path}#/target_distribution/{index}",
+                            rule_id="blueprint-ratio-numeric",
+                        )
+                    )
+
+    if isinstance(selection, dict):
+        outputs.append(str(selection_path))
+        selected_templates = selection.get("selected_templates", [])
+        if not isinstance(selected_templates, list) or not selected_templates:
+            findings.append(
+                _build_finding(
+                    code="TMP_SELECTION_EMPTY",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="template-selection.json must include selected_templates",
+                    path=str(selection_path),
+                    rule_id="selection-templates-required",
+                )
+            )
+        else:
+            for index, item in enumerate(selected_templates):
+                if not isinstance(item, dict):
+                    findings.append(
+                        _build_finding(
+                            code="TMP_SELECTION_ITEM_INVALID",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message="selected_templates item must be an object",
+                            path=f"{selection_path}#/selected_templates/{index}",
+                            rule_id="selection-item-object",
+                        )
+                    )
+                    continue
+                template_id = _normalize_template_id(item.get("template_id"))
+                if not template_id:
+                    findings.append(
+                        _build_finding(
+                            code="TMP_SELECTION_TEMPLATE_ID_MISSING",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message="selected_templates item is missing template_id",
+                            path=f"{selection_path}#/selected_templates/{index}",
+                            rule_id="selection-template-id-required",
+                        )
+                    )
+                elif template_ids and template_id not in template_ids:
+                    findings.append(
+                        _build_finding(
+                            code="TMP_SELECTION_TEMPLATE_UNKNOWN",
+                            category="TEMPLATE",
+                            severity="HIGH",
+                            message=f"selected template '{template_id}' is not in catalog",
+                            path=f"{selection_path}#/selected_templates/{index}",
+                            rule_id="selection-template-known",
+                        )
+                    )
+
+    return findings, outputs, blueprint if isinstance(blueprint, dict) else None, selection if isinstance(selection, dict) else None
+
+
+def _validate_template_rules(
+    *,
+    unit_dir: Path,
+    brief: dict[str, Any] | None,
+    blueprint: dict[str, Any] | None,
+    selection: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    findings: list[dict[str, Any]] = []
+    outputs: list[str] = []
+
+    if blueprint is None and selection is None:
+        return findings, outputs
+
+    if isinstance(blueprint, dict):
+        dist = blueprint.get("target_distribution", [])
+        tolerance = blueprint.get("tolerance_percent", 10)
+        ratio_sum = 0.0
+        if isinstance(dist, list):
+            for item in dist:
+                if isinstance(item, dict) and isinstance(item.get("ratio_percent"), (int, float)):
+                    ratio_sum += float(item.get("ratio_percent"))
+        if abs(ratio_sum - 100.0) > float(tolerance):
+            findings.append(
+                _build_finding(
+                    code="TMP_BLUEPRINT_RATIO_DRIFT",
+                    category="TEMPLATE",
+                    severity="MEDIUM",
+                    message=f"Template ratio sum {ratio_sum:.2f}% is outside tolerance ±{tolerance}%",
+                    path=str(unit_dir / "assessment-blueprint.json"),
+                    rule_id="blueprint-ratio-tolerance",
+                    details={"ratio_sum": ratio_sum, "tolerance": tolerance},
+                )
+            )
+
+        lo_mapping = blueprint.get("lo_mapping", {})
+        if isinstance(brief, dict):
+            expected_lo = [
+                item.get("lo_id")
+                for item in brief.get("learning_outcomes", [])
+                if isinstance(item, dict) and isinstance(item.get("lo_id"), str)
+            ]
+            if isinstance(lo_mapping, dict):
+                for lo_id in expected_lo:
+                    mapped = lo_mapping.get(lo_id, [])
+                    if not isinstance(mapped, list) or not mapped:
+                        findings.append(
+                            _build_finding(
+                                code="TMP_BLUEPRINT_LO_UNMAPPED",
+                                category="TEMPLATE",
+                                severity="MEDIUM",
+                                message=f"LO '{lo_id}' has no mapped template in assessment blueprint",
+                                path=str(unit_dir / "assessment-blueprint.json"),
+                                rule_id="blueprint-lo-coverage",
+                            )
+                        )
+
+        outputs.append("assessment-blueprint.rules")
+
+    if isinstance(selection, dict):
+        selected_templates = selection.get("selected_templates", [])
+        top_k = selection.get("top_k", 3)
+        seen: set[str] = set()
+        duplicate_ids: set[str] = set()
+        for item in selected_templates if isinstance(selected_templates, list) else []:
+            if not isinstance(item, dict):
+                continue
+            template_id = _normalize_template_id(item.get("template_id"))
+            if not template_id:
+                continue
+            if template_id in seen:
+                duplicate_ids.add(template_id)
+            seen.add(template_id)
+
+        if duplicate_ids:
+            findings.append(
+                _build_finding(
+                    code="TMP_SELECTION_DUPLICATE",
+                    category="TEMPLATE",
+                    severity="MEDIUM",
+                    message=f"Duplicate template IDs in selection: {sorted(duplicate_ids)}",
+                    path=str(unit_dir / "template-selection.json"),
+                    rule_id="selection-template-unique",
+                )
+            )
+
+        if isinstance(top_k, int) and isinstance(selected_templates, list) and len(selected_templates) > top_k:
+            findings.append(
+                _build_finding(
+                    code="TMP_SELECTION_EXCEEDS_TOPK",
+                    category="TEMPLATE",
+                    severity="MEDIUM",
+                    message=f"selected_templates has {len(selected_templates)} items but top_k={top_k}",
+                    path=str(unit_dir / "template-selection.json"),
+                    rule_id="selection-top-k-limit",
+                )
+            )
+
+        outputs.append("template-selection.rules")
+
+    return findings, outputs
+
+
+def _validate_template_rules_with_validator(
+    *,
+    template_pack_dir: Path,
+    unit_dir: Path,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    findings: list[dict[str, Any]] = []
+    outputs: list[str] = []
+
+    validator_path = template_pack_dir / "validators" / "validate_template_pack.py"
+    if not validator_path.is_file():
+        findings.append(
+            _build_finding(
+                code="TMP_VALIDATOR_SCRIPT_MISSING",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="Template pack validator script is missing",
+                path=str(validator_path),
+                rule_id="template-validator-script-required",
+            )
+        )
+        return findings, outputs
+
+    outputs.append(str(validator_path))
+    command = [
+        sys.executable,
+        str(validator_path),
+        "--template-pack-dir",
+        str(template_pack_dir),
+        "--unit-dir",
+        str(unit_dir),
+        "--json",
+    ]
+
+    try:
+        process = subprocess.run(command, capture_output=True, text=True, check=False)
+    except Exception as exc:  # noqa: BLE001
+        findings.append(
+            _build_finding(
+                code="TMP_VALIDATOR_EXEC_FAILED",
+                category="SYSTEM",
+                severity="HIGH",
+                message=f"Failed to execute template validator: {exc}",
+                path=str(validator_path),
+                rule_id="template-validator-exec",
+            )
+        )
+        return findings, outputs
+
+    stdout = process.stdout.strip()
+    if not stdout:
+        findings.append(
+            _build_finding(
+                code="TMP_VALIDATOR_NO_OUTPUT",
+                category="SYSTEM",
+                severity="HIGH",
+                message="Template validator returned no JSON payload",
+                path=str(validator_path),
+                rule_id="template-validator-json-output",
+                details={"stderr": process.stderr.strip(), "returncode": process.returncode},
+            )
+        )
+        return findings, outputs
+
+    try:
+        payload = json.loads(stdout)
+    except Exception as exc:  # noqa: BLE001
+        findings.append(
+            _build_finding(
+                code="TMP_VALIDATOR_OUTPUT_INVALID",
+                category="SYSTEM",
+                severity="HIGH",
+                message=f"Template validator output is not valid JSON: {exc}",
+                path=str(validator_path),
+                rule_id="template-validator-json-output",
+                details={"stdout": stdout[:300], "returncode": process.returncode},
+            )
+        )
+        return findings, outputs
+
+    raw_findings = payload.get("FINDINGS", [])
+    if raw_findings and not isinstance(raw_findings, list):
+        findings.append(
+            _build_finding(
+                code="TMP_VALIDATOR_FINDINGS_INVALID",
+                category="SYSTEM",
+                severity="HIGH",
+                message="Template validator FINDINGS must be a list",
+                path=str(validator_path),
+                rule_id="template-validator-findings-list",
+            )
+        )
+        return findings, outputs
+
+    for item in raw_findings if isinstance(raw_findings, list) else []:
+        if not isinstance(item, dict):
+            findings.append(
+                _build_finding(
+                    code="TMP_VALIDATOR_FINDING_INVALID",
+                    category="SYSTEM",
+                    severity="HIGH",
+                    message="Template validator finding entry must be an object",
+                    path=str(validator_path),
+                    rule_id="template-validator-finding-object",
+                )
+            )
+            continue
+        findings.append(
+            _build_finding(
+                code=str(item.get("code", "TMP_VALIDATOR_FINDING")).strip() or "TMP_VALIDATOR_FINDING",
+                category="TEMPLATE",
+                severity=_normalize_severity(item.get("severity", "MEDIUM")),
+                message=str(item.get("message", "Template validator finding")).strip() or "Template validator finding",
+                path=str(item.get("path", "")).strip(),
+                rule_id=str(item.get("rule_id", "template-pack-validator")).strip() or "template-pack-validator",
+                details=item.get("details", {}) if isinstance(item.get("details"), dict) else {},
+            )
+        )
+
+    status = str(payload.get("STATUS", "")).strip().upper()
+    has_blocking = any(item["severity"] in {"CRITICAL", "HIGH"} for item in findings)
+    if status == "BLOCK" and not has_blocking:
+        findings.append(
+            _build_finding(
+                code="TMP_VALIDATOR_BLOCK_UNMAPPED",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="Template validator returned BLOCK without mapped blocking findings",
+                path=str(validator_path),
+                rule_id="template-validator-block-state",
+                details={"returncode": process.returncode},
+            )
+        )
+
+    return findings, outputs
+
+
+def _build_phase_summary(steps: list[dict[str, Any]], findings: list[dict[str, Any]], decision: str) -> dict[str, Any]:
+    by_phase: dict[str, dict[str, Any]] = {}
+    for step in steps:
+        phase = step["phase"]
+        by_phase[phase] = {
+            "status": step["status"],
+            "severity": step["severity"],
+            "finding_count": len(step.get("findings_ref", [])),
+            "duration_ms": step.get("duration_ms", 0),
+        }
+
+    open_critical = sum(1 for item in findings if item["severity"] == "CRITICAL")
+    open_high = sum(1 for item in findings if item["severity"] == "HIGH")
+
+    return {
+        "decision": decision,
+        "total_steps": len(steps),
+        "phase_order": list(PIPELINE_PHASES),
+        "by_phase": by_phase,
+        "open_critical": open_critical,
+        "open_high": open_high,
+        "finding_count": len(findings),
+    }
+
+
+def _build_agent_report(
+    *,
+    steps: list[dict[str, Any]],
+    findings: list[dict[str, Any]],
+    decision: str,
+    unit_dir: Path,
+) -> dict[str, Any]:
+    blocking_steps = [step["step_id"] for step in steps if step["status"] == "BLOCK"]
+    top_issues = [
+        {
+            "code": finding["code"],
+            "severity": finding["severity"],
+            "message": finding["message"],
+            "path": finding.get("path", ""),
+        }
+        for finding in findings[:5]
+    ]
+    ordered_fix_plan = [
+        {
+            "code": finding["code"],
+            "priority": "P0" if finding["severity"] in {"CRITICAL", "HIGH"} else "P1",
+            "action": (
+                f"Fix {finding['code']}"
+                if not finding.get("path")
+                else f"Fix {finding['code']} at {finding['path']}"
+            ),
+        }
+        for finding in findings
+        if finding["severity"] in {"CRITICAL", "HIGH", "MEDIUM"}
+    ]
+
+    if decision == "PASS":
+        summary_line = "All required contract checks passed."
+    else:
+        summary_line = f"Validation blocked with {len(blocking_steps)} blocking step(s)."
+
+    return {
+        "summary_line": summary_line,
+        "blocking_steps": blocking_steps,
+        "top_issues": top_issues,
+        "ordered_fix_plan": ordered_fix_plan,
+        "rerun_command": (
+            "bash factory/scripts/bash/validate-artifact-contracts.sh --json "
+            f"--unit-dir \"{unit_dir}\""
+        ),
+    }
+
+
 def main() -> int:
     args = parse_args()
 
@@ -371,50 +1102,413 @@ def main() -> int:
     errors: list[str] = []
     artifacts: dict[str, dict | list] = {}
 
+    findings: list[dict[str, Any]] = []
+    steps: list[dict[str, Any]] = []
+
+    phase_start = time.perf_counter()
+    preflight_findings: list[dict[str, Any]] = []
     if schemas_dir is None:
         missing_schemas.append(str(repo_root / "contracts" / "schemas"))
-        payload = {
-            "STATUS": "BLOCK",
-            "UNIT_DIR": str(unit_dir),
-            "VALIDATED": validated,
-            "MISSING_FILES": missing_files,
-            "MISSING_SCHEMAS": missing_schemas,
-            "ERRORS": ["schema directory not found (expected contracts/schemas)"],
-        }
-        if args.json:
-            print(json.dumps(payload, separators=(",", ":")))
+        preflight_findings.append(
+            _build_finding(
+                code="SCHEMA_DIR_NOT_FOUND",
+                category="IO",
+                severity="CRITICAL",
+                message="Schema directory not found (expected contracts/schemas)",
+                path=str(repo_root),
+                rule_id="schema-dir-required",
+            )
+        )
+    preflight_status, preflight_severity = _phase_status(preflight_findings)
+    if preflight_findings:
+        findings.extend(preflight_findings)
+        preflight_refs = list(range(len(findings) - len(preflight_findings), len(findings)))
+    else:
+        preflight_refs = []
+    steps.append(
+        _build_step(
+            step_id="PRE_001",
+            phase="preflight",
+            status=preflight_status,
+            severity=preflight_severity,
+            message="Resolved validator inputs and schema bundle",
+            inputs=[str(repo_root), str(unit_dir)],
+            outputs=[str(schemas_dir)] if schemas_dir else [],
+            findings_ref=preflight_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action="Ensure contracts/schemas exists before re-running." if preflight_status == "BLOCK" else "",
+        )
+    )
+
+    phase_start = time.perf_counter()
+    schema_phase_findings: list[dict[str, Any]] = []
+    if schemas_dir is not None:
+        for pair in REQUIRED_CONTRACTS:
+            artifact_path = unit_dir / pair.artifact
+            schema_path = schemas_dir / pair.schema
+
+            if not schema_path.is_file():
+                missing_schemas.append(str(schema_path))
+                schema_phase_findings.append(
+                    _build_finding(
+                        code="SCHEMA_FILE_MISSING",
+                        category="SCHEMA",
+                        severity="HIGH",
+                        message=f"Missing schema file for {pair.artifact}",
+                        path=str(schema_path),
+                        rule_id="schema-file-required",
+                    )
+                )
+                continue
+
+            if not artifact_path.is_file():
+                missing_files.append(str(artifact_path))
+                schema_phase_findings.append(
+                    _build_finding(
+                        code="ARTIFACT_FILE_MISSING",
+                        category="IO",
+                        severity="HIGH",
+                        message=f"Missing required artifact file {pair.artifact}",
+                        path=str(artifact_path),
+                        rule_id="artifact-file-required",
+                    )
+                )
+                continue
+
+            validated.append(str(artifact_path))
+            schema_errors = _validate_json(artifact_path, schema_path)
+            errors.extend(schema_errors)
+            for msg in schema_errors:
+                schema_phase_findings.append(
+                    _build_finding(
+                        code="SCHEMA_VALIDATION_ERROR",
+                        category="SCHEMA",
+                        severity="HIGH",
+                        message=msg,
+                        path=_extract_path_hint(msg),
+                        rule_id=pair.schema,
+                    )
+                )
+
+            loaded = _load_json(artifact_path)
+            if loaded is not None:
+                artifacts[pair.artifact] = loaded
+    else:
+        schema_phase_findings.append(
+            _build_finding(
+                code="SCHEMA_PHASE_SKIPPED",
+                category="SYSTEM",
+                severity="INFO",
+                message="Artifact schema phase skipped due to missing schema directory",
+                path=str(unit_dir),
+                rule_id="artifact-schema-skip",
+            )
+        )
+
+    schema_status, schema_severity = _phase_status(schema_phase_findings, default="PASS")
+    findings.extend(schema_phase_findings)
+    schema_refs = list(range(len(findings) - len(schema_phase_findings), len(findings))) if schema_phase_findings else []
+    steps.append(
+        _build_step(
+            step_id="ART_SCHEMA_001",
+            phase="artifact_schema",
+            status=schema_status if schemas_dir is not None else "BLOCK",
+            severity=schema_severity if schemas_dir is not None else "HIGH",
+            message="Validated required artifact JSON files against schema contracts",
+            inputs=[str(unit_dir / pair.artifact) for pair in REQUIRED_CONTRACTS],
+            outputs=validated,
+            findings_ref=schema_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action="Fix missing files/schemas and schema violations." if schema_status != "PASS" else "",
+        )
+    )
+
+    phase_start = time.perf_counter()
+    consistency_findings: list[dict[str, Any]] = []
+    consistency_errors: list[str] = []
+    if schemas_dir is not None and not missing_files and not missing_schemas and not errors:
+        consistency_errors = _cross_artifact_checks(unit_dir, artifacts)
+        errors.extend(consistency_errors)
+        for msg in consistency_errors:
+            consistency_findings.append(
+                _build_finding(
+                    code="CONSISTENCY_CHECK_FAILED",
+                    category="CONSISTENCY",
+                    severity="HIGH",
+                    message=msg,
+                    path=_extract_path_hint(msg),
+                    rule_id="cross-artifact-consistency",
+                )
+            )
+        consistency_status, consistency_severity = _phase_status(consistency_findings)
+    else:
+        consistency_status = "SKIP"
+        consistency_severity = "INFO"
+
+    findings.extend(consistency_findings)
+    consistency_refs = (
+        list(range(len(findings) - len(consistency_findings), len(findings))) if consistency_findings else []
+    )
+    steps.append(
+        _build_step(
+            step_id="ART_CONS_001",
+            phase="artifact_consistency",
+            status=consistency_status,
+            severity=consistency_severity,
+            message=(
+                "Cross-artifact consistency checks completed"
+                if consistency_status != "SKIP"
+                else "Cross-artifact consistency skipped (schema phase not clean)"
+            ),
+            inputs=[str(unit_dir / pair.artifact) for pair in REQUIRED_CONTRACTS],
+            outputs=["cross-artifact-consistency"],
+            findings_ref=consistency_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action="Resolve cross-artifact mismatch before publish." if consistency_status == "BLOCK" else "",
+        )
+    )
+
+    template_pack_dir = _resolve_template_pack_dir(repo_root)
+
+    phase_start = time.perf_counter()
+    catalog_payload: dict[str, Any] | None = None
+    catalog_phase_findings: list[dict[str, Any]] = []
+    catalog_outputs: list[str] = []
+    if template_pack_dir is not None:
+        catalog_payload, catalog_phase_findings, catalog_outputs = _validate_template_catalog(
+            template_pack_dir=template_pack_dir
+        )
+        catalog_status, catalog_severity = _phase_status(catalog_phase_findings)
+    else:
+        catalog_status, catalog_severity = "SKIP", "INFO"
+
+    findings.extend(catalog_phase_findings)
+    catalog_refs = list(range(len(findings) - len(catalog_phase_findings), len(findings))) if catalog_phase_findings else []
+    steps.append(
+        _build_step(
+            step_id="TMP_CAT_001",
+            phase="template_catalog",
+            status=catalog_status,
+            severity=catalog_severity,
+            message=(
+                "Template catalog loaded"
+                if catalog_status != "SKIP"
+                else "Template catalog not found; template checks skipped"
+            ),
+            inputs=[str(template_pack_dir)] if template_pack_dir else [],
+            outputs=catalog_outputs,
+            findings_ref=catalog_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action="Add/repair template-pack catalog.json." if catalog_status == "BLOCK" else "",
+        )
+    )
+
+    phase_start = time.perf_counter()
+    template_schema_findings: list[dict[str, Any]] = []
+    template_schema_outputs: list[str] = []
+    blueprint_payload: dict[str, Any] | None = None
+    selection_payload: dict[str, Any] | None = None
+    if catalog_payload is not None:
+        (
+            template_schema_findings,
+            template_schema_outputs,
+            blueprint_payload,
+            selection_payload,
+        ) = _validate_blueprint_schema(unit_dir=unit_dir, catalog=catalog_payload)
+        if not template_schema_outputs and not template_schema_findings:
+            template_schema_status, template_schema_severity = "SKIP", "INFO"
         else:
-            print("STATUS: BLOCK")
-            print(f"UNIT_DIR: {unit_dir}")
-            print("MISSING_SCHEMAS:")
-            for item in missing_schemas:
-                print(f"  - {item}")
-            print("ERRORS:")
-            print("  - schema directory not found (expected contracts/schemas)")
-        return 1
+            template_schema_status, template_schema_severity = _phase_status(template_schema_findings)
+    else:
+        template_schema_status, template_schema_severity = "SKIP", "INFO"
 
-    for pair in REQUIRED_CONTRACTS:
-        artifact_path = unit_dir / pair.artifact
-        schema_path = schemas_dir / pair.schema
+    findings.extend(template_schema_findings)
+    template_schema_refs = (
+        list(range(len(findings) - len(template_schema_findings), len(findings)))
+        if template_schema_findings
+        else []
+    )
+    steps.append(
+        _build_step(
+            step_id="TMP_SCHEMA_001",
+            phase="template_schema",
+            status=template_schema_status,
+            severity=template_schema_severity,
+            message=(
+                "Template schema checks completed"
+                if template_schema_status != "SKIP"
+                else "Template schema checks skipped"
+            ),
+            inputs=[str(unit_dir / "assessment-blueprint.json"), str(unit_dir / "template-selection.json")],
+            outputs=template_schema_outputs,
+            findings_ref=template_schema_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action=(
+                "Fix template blueprint/selection schema errors before authoring."
+                if template_schema_status == "BLOCK"
+                else ""
+            ),
+        )
+    )
 
-        if not schema_path.is_file():
-            missing_schemas.append(str(schema_path))
-            continue
+    phase_start = time.perf_counter()
+    template_rule_findings: list[dict[str, Any]] = []
+    template_rule_outputs: list[str] = []
+    brief_payload = artifacts.get("brief.json") if isinstance(artifacts.get("brief.json"), dict) else None
+    if catalog_payload is not None and (blueprint_payload is not None or selection_payload is not None):
+        template_rule_findings, template_rule_outputs = _validate_template_rules(
+            unit_dir=unit_dir,
+            brief=brief_payload,
+            blueprint=blueprint_payload,
+            selection=selection_payload,
+        )
+        if template_pack_dir is not None:
+            validator_findings, validator_outputs = _validate_template_rules_with_validator(
+                template_pack_dir=template_pack_dir,
+                unit_dir=unit_dir,
+            )
+            template_rule_findings.extend(validator_findings)
+            template_rule_outputs.extend(validator_outputs)
+            template_rule_findings = _dedupe_findings(template_rule_findings)
+        if template_rule_findings:
+            template_rule_status, template_rule_severity = _phase_status(template_rule_findings)
+        else:
+            template_rule_status, template_rule_severity = "PASS", "INFO"
+    else:
+        template_rule_status, template_rule_severity = "SKIP", "INFO"
 
-        if not artifact_path.is_file():
-            missing_files.append(str(artifact_path))
-            continue
+    findings.extend(template_rule_findings)
+    template_rule_refs = (
+        list(range(len(findings) - len(template_rule_findings), len(findings))) if template_rule_findings else []
+    )
+    steps.append(
+        _build_step(
+            step_id="TMP_RULE_001",
+            phase="template_rules",
+            status=template_rule_status,
+            severity=template_rule_severity,
+            message=(
+                "Template semantic checks completed"
+                if template_rule_status != "SKIP"
+                else "Template semantic checks skipped"
+            ),
+            inputs=[str(unit_dir / "assessment-blueprint.json"), str(unit_dir / "template-selection.json")],
+            outputs=template_rule_outputs,
+            findings_ref=template_rule_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action=(
+                "Address template semantic warnings for better LO coverage and distribution."
+                if template_rule_status in {"WARN", "BLOCK"}
+                else ""
+            ),
+        )
+    )
 
-        validated.append(str(artifact_path))
-        errors.extend(_validate_json(artifact_path, schema_path))
-        loaded = _load_json(artifact_path)
-        if loaded is not None:
-            artifacts[pair.artifact] = loaded
+    phase_start = time.perf_counter()
+    rubric_audit_findings: list[dict[str, Any]] = []
+    audit_payload = artifacts.get("audit-report.json")
+    if isinstance(audit_payload, dict):
+        gate_decision = str(audit_payload.get("gate_decision", "BLOCK")).upper()
+        open_critical = int(audit_payload.get("open_critical", 0))
+        open_high = int(audit_payload.get("open_high", 0))
+        if gate_decision == "BLOCK" or open_critical > 0 or open_high > 0:
+            rubric_audit_findings.append(
+                _build_finding(
+                    code="AUDIT_GATE_BLOCK",
+                    category="GATE",
+                    severity="LOW",
+                    message=(
+                        "Audit report currently indicates BLOCK/OPEN findings; author gate will enforce hard stop"
+                    ),
+                    path=str(unit_dir / "audit-report.json"),
+                    rule_id="audit-gate-preview",
+                    details={
+                        "gate_decision": gate_decision,
+                        "open_critical": open_critical,
+                        "open_high": open_high,
+                    },
+                )
+            )
+        rubric_status, rubric_severity = _phase_status(rubric_audit_findings)
+    else:
+        rubric_status, rubric_severity = "SKIP", "INFO"
 
-    if not missing_files and not missing_schemas and not errors:
-        errors.extend(_cross_artifact_checks(unit_dir, artifacts))
+    findings.extend(rubric_audit_findings)
+    rubric_refs = (
+        list(range(len(findings) - len(rubric_audit_findings), len(findings))) if rubric_audit_findings else []
+    )
+    steps.append(
+        _build_step(
+            step_id="RUBRIC_001",
+            phase="rubric_audit",
+            status=rubric_status,
+            severity=rubric_severity,
+            message=(
+                "Rubric/audit parity snapshot collected"
+                if rubric_status != "SKIP"
+                else "Rubric/audit snapshot skipped"
+            ),
+            inputs=[str(unit_dir / "audit-report.json")],
+            outputs=["audit-gate-preview"] if rubric_status != "SKIP" else [],
+            findings_ref=rubric_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action="Resolve audit blockers before /lcs.author." if rubric_status in {"WARN", "BLOCK"} else "",
+        )
+    )
 
-    status = "PASS" if not missing_files and not missing_schemas and not errors else "BLOCK"
+    phase_start = time.perf_counter()
+    blocking_findings = [item for item in findings if item["severity"] in {"CRITICAL", "HIGH"}]
+    decision = "PASS" if not blocking_findings else "BLOCK"
+    gate_findings: list[dict[str, Any]] = []
+    if decision == "BLOCK":
+        gate_findings.append(
+            _build_finding(
+                code="PIPELINE_BLOCKED",
+                category="GATE",
+                severity="HIGH",
+                message="Validation pipeline contains blocking findings",
+                rule_id="gate-eval-high-critical",
+                details={"blocking_finding_count": len(blocking_findings)},
+            )
+        )
+    findings.extend(gate_findings)
+    gate_refs = list(range(len(findings) - len(gate_findings), len(findings))) if gate_findings else []
+    steps.append(
+        _build_step(
+            step_id="GATE_001",
+            phase="gate_eval",
+            status=("BLOCK" if decision == "BLOCK" else "PASS"),
+            severity=("HIGH" if decision == "BLOCK" else "INFO"),
+            message=(
+                "Gate decision computed from pipeline severities"
+                if decision == "PASS"
+                else "Gate decision is BLOCK due to CRITICAL/HIGH findings"
+            ),
+            inputs=["pipeline-findings"],
+            outputs=[f"decision:{decision}"],
+            findings_ref=gate_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action="Fix blocking findings and rerun validation." if decision == "BLOCK" else "",
+        )
+    )
+
+    phase_start = time.perf_counter()
+    steps.append(
+        _build_step(
+            step_id="FINAL_001",
+            phase="finalize",
+            status="PASS",
+            severity="INFO",
+            message="Compiled validation response envelope",
+            inputs=["pipeline-steps", "pipeline-findings"],
+            outputs=["PHASE_SUMMARY", "AGENT_REPORT"],
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+        )
+    )
+    phase_summary = _build_phase_summary(steps=steps, findings=findings, decision=decision)
+    agent_report = _build_agent_report(steps=steps, findings=findings, decision=decision, unit_dir=unit_dir)
+
+    status = "PASS" if decision == "PASS" else "BLOCK"
     payload = {
         "STATUS": status,
         "UNIT_DIR": str(unit_dir),
@@ -422,6 +1516,16 @@ def main() -> int:
         "MISSING_FILES": missing_files,
         "MISSING_SCHEMAS": missing_schemas,
         "ERRORS": errors,
+        "RESPONSE_VERSION": RESPONSE_VERSION,
+        "PIPELINE": {
+            "name": PIPELINE_NAME,
+            "mode": PIPELINE_MODE,
+            "phases": list(PIPELINE_PHASES),
+        },
+        "STEPS": steps,
+        "FINDINGS": findings,
+        "PHASE_SUMMARY": phase_summary,
+        "AGENT_REPORT": agent_report,
     }
 
     if args.json:
@@ -430,6 +1534,8 @@ def main() -> int:
         print(f"STATUS: {status}")
         print(f"UNIT_DIR: {unit_dir}")
         print(f"VALIDATED: {len(validated)}")
+        print(f"RESPONSE_VERSION: {RESPONSE_VERSION}")
+        print(f"PIPELINE: {PIPELINE_NAME}")
         if missing_schemas:
             print("MISSING_SCHEMAS:")
             for item in missing_schemas:
@@ -442,6 +1548,10 @@ def main() -> int:
             print("ERRORS:")
             for item in errors:
                 print(f"  - {item}")
+        if findings:
+            print("FINDINGS:")
+            for item in findings:
+                print(f"  - [{item['severity']}] {item['code']}: {item['message']}")
 
     return 0 if status == "PASS" else 1
 
