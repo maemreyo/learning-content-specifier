@@ -93,6 +93,1123 @@ def test_template_pack_validator_blocks_tfng_not_given_direct_evidence(tmp_path:
 
 
 @pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_yes_no_not_given_label_evidence_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "yes-no-not-given-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "yes-no-not-given.v1",
+                "exercise_type": "YES_NO_NOT_GIVEN",
+                "item": {
+                    "item_id": "YNNG-1",
+                    "passage_ref": "P-1",
+                    "statement": "The writer supports replacing teacher moderation with automated scoring in all cases.",
+                    "label": "YES",
+                    "viewpoint_profile": {
+                        "claim_focus": "policy_stance",
+                        "evidence_basis": "explicit_disagreement",
+                        "scope_anchor": "Paragraph 4",
+                        "reasoning_path": (
+                            "The writer rejects full automation and keeps teacher moderation in the evaluation process."
+                        ),
+                        "trap_type": "polarity_shift",
+                    },
+                    "evidence_hint": (
+                        "The passage explicitly states that teachers remain responsible for final moderation "
+                        "decisions across all assessed tasks."
+                    ),
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_YNNG_LABEL_EVIDENCE_MISMATCH" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_integrated_writing_claim_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "integrated-writing-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "integrated-writing.v1",
+                "exercise_type": "INTEGRATED_WRITING",
+                "item": {
+                    "item_id": "IW-1",
+                    "instructions": (
+                        "Read the passage, listen to the lecture, then write 150-225 words summarizing the lecture "
+                        "and explaining how it relates to the reading."
+                    ),
+                    "prompt_question": (
+                        "Summarize the lecturer's points and explain how they challenge the claims in the reading passage."
+                    ),
+                    "reading_passage": (
+                        "The proposal states that replacing discussion sections with AI tools improves speed, consistency, "
+                        "and costs. Administrators believe immediate feedback helps students fix misunderstandings quickly, "
+                        "uniform output ensures equal guidance, and automation lowers expenses enough to fund other priorities."
+                    ),
+                    "lecture_transcript": (
+                        "The lecturer disputes all three claims. She says fast comments can still lead to repeated errors, "
+                        "uniform output can scale the same mistake to many students, and implementation costs are higher than "
+                        "expected once monitoring and appeals are included."
+                    ),
+                    "task_profile": {
+                        "time_limit_minutes": 20,
+                        "recommended_word_min": 150,
+                        "recommended_word_max": 225,
+                        "relation_expectation": "lecture_challenges_reading",
+                        "expected_point_count": 3,
+                    },
+                    "source_alignment": [
+                        {
+                            "claim_id": "C1",
+                            "reading_claim": "Immediate AI feedback improves correction speed.",
+                            "lecture_point": "Students repeated errors despite immediate comments.",
+                            "relation_type": "contradicts",
+                        },
+                        {
+                            "claim_id": "C2",
+                            "reading_claim": "Uniform AI guidance is consistently reliable.",
+                            "lecture_point": "Uniform guidance can spread one flawed explanation.",
+                            "relation_type": "challenges",
+                        },
+                        {
+                            "claim_id": "C3",
+                            "reading_claim": "Automation reduces teaching costs.",
+                            "lecture_point": "Support and dispute handling costs removed expected savings.",
+                            "relation_type": "refutes",
+                        },
+                    ],
+                    "reference_responses": [
+                        {
+                            "response_id": "A",
+                            "body": (
+                                "The lecture argues that the reading overestimates the benefits of AI discussion modules. "
+                                "First, quick feedback was not enough to improve understanding, because many students kept "
+                                "making the same conceptual mistakes. Second, the lecturer explains that standardized output "
+                                "can create standardized error: if one explanation is weak, every student receives that weak "
+                                "version. Third, she states that implementation required monitoring and appeal workflows that "
+                                "increased operating costs. As a result, the expected financial advantage was not confirmed."
+                            ),
+                            "covered_claim_ids": ["C1", "C2"],
+                        },
+                        {
+                            "response_id": "B",
+                            "body": (
+                                "The lecture challenges the reading point by point. It says speed alone is not evidence of "
+                                "learning, because students repeated mistakes even with immediate comments. It also says that "
+                                "uniform guidance is risky, since one flawed explanation can affect everyone. Finally, it "
+                                "rejects the cost argument and reports ongoing expenses for system oversight and disputes. "
+                                "These details show the lecture does not support the reading's optimistic conclusion."
+                            ),
+                            "covered_claim_ids": ["C1", "C2", "C3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "content_accuracy": "Capture lecture points accurately.",
+                        "source_integration": "Link lecture points to reading claims.",
+                        "organization": "Present clear point-by-point structure.",
+                        "language_use": "Use grammatically accurate academic English.",
+                    },
+                    "explanation": "Regression case for claim coverage mismatch.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_IW_CLAIM_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_essay_opinion_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "essay-opinion-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "essay-opinion.v1",
+                "exercise_type": "ESSAY_OPINION",
+                "item": {
+                    "item_id": "EO-REG-001",
+                    "instructions": (
+                        "Write an essay in 250-320 words. Give a clear opinion and support it with specific reasons "
+                        "and examples."
+                    ),
+                    "prompt": (
+                        "Some people believe schools should ban smartphone use for students under 16 during school days. "
+                        "To what extent do you agree or disagree?"
+                    ),
+                    "task_profile": {
+                        "context_type": "agree_disagree",
+                        "stance_requirement": "opinion_required",
+                        "register": "neutral_formal",
+                        "word_limit_min": 250,
+                        "word_limit_max": 320,
+                        "time_limit_minutes": 40,
+                        "allow_bullets": False,
+                        "source_mode": "prompt_only",
+                        "required_points": [
+                            {
+                                "point_id": "P1",
+                                "requirement": "State a clear position on the policy (agree/disagree/qualified).",
+                            },
+                            {
+                                "point_id": "P2",
+                                "requirement": "Provide one reason linked to learning quality or classroom focus.",
+                            },
+                            {
+                                "point_id": "P3",
+                                "requirement": (
+                                    "Provide one reason linked to student wellbeing, autonomy, "
+                                    "or implementation feasibility."
+                                ),
+                            },
+                        ],
+                    },
+                    "topic_context": {
+                        "topic_id": "TREND-2026-02",
+                        "topic_title": "Digital-device policy and adolescent learning outcomes",
+                        "source_type": "google_trends",
+                        "source_url": "https://trends.google.com/trends/",
+                        "captured_at": "2026-02-14",
+                        "trend_window": "30d",
+                        "keywords": ["school smartphone policy", "student focus", "digital wellbeing"],
+                    },
+                    "reference_essays": [
+                        {
+                            "essay_id": "A",
+                            "position_label": "qualified",
+                            "body": (
+                                "I partly agree that schools should restrict smartphone use for students under sixteen "
+                                "during school days, but a full ban is less effective than a structured policy. In my "
+                                "opinion, the main educational reason for limits is attention control. Unrestricted phone "
+                                "access creates constant interruption through notifications, social messaging, and "
+                                "entertainment loops that compete with instruction time. Even brief checking behavior "
+                                "reduces working-memory continuity, so students need longer to return to complex tasks such "
+                                "as problem solving and extended reading. However, treating all use as misuse ignores "
+                                "legitimate learning functions. Teachers increasingly rely on digital platforms for quizzes, "
+                                "feedback, and collaborative activities that can improve participation when used with clear "
+                                "boundaries. A second reason is student wellbeing and implementation practicality. "
+                                "Supporters of strict bans argue that removing phones lowers anxiety and peer comparison "
+                                "pressure. This is often true, but enforcement becomes inconsistent when schools do not "
+                                "provide alternatives for communication, safety updates, or supervised digital tasks. "
+                                "A policy that stores phones during lessons and allows limited access in defined windows is "
+                                "easier to monitor and more realistic for staff and families. Therefore, I believe schools "
+                                "should apply strong restrictions, not absolute prohibition. The priority is to design rules "
+                                "that protect concentration while still teaching students responsible technology habits before "
+                                "they enter less structured environments. Such a model addresses academic risk and social "
+                                "development at the same time."
+                            ),
+                            "covered_point_ids": ["P1", "P2"],
+                        },
+                        {
+                            "essay_id": "B",
+                            "position_label": "agree",
+                            "body": (
+                                "I agree that schools should ban smartphone use for students under sixteen during school "
+                                "days because the academic and social costs of constant access are too high. In my view, "
+                                "the strongest educational argument is cognitive focus. Adolescents are still developing "
+                                "self-regulation, so frequent phone checking during class quickly fragments attention and "
+                                "reduces depth of processing. Lessons that require sustained reasoning, such as science "
+                                "explanation or essay planning, are especially vulnerable to this pattern. Teachers then "
+                                "spend additional time rebuilding focus instead of advancing instruction. A second reason "
+                                "concerns wellbeing and school culture. Phone-centered interaction can intensify social "
+                                "comparison, exclusion, and online conflict that continues into classroom life. Limiting "
+                                "access during school hours reduces immediate exposure to these pressures and creates a "
+                                "safer environment for face-to-face participation. Critics argue that smartphones can "
+                                "support learning tools, but schools can provide supervised digital resources without "
+                                "allowing personal devices throughout the day. They also argue that bans are difficult to "
+                                "enforce, yet consistency improves when rules are simple and universal rather than "
+                                "negotiable across classes. For these reasons, I believe a school-day ban for younger "
+                                "students is justified and practical. It protects instructional quality, supports healthier "
+                                "peer interaction, and gives students space to build concentration habits before they are "
+                                "expected to manage digital freedom independently in later stages of education."
+                            ),
+                            "covered_point_ids": ["P1", "P2", "P3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "task_response": "Essay states a clear position and addresses all required points with relevant support.",
+                        "coherence_and_cohesion": "Ideas are organized logically with clear progression and linking.",
+                        "lexical_resource": "Vocabulary is precise and suitable for formal argument writing.",
+                        "grammatical_range_accuracy": "Sentence structures are varied and mostly accurate.",
+                        "argument_quality": "Reasons are specific, defensible, and connected to the stated position.",
+                    },
+                    "explanation": "Regression case: reference essay A omits P3 in covered_point_ids.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_EO_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_essay_discussion_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "essay-discussion-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "essay-discussion.v1",
+                "exercise_type": "ESSAY_DISCUSSION",
+                "item": {
+                    "item_id": "ED-1",
+                    "instructions": (
+                        "Write an essay in 250-320 words. Discuss both views, give your own opinion, "
+                        "and support your position with clear reasons and examples."
+                    ),
+                    "prompt": (
+                        "Some universities should replace most in-person tutorial discussions with "
+                        "AI-supported study forums. Discuss both views and give your own opinion."
+                    ),
+                    "task_profile": {
+                        "context_type": "discuss_both_views",
+                        "stance_requirement": "opinion_required",
+                        "register": "neutral_formal",
+                        "word_limit_min": 250,
+                        "word_limit_max": 320,
+                        "time_limit_minutes": 40,
+                        "allow_bullets": False,
+                        "source_mode": "prompt_only",
+                        "required_points": [
+                            {"point_id": "P1", "requirement": "Explain one argument supporting replacement."},
+                            {"point_id": "P2", "requirement": "Explain one argument against full replacement."},
+                            {"point_id": "P3", "requirement": "State and justify your own position."},
+                        ],
+                    },
+                    "reference_essays": [
+                        {
+                            "essay_id": "A",
+                            "position_label": "qualified",
+                            "body": (
+                                "Many institutions see AI forums as a scalable solution because students can ask routine "
+                                "questions at any time and receive immediate responses. This flexibility can reduce waiting "
+                                "time and help teachers focus on high-value interventions. However, the core risk is that "
+                                "automated explanations can sound convincing while missing the exact reason a learner is "
+                                "confused. In live tutorials, instructors adjust examples, challenge weak assumptions, and "
+                                "monitor whether students can defend their reasoning. In my opinion, universities should use "
+                                "AI forums as supplementary support rather than a full replacement for tutorial dialogue."
+                            ),
+                            "covered_point_ids": ["P1", "P2"],
+                        },
+                        {
+                            "essay_id": "B",
+                            "position_label": "balanced",
+                            "body": (
+                                "Replacing in-person tutorials with AI forums offers real efficiency benefits, including "
+                                "continuous access and consistent baseline guidance for large cohorts. Those strengths are "
+                                "useful in administrative and revision contexts. Yet tutorial quality depends on adaptive "
+                                "interaction, and that human dimension remains difficult to automate reliably. Tutors can "
+                                "identify subtle misunderstandings, probe student logic, and modify discussion pathways in "
+                                "real time. I believe a hybrid strategy is more sustainable: preserve in-person tutorials "
+                                "for conceptual development while using AI forums for preparatory practice and follow-up."
+                            ),
+                            "covered_point_ids": ["P1", "P2", "P3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "task_response": "Address both views and maintain relevance.",
+                        "coherence_and_cohesion": "Organize ideas with clear progression.",
+                        "lexical_resource": "Use precise and varied vocabulary.",
+                        "grammatical_range_accuracy": "Maintain mostly accurate sentence control.",
+                        "argument_quality": "Defend a clear and justified position.",
+                    },
+                    "explanation": "Regression case for required-point coverage mismatch.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_ED_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_report_visual_data_observation_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "report-visual-data-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "report-visual-data.v1",
+                "exercise_type": "REPORT_VISUAL_DATA",
+                "item": {
+                    "item_id": "RVD-1",
+                    "instructions": (
+                        "Write a report in 170-230 words. Summarize the key features of the visual data, "
+                        "include an overall trend, and make relevant comparisons."
+                    ),
+                    "prompt": (
+                        "The chart compares weekly hours spent on self-study by first-year and final-year students "
+                        "between 2021 and 2024. Write a report describing the main trends and differences."
+                    ),
+                    "visual_dataset": {
+                        "visual_id": "VD-1",
+                        "visual_type": "line_chart",
+                        "title": "Average weekly self-study hours by student cohort (2021-2024)",
+                        "timeframe": "2021-2024",
+                        "unit": "hours per week",
+                        "data_series": [
+                            {
+                                "series_id": "S1",
+                                "label": "First-year students",
+                                "points": [
+                                    {"x": "2021", "value": 6.5},
+                                    {"x": "2022", "value": 7.2},
+                                    {"x": "2023", "value": 8.0},
+                                    {"x": "2024", "value": 8.7},
+                                ],
+                            },
+                            {
+                                "series_id": "S2",
+                                "label": "Final-year students",
+                                "points": [
+                                    {"x": "2021", "value": 8.1},
+                                    {"x": "2022", "value": 8.4},
+                                    {"x": "2023", "value": 8.9},
+                                    {"x": "2024", "value": 9.4},
+                                ],
+                            },
+                        ],
+                    },
+                    "task_profile": {
+                        "report_type": "academic_task1",
+                        "register": "neutral_formal",
+                        "word_limit_min": 170,
+                        "word_limit_max": 230,
+                        "time_limit_minutes": 20,
+                        "include_overview": True,
+                        "include_comparisons": True,
+                        "allow_bullets": False,
+                        "required_observations": [
+                            {"observation_id": "O1", "requirement": "Identify overall trend for both cohorts."},
+                            {"observation_id": "O2", "requirement": "Compare values at start and end."},
+                            {"observation_id": "O3", "requirement": "Report one notable change in the gap."},
+                        ],
+                    },
+                    "reference_reports": [
+                        {
+                            "report_id": "A",
+                            "body": (
+                                "The chart presents weekly self-study time for two cohorts from 2021 to 2024. "
+                                "Overall, both groups increased their study hours across the period, while final-year "
+                                "students remained higher in every year. First-year values rose from 6.5 to 8.7 hours, "
+                                "whereas final-year values increased from 8.1 to 9.4 hours. The pattern shows that both "
+                                "series moved upward, but the first-year line climbed more quickly. As a result, the "
+                                "difference between groups became narrower over time, indicating partial convergence in "
+                                "study behavior by 2024."
+                            ),
+                            "covered_observation_ids": ["O1", "O2"],
+                        },
+                        {
+                            "report_id": "B",
+                            "body": (
+                                "The visual compares average weekly self-study hours in two student cohorts over four years. "
+                                "In general, both cohorts recorded steady growth, and final-year students studied more than "
+                                "first-year students throughout the period. In 2021, the figures were 6.5 and 8.1 hours, "
+                                "while by 2024 they reached 8.7 and 9.4 hours respectively. Although both lines rose, the "
+                                "increase was stronger for first-year students, which reduced the gap from 1.6 to 0.7 hours. "
+                                "Therefore, the key trend is simultaneous growth with a smaller difference over time."
+                            ),
+                            "covered_observation_ids": ["O1", "O2", "O3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "task_achievement": "Select and summarize key features.",
+                        "coherence_and_cohesion": "Organize report logically.",
+                        "lexical_resource": "Use accurate trend vocabulary.",
+                        "grammatical_range_accuracy": "Maintain accurate sentence control.",
+                        "data_accuracy": "Keep values and comparisons consistent with dataset.",
+                    },
+                    "explanation": "Regression case for observation coverage mismatch.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_RVD_OBSERVATION_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_read_aloud_reference_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "read-aloud-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "read-aloud.v1",
+                "exercise_type": "READ_ALOUD",
+                "item": {
+                    "item_id": "RA-1",
+                    "instructions": (
+                        "Read the text aloud as clearly and naturally as possible. "
+                        "You have 45 seconds to prepare and 45 seconds to speak."
+                    ),
+                    "prompt_text": (
+                        "In blended classrooms, students often use digital tools before discussing ideas face to face. "
+                        "This sequence can improve confidence because learners arrive with organized notes and clearer "
+                        "questions. However, teachers still need to monitor discussion quality, since fast digital "
+                        "preparation does not always produce deep understanding or accurate reasoning in group tasks."
+                    ),
+                    "task_profile": {
+                        "exam_profile": "toeic_speaking",
+                        "prep_time_seconds": 45,
+                        "response_time_seconds": 45,
+                        "delivery_mode": "verbatim_reading",
+                        "allow_paraphrase": False,
+                        "expected_word_count_min": 50,
+                        "expected_word_count_max": 75,
+                        "required_features": [
+                            {"feature_id": "F1", "requirement": "Maintain intelligible pronunciation."},
+                            {"feature_id": "F2", "requirement": "Use clause-level pausing."},
+                            {"feature_id": "F3", "requirement": "Keep steady pace and fluency."},
+                        ],
+                    },
+                    "reference_renderings": [
+                        {
+                            "rendering_id": "A",
+                            "transcript": (
+                                "In blended classrooms, students often use digital tools before discussing ideas face to face. "
+                                "This sequence can improve confidence because learners arrive with quick notes and simple "
+                                "questions. However, teachers still need to monitor discussion quality, since fast digital "
+                                "preparation does not always produce deep understanding or accurate reasoning in group tasks."
+                            ),
+                            "delivery_note": "Clear articulation with medium pace and clause-based pausing.",
+                            "covered_feature_ids": ["F1", "F2", "F3"],
+                        },
+                        {
+                            "rendering_id": "B",
+                            "transcript": (
+                                "In blended classrooms, students often use digital tools before discussing ideas face to face. "
+                                "This sequence can improve confidence because learners arrive with organized notes and clearer "
+                                "questions. However, teachers still need to monitor discussion quality, since fast digital "
+                                "preparation does not always produce deep understanding or accurate reasoning in group tasks."
+                            ),
+                            "delivery_note": "Slightly slower tempo with strong stress on connectors.",
+                            "covered_feature_ids": ["F1", "F2", "F3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "pronunciation": "Speech is generally intelligible.",
+                        "intonation_and_stress": "Prosody supports meaning.",
+                        "fluency": "Delivery is continuous with manageable hesitations.",
+                        "accuracy": "Output preserves prompt text.",
+                    },
+                    "explanation": "Regression case for transcript mismatch under verbatim mode.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_RA_REFERENCE_MISMATCH" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_describe_picture_detail_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "describe-picture-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "describe-picture.v1",
+                "exercise_type": "DESCRIBE_PICTURE",
+                "item": {
+                    "item_id": "DP-REG-001",
+                    "instructions": (
+                        "Describe the picture in detail. You have 45 seconds to prepare and 30 seconds to speak. "
+                        "Include key actions and spatial relationships."
+                    ),
+                    "picture_context": {
+                        "picture_id": "PIC-001",
+                        "scene_summary": (
+                            "The image shows a busy train-station platform during the morning commute, with travelers "
+                            "waiting, checking schedules, and organizing their belongings while people move through "
+                            "different areas of the scene."
+                        ),
+                        "salient_details": [
+                            {
+                                "detail_id": "D1",
+                                "detail_text": "A woman in a blue coat is checking her phone next to a red suitcase.",
+                                "detail_type": "person",
+                            },
+                            {
+                                "detail_id": "D2",
+                                "detail_text": "A child is pointing at the departure board near the middle of the platform.",
+                                "detail_type": "action",
+                            },
+                            {
+                                "detail_id": "D3",
+                                "detail_text": "Two cyclists are locking their bikes beside a ticket machine on the right.",
+                                "detail_type": "interaction",
+                            },
+                            {
+                                "detail_id": "D4",
+                                "detail_text": "An older man stands behind the child and reads a newspaper.",
+                                "detail_type": "person",
+                            },
+                        ],
+                    },
+                    "task_profile": {
+                        "exam_profile": "toeic_speaking",
+                        "prep_time_seconds": 45,
+                        "response_time_seconds": 30,
+                        "expected_word_count_min": 50,
+                        "expected_word_count_max": 95,
+                        "require_spatial_relations": True,
+                        "allow_inference": False,
+                        "required_detail_ids": ["D1", "D2", "D3"],
+                    },
+                    "topic_context": {
+                        "topic_id": "TREND-2026-02",
+                        "topic_title": "Commuter mobility and urban learning routines",
+                        "source_type": "google_trends",
+                        "source_url": "https://trends.google.com/trends/",
+                        "captured_at": "2026-02-14",
+                        "trend_window": "30d",
+                        "keywords": ["public transport", "daily commute", "urban behavior"],
+                    },
+                    "reference_descriptions": [
+                        {
+                            "description_id": "A",
+                            "transcript": (
+                                "At this train station platform, several commuters are waiting for a morning train. "
+                                "In the foreground, a woman in a blue coat is checking her phone beside a red suitcase. "
+                                "To her left, a child points at the departure board while an older man stands behind "
+                                "them and reads a newspaper. Near the right side, two cyclists are locking their bikes "
+                                "next to a ticket machine."
+                            ),
+                            "delivery_note": "Steady pace with clear stress on location markers and actions.",
+                            "covered_detail_ids": ["D1", "D2", "D4"],
+                        },
+                        {
+                            "description_id": "B",
+                            "transcript": (
+                                "The picture captures a crowded platform during rush hour. In the front area, a woman "
+                                "in a blue coat is using her phone, and her red suitcase is on the ground beside her. "
+                                "Behind her, an older man is reading a newspaper, while a child near the center points "
+                                "up at the departure board. On the right, two cyclists are locking their bicycles by "
+                                "the ticket machine."
+                            ),
+                            "delivery_note": "Natural intonation with controlled pausing between detail clusters.",
+                            "covered_detail_ids": ["D1", "D2", "D3", "D4"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "pronunciation": "Speech is generally intelligible with controlled segmental accuracy.",
+                        "intonation_and_stress": "Prosody supports meaning and highlights key picture details.",
+                        "fluency": "Delivery is continuous with manageable hesitation and stable pace.",
+                        "grammar": "Sentence forms remain controlled while describing actions and relations.",
+                        "vocabulary": "Lexical choices for objects, actions, and locations are accurate and varied.",
+                        "cohesion": "Description is organized logically with clear transitions between details.",
+                    },
+                    "explanation": "Regression case: reference description A does not include all required detail IDs.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_DP_DETAIL_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_repeat_sentence_reference_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "repeat-sentence-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "repeat-sentence.v1",
+                "exercise_type": "REPEAT_SENTENCE",
+                "item": {
+                    "item_id": "RS-REG-001",
+                    "instructions": (
+                        "Listen to the sentence and repeat the sentence exactly after the beep. "
+                        "You have 3 seconds to prepare and 15 seconds to respond."
+                    ),
+                    "prompt_audio_transcript": (
+                        "Although online tutorials are flexible, students still benefit most when they "
+                        "review feedback carefully before the next lesson."
+                    ),
+                    "task_profile": {
+                        "exam_profile": "pte_academic",
+                        "prep_time_seconds": 3,
+                        "response_time_seconds": 15,
+                        "delivery_mode": "verbatim_repetition",
+                        "allow_paraphrase": False,
+                        "expected_word_count_min": 14,
+                        "expected_word_count_max": 20,
+                        "required_features": [
+                            {
+                                "feature_id": "F1",
+                                "requirement": "Preserve original lexical content without substitution.",
+                            },
+                            {
+                                "feature_id": "F2",
+                                "requirement": "Maintain intelligible pronunciation across all stressed words.",
+                            },
+                            {
+                                "feature_id": "F3",
+                                "requirement": "Deliver at steady pace with minimal hesitation.",
+                            },
+                        ],
+                    },
+                    "topic_context": {
+                        "topic_id": "TREND-2026-02",
+                        "topic_title": "AI-supported learning routines and classroom outcomes",
+                        "source_type": "google_trends",
+                        "source_url": "https://trends.google.com/trends/",
+                        "captured_at": "2026-02-14",
+                        "trend_window": "30d",
+                        "keywords": ["learning feedback", "classroom language", "academic speaking"],
+                    },
+                    "reference_repetitions": [
+                        {
+                            "repetition_id": "A",
+                            "transcript": (
+                                "Although online tutorials are flexible, students benefit most when they review "
+                                "feedback carefully before the next lesson."
+                            ),
+                            "delivery_note": "Clear stress on key content words with clause-level pausing.",
+                            "covered_feature_ids": ["F1", "F2", "F3"],
+                        },
+                        {
+                            "repetition_id": "B",
+                            "transcript": (
+                                "Although online tutorials are flexible, students still benefit most when they review "
+                                "feedback carefully before the next lesson."
+                            ),
+                            "delivery_note": "Slightly slower pacing while preserving complete verbal fidelity.",
+                            "covered_feature_ids": ["F1", "F2", "F3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "content_accuracy": "Response preserves original words and sequence with no omission.",
+                        "pronunciation": "Speech is intelligible with controlled segmental production.",
+                        "oral_fluency": "Utterance is smooth with manageable pauses and stable rhythm.",
+                        "memory_control": "Sentence is retained and reproduced without major breakdown.",
+                    },
+                    "explanation": "Regression case: reference repetition A omits one required word.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_RS_REFERENCE_MISMATCH" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_retell_lecture_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "retell-lecture-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "retell-lecture.v1",
+                "exercise_type": "RETELL_LECTURE",
+                "item": {
+                    "item_id": "RL-REG-001",
+                    "instructions": (
+                        "Listen to the lecture excerpt and retell the main ideas in your own words. "
+                        "You have 30 seconds to prepare and 60 seconds to speak. Do not add personal opinions."
+                    ),
+                    "lecture_context": {
+                        "lecture_id": "LEC-001",
+                        "topic_title": "Why urban trees reduce heat exposure",
+                        "lecture_transcript": (
+                            "The lecturer explains that urban trees reduce heat exposure through three linked mechanisms. "
+                            "First, tree canopies block direct sunlight, which lowers surface temperatures on streets and "
+                            "building walls during peak afternoon hours. Second, trees cool surrounding air through "
+                            "evapotranspiration, a process in which water released from leaves absorbs heat energy. Third, "
+                            "shaded neighborhoods usually encourage more outdoor walking, which reduces short car trips and "
+                            "can indirectly lower local heat generated by traffic and asphalt. The lecture emphasizes that "
+                            "these benefits are strongest when city planners combine tree planting with maintenance, "
+                            "irrigation, and species selection suited to local climate."
+                        ),
+                        "key_points": [
+                            {
+                                "point_id": "K1",
+                                "point_text": "Canopies block direct sunlight and lower surface temperatures.",
+                            },
+                            {
+                                "point_id": "K2",
+                                "point_text": "Evapotranspiration cools nearby air by absorbing heat.",
+                            },
+                            {
+                                "point_id": "K3",
+                                "point_text": "Shade can reduce short car trips and heat from traffic.",
+                            },
+                            {
+                                "point_id": "K4",
+                                "point_text": "Planning quality and maintenance determine overall impact.",
+                            },
+                        ],
+                    },
+                    "task_profile": {
+                        "exam_profile": "toefl_integrated_speaking",
+                        "prep_time_seconds": 30,
+                        "response_time_seconds": 60,
+                        "expected_word_count_min": 95,
+                        "expected_word_count_max": 155,
+                        "required_point_ids": ["K1", "K2", "K4"],
+                        "allow_personal_opinion": False,
+                    },
+                    "topic_context": {
+                        "topic_id": "TREND-2026-02",
+                        "topic_title": "Climate adaptation in urban education contexts",
+                        "source_type": "google_trends",
+                        "source_url": "https://trends.google.com/trends/",
+                        "captured_at": "2026-02-14",
+                        "trend_window": "30d",
+                        "keywords": ["urban climate", "public health", "sustainable cities"],
+                    },
+                    "reference_retells": [
+                        {
+                            "retell_id": "A",
+                            "transcript": (
+                                "The lecture says urban trees reduce heat in several connected ways. First, tree canopies "
+                                "block direct sunlight, so roads and walls become less hot in the afternoon. Second, leaves "
+                                "release water and this evapotranspiration process absorbs heat, so nearby air gets cooler. "
+                                "The speaker also notes a behavioral effect: when streets are shaded, people walk more and "
+                                "depend less on short car trips, which can reduce additional local heat from traffic and "
+                                "paved surfaces. Finally, the lecturer stresses that results depend on good planning, "
+                                "including maintenance, irrigation, and choosing tree species that fit the local climate."
+                            ),
+                            "delivery_note": "Clear pacing with explicit transitions between each mechanism.",
+                            "covered_point_ids": ["K1", "K2", "K3"],
+                        },
+                        {
+                            "retell_id": "B",
+                            "transcript": (
+                                "According to the lecturer, urban trees lower heat exposure through direct cooling and "
+                                "indirect behavioral change. One mechanism is shading, because canopies block sunlight and "
+                                "keep street surfaces cooler during hot periods. Another mechanism is evapotranspiration, "
+                                "where water from leaves helps remove heat from surrounding air. The lecture adds that "
+                                "shaded areas can encourage walking and reduce very short car journeys, which may lessen "
+                                "heat produced by traffic and asphalt. The closing point is that benefits are not automatic, "
+                                "since cities need proper maintenance, irrigation, and appropriate species selection for "
+                                "local conditions."
+                            ),
+                            "delivery_note": "Natural intonation and coherent summary progression from cause to implication.",
+                            "covered_point_ids": ["K1", "K2", "K3", "K4"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "delivery": "Speech is clear and paced naturally with manageable hesitation.",
+                        "language_use": "Grammar and vocabulary support accurate summary of source ideas.",
+                        "topic_development": "Response organizes and links key lecture ideas coherently.",
+                        "content_accuracy": "Retell preserves main claims and examples without factual drift.",
+                    },
+                    "explanation": "Regression case: reference retell A does not cover all required point IDs.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_RL_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_answer_short_question_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "answer-short-question-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "answer-short-question.v1",
+                "exercise_type": "ANSWER_SHORT_QUESTION",
+                "item": {
+                    "item_id": "ASQ-REG-001",
+                    "instructions": (
+                        "Answer the question clearly and directly. "
+                        "You have 3 seconds to prepare and 30 seconds to speak."
+                    ),
+                    "question_context": {
+                        "question_id": "Q-001",
+                        "question_text": (
+                            "What is one effective way for students to improve speaking fluency outside class, and why?"
+                        ),
+                        "question_type": "preference",
+                        "expected_points": [
+                            {"point_id": "P1", "point_text": "Describe one concrete out-of-class speaking routine."},
+                            {"point_id": "P2", "point_text": "Explain why that routine improves fluency outcomes."},
+                            {"point_id": "P3", "point_text": "Give one practical example of implementation."},
+                        ],
+                    },
+                    "task_profile": {
+                        "exam_profile": "toeic_speaking",
+                        "prep_time_seconds": 3,
+                        "response_time_seconds": 30,
+                        "expected_word_count_min": 55,
+                        "expected_word_count_max": 95,
+                        "allow_personal_opinion": True,
+                        "required_point_ids": ["P1", "P2"],
+                    },
+                    "topic_context": {
+                        "topic_id": "TREND-2026-02",
+                        "topic_title": "Self-directed speaking practice and feedback loops",
+                        "source_type": "google_trends",
+                        "source_url": "https://trends.google.com/trends/",
+                        "captured_at": "2026-02-14",
+                        "trend_window": "30d",
+                        "keywords": ["speaking fluency", "language practice", "learning routine"],
+                    },
+                    "reference_responses": [
+                        {
+                            "response_id": "A",
+                            "transcript": (
+                                "One effective way is to schedule a short daily speaking routine where students summarize "
+                                "their day out loud for two minutes. For example, a student can record a daily voice note, "
+                                "listen again, and track repeated pauses to improve rhythm and confidence week by week."
+                            ),
+                            "delivery_note": "Direct answer and example, but missing explicit reason statement.",
+                            "covered_point_ids": ["P1", "P3"],
+                        },
+                        {
+                            "response_id": "B",
+                            "transcript": (
+                                "I recommend a partner speaking check-in three times a week. Students can choose one "
+                                "familiar topic and explain it for one minute while a partner gives quick feedback. This "
+                                "improves fluency because frequent practice under light pressure helps ideas come faster "
+                                "and makes transitions smoother. A practical example is using a timer and rotating topics "
+                                "like school projects, weekend plans, or local news."
+                            ),
+                            "delivery_note": "Natural intonation with clear link between method, reason, and example.",
+                            "covered_point_ids": ["P1", "P2", "P3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "comprehension": "Response addresses the asked question without misunderstanding intent.",
+                        "relevance": "Content remains focused on the requested method and justification.",
+                        "fluency": "Delivery is continuous with manageable pauses and clear rhythm.",
+                        "language_use": "Grammar and vocabulary are appropriate for short spoken explanation.",
+                    },
+                    "explanation": "Regression case: reference response A does not cover all required point IDs.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_ASQ_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_respond_to_information_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "respond-to-information-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "respond-to-information.v1",
+                "exercise_type": "RESPOND_TO_INFORMATION",
+                "item": {
+                    "item_id": "RTI-REG-001",
+                    "instructions": (
+                        "Read the information and respond to the question clearly. "
+                        "You have 45 seconds to prepare and 30 seconds to speak."
+                    ),
+                    "information_context": {
+                        "info_id": "INFO-001",
+                        "prompt_type": "service_notice",
+                        "stimulus_text": (
+                            "Campus Transit Notice: From Monday to Friday this month, Route B will stop operating "
+                            "after 6:00 p.m. due to road repairs near West Gate. Students traveling from the library "
+                            "to North Dorm should use Route C, which departs every 20 minutes until 10:00 p.m. A free "
+                            "transfer from Route A to Route C is available at Science Center with the same student ID card."
+                        ),
+                        "prompt_question": (
+                            "Your classmate asks about evening transport from the library to North Dorm. "
+                            "Explain the updated plan using the notice."
+                        ),
+                        "info_points": [
+                            {"point_id": "I1", "point_text": "Route B does not run after 6:00 p.m. on weekdays this month."},
+                            {
+                                "point_id": "I2",
+                                "point_text": (
+                                    "Route C runs every 20 minutes from the library area to North Dorm until 10:00 p.m."
+                                ),
+                            },
+                            {
+                                "point_id": "I3",
+                                "point_text": (
+                                    "Students can transfer for free from Route A to Route C at Science Center using ID."
+                                ),
+                            },
+                        ],
+                    },
+                    "task_profile": {
+                        "exam_profile": "toeic_speaking",
+                        "prep_time_seconds": 45,
+                        "response_time_seconds": 30,
+                        "expected_word_count_min": 70,
+                        "expected_word_count_max": 120,
+                        "response_style": "question_response",
+                        "allow_personal_opinion": False,
+                        "required_point_ids": ["I1", "I2", "I3"],
+                    },
+                    "topic_context": {
+                        "topic_id": "TREND-2026-02",
+                        "topic_title": "Campus service updates and student mobility routines",
+                        "source_type": "google_trends",
+                        "source_url": "https://trends.google.com/trends/",
+                        "captured_at": "2026-02-14",
+                        "trend_window": "30d",
+                        "keywords": ["campus transport", "service notice", "student commute"],
+                    },
+                    "reference_responses": [
+                        {
+                            "response_id": "A",
+                            "transcript": (
+                                "The notice says Route B is not available after six in the evening on weekdays this month, "
+                                "so your usual plan will not work. You should use Route C from the library to North Dorm, "
+                                "and it still runs every twenty minutes until ten p.m. That means evening travel is still "
+                                "possible if you switch to the new route schedule for your study return trip. You can "
+                                "check the bus app first so you do not miss departure time."
+                            ),
+                            "delivery_note": "Clear explanation of route change and replacement schedule, but no transfer detail.",
+                            "covered_point_ids": ["I1", "I2"],
+                        },
+                        {
+                            "response_id": "B",
+                            "transcript": (
+                                "For evening trips, the important update is that Route B stops after 6:00 p.m. this month "
+                                "because of roadwork near West Gate. The notice recommends Route C for library to North "
+                                "Dorm travel, and that bus comes every twenty minutes until 10:00 p.m. If you need to "
+                                "connect from Route A, transfer at Science Center and keep your student card ready. The "
+                                "transfer from A to C is free with the same ID, so you do not need to pay again."
+                            ),
+                            "delivery_note": "Keep a practical tone and organize the response as change, alternative, and transfer details.",
+                            "covered_point_ids": ["I1", "I2", "I3"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "comprehension": "Response reflects key details from the provided notice accurately.",
+                        "relevance": "Content stays focused on answering the classmate's transport question.",
+                        "task_completion": "Response includes the critical update, alternative route, and transfer condition.",
+                        "fluency": "Delivery is steady with manageable pauses and clear progression.",
+                        "language_use": "Grammar and vocabulary are appropriate for concise functional speaking.",
+                    },
+                    "explanation": "Regression case: reference response A does not include all required information points.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_RTI_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_oral_interview_qa_point_coverage_fixture() -> None:
+    item_file = PACK_DIR / "examples" / "regression" / "oral-interview-qa.point-coverage.json"
+    assert item_file.is_file(), "Missing oral interview QA regression fixture"
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_OIQ_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_cue_card_long_turn_point_coverage_fixture() -> None:
+    item_file = PACK_DIR / "examples" / "regression" / "cue-card-long-turn.point-coverage.json"
+    assert item_file.is_file(), "Missing cue-card-long-turn regression fixture"
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_CLT_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_collaborative_discussion_point_coverage_fixture() -> None:
+    item_file = PACK_DIR / "examples" / "regression" / "collaborative-discussion.point-coverage.json"
+    assert item_file.is_file(), "Missing collaborative-discussion regression fixture"
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_CD_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_respond_to_written_request_point_coverage_fixture() -> None:
+    item_file = PACK_DIR / "examples" / "regression" / "respond-to-written-request.point-coverage.json"
+    assert item_file.is_file(), "Missing respond-to-written-request regression fixture"
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_RTWR_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_write_sentence_from_picture_keyword_missing_fixture() -> None:
+    item_file = PACK_DIR / "examples" / "regression" / "write-sentence-from-picture.keyword-missing.json"
+    assert item_file.is_file(), "Missing write-sentence-from-picture regression fixture"
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_WSFP_KEYWORD_MISSING" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
 def test_template_pack_validator_blocks_matching_headings_invalid_mapping(tmp_path: Path) -> None:
     item_file = tmp_path / "matching-headings-invalid.json"
     item_file.write_text(
@@ -1763,3 +2880,216 @@ def test_template_pack_validator_blocks_sentence_rewrite_with_one_reference(tmp_
     assert code != 0
     assert payload["STATUS"] == "BLOCK"
     assert any(item["code"] == "TMP_REWRITE_REFERENCE_MIN" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_summarize_written_text_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "swt-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "summarize-written-text.v1",
+                "exercise_type": "SUMMARIZE_WRITTEN_TEXT",
+                "item": {
+                    "item_id": "SWT-REG-001",
+                    "instructions": (
+                        "Read the passage and write one sentence summarizing the key points in 5-75 words "
+                        "within 10 minutes."
+                    ),
+                    "source_text": (
+                        "Many city governments are replacing fixed bus timetables with demand-responsive shuttle "
+                        "systems that adjust routes according to real-time passenger requests. Advocates argue that "
+                        "the model reduces waiting time in low-density neighborhoods and cuts fuel waste because "
+                        "vehicles no longer run mostly empty routes. They also claim that data-driven routing can "
+                        "improve service equity when authorities prioritize areas with limited public transport "
+                        "access. However, critics note that on-demand systems require reliable mobile access and "
+                        "digital literacy, which can exclude older residents and low-income riders if no phone-based "
+                        "alternatives are provided. Operational complexity is another challenge, since agencies need "
+                        "continuous monitoring staff, updated dispatch software, and transparent service standards to "
+                        "prevent unpredictable delays. Some transport planners therefore recommend hybrid designs that "
+                        "keep core fixed routes during peak periods while using on-demand shuttles for off-peak and "
+                        "low-coverage zones."
+                    ),
+                    "source_points": [
+                        {
+                            "point_id": "P1",
+                            "point_text": (
+                                "The passage describes demand-responsive shuttles as an alternative to fixed bus timetables."
+                            ),
+                        },
+                        {
+                            "point_id": "P2",
+                            "point_text": (
+                                "Supporters expect lower waiting times, reduced fuel waste, and potentially better service "
+                                "equity through data-driven routing."
+                            ),
+                        },
+                        {
+                            "point_id": "P3",
+                            "point_text": (
+                                "The text warns about digital-access barriers and operational complexity, recommending a "
+                                "hybrid fixed-plus-demand model."
+                            ),
+                        },
+                    ],
+                    "task_profile": {
+                        "exam_profile": "pte_academic",
+                        "time_limit_minutes": 10,
+                        "source_text_word_max": 300,
+                        "summary_word_min": 5,
+                        "summary_word_max": 75,
+                        "sentence_count_required": 1,
+                        "allow_multiple_sentences": False,
+                        "required_point_ids": ["P1", "P2", "P3"],
+                    },
+                    "reference_summaries": [
+                        {
+                            "summary_id": "A",
+                            "body": (
+                                "The passage explains that demand-responsive shuttle systems may reduce waiting and fuel "
+                                "use while improving route targeting in underserved neighborhoods, though implementation "
+                                "quality still depends on practical policy choices."
+                            ),
+                            "covered_point_ids": ["P1", "P2"],
+                        },
+                        {
+                            "summary_id": "B",
+                            "body": (
+                                "According to the text, cities view on-demand shuttles as a flexible substitute for fixed "
+                                "routes and expect efficiency gains, but successful adoption requires careful planning and "
+                                "clear operating standards."
+                            ),
+                            "covered_point_ids": ["P1", "P2"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "content": "Summary captures topic and key claims without distortion.",
+                        "form": "Response is one sentence within the required word range.",
+                        "grammar": "Sentence structure is controlled and grammatical.",
+                        "vocabulary": "Word choice is concise and appropriate.",
+                    },
+                    "explanation": "Regression case for required point coverage mismatch.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_SWT_POINT_COVERAGE" for item in payload["FINDINGS"])
+
+
+@pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
+def test_template_pack_validator_blocks_summarize_spoken_text_point_coverage_mismatch(tmp_path: Path) -> None:
+    item_file = tmp_path / "sst-invalid.json"
+    item_file.write_text(
+        json.dumps(
+            {
+                "template_id": "summarize-spoken-text.v1",
+                "exercise_type": "SUMMARIZE_SPOKEN_TEXT",
+                "item": {
+                    "item_id": "SST-REG-001",
+                    "instructions": (
+                        "Listen to the recording and write a 50-70 word summary in 10 minutes, "
+                        "covering the main message and key supporting points."
+                    ),
+                    "lecture_context": {
+                        "lecture_id": "LEC-SST-B2-001",
+                        "topic_title": "Why hospitals use digital triage before in-person appointments",
+                        "audio_length_seconds": 76,
+                        "lecture_transcript": (
+                            "The lecturer describes how digital triage systems are being used to manage patient flow "
+                            "before in-person appointments. In this model, patients complete structured symptom forms "
+                            "online, and the system categorizes urgency based on predefined risk indicators. "
+                            "Supporters argue that this process reduces waiting-room congestion because low-risk cases "
+                            "can be redirected to remote consultation or self-care guidance, while high-risk cases "
+                            "receive faster clinical attention. The lecturer adds that digital triage can improve "
+                            "documentation quality by capturing standardized symptom histories before patients meet a "
+                            "clinician. However, the system is not effective without strong escalation rules and human "
+                            "review pathways, since automated categorization can miss atypical cases. The final point "
+                            "is that hospitals should combine digital screening with clinician oversight and periodic "
+                            "audit, so patient safety is protected while operational efficiency improves."
+                        ),
+                        "key_points": [
+                            {
+                                "point_id": "K1",
+                                "point_text": (
+                                    "Digital triage pre-screens patients through structured symptom input and urgency "
+                                    "categorization."
+                                ),
+                            },
+                            {
+                                "point_id": "K2",
+                                "point_text": (
+                                    "The approach can reduce congestion and improve documentation by routing cases "
+                                    "more efficiently."
+                                ),
+                            },
+                            {
+                                "point_id": "K3",
+                                "point_text": (
+                                    "The lecturer stresses that human oversight and audit are necessary to avoid "
+                                    "automation risks."
+                                ),
+                            },
+                        ],
+                    },
+                    "task_profile": {
+                        "exam_profile": "pte_academic",
+                        "time_limit_minutes": 10,
+                        "prompt_length_seconds_min": 60,
+                        "prompt_length_seconds_max": 90,
+                        "summary_word_min": 50,
+                        "summary_word_max": 70,
+                        "zero_score_below_words": 40,
+                        "zero_score_above_words": 100,
+                        "require_own_words": True,
+                        "allow_bullets": False,
+                        "required_point_ids": ["K1", "K2", "K3"],
+                    },
+                    "reference_summaries": [
+                        {
+                            "summary_id": "A",
+                            "body": (
+                                "The lecture explains that digital triage systems pre-screen patients through "
+                                "structured symptom forms and urgency categorization to manage clinical flow, and this "
+                                "approach can reduce waiting congestion while improving documentation quality before "
+                                "in-person visits."
+                            ),
+                            "covered_point_ids": ["K1", "K2"],
+                        },
+                        {
+                            "summary_id": "B",
+                            "body": (
+                                "According to the speaker, hospitals use digital triage to classify risk and route "
+                                "cases more efficiently, which supports faster handling and cleaner symptom records, "
+                                "but successful implementation still requires careful process design and dependable "
+                                "escalation governance."
+                            ),
+                            "covered_point_ids": ["K1", "K2"],
+                        },
+                    ],
+                    "scoring_rubric": {
+                        "content": "Summary reflects lecture meaning and key support points.",
+                        "form": "Response stays in the target word range.",
+                        "grammar": "Sentence structures are controlled and grammatical.",
+                        "vocabulary": "Word choice is precise and appropriate.",
+                        "spelling": "Spelling is accurate and consistent.",
+                    },
+                    "explanation": "Regression case for required point coverage mismatch.",
+                    "lo_refs": ["LO1"],
+                    "difficulty": "medium",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code, payload = _run_validator(item_file)
+    assert code != 0
+    assert payload["STATUS"] == "BLOCK"
+    assert any(item["code"] == "TMP_SST_POINT_COVERAGE" for item in payload["FINDINGS"])
