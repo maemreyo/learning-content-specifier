@@ -76,6 +76,16 @@ For each unit under `specs/<###-slug>/`:
 
 Governance source: `.lcs/memory/charter.md`.
 
+## Proficiency Targets (Optional)
+
+Unit authors may optionally declare proficiency targets in `brief.json.proficiency_targets[]` (e.g., CEFR / IELTS / TOEIC).
+
+- Targets are validated and normalized using contract fixtures under `contracts/fixtures/` (registry, crosswalks, and subject pivots).
+- If targets are declared but cannot be normalized to the subject pivot framework, `/lcs.author` will hard-block (factory step `PROF_RULE_001`).
+- When present, template selection can include `proficiency_fit` scoring and an optional `proficiency_context` block in `template-selection.json`.
+
+Details: `contracts/docs/README.md`.
+
 ## Contract Package For Standalone Consumer
 
 LCS publishes a context-safe contract package for external consumer platforms:
