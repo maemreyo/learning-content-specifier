@@ -254,8 +254,8 @@ build_variant() {
       generate_commands qwen toml "{{args}}" "$base_dir/.qwen/commands" "$script"
       [[ -f agent_templates/qwen/QWEN.md ]] && cp agent_templates/qwen/QWEN.md "$base_dir/QWEN.md" ;;
     opencode)
-      mkdir -p "$base_dir/.opencode/command"
-      generate_commands opencode md "\$ARGUMENTS" "$base_dir/.opencode/command" "$script" ;;
+      mkdir -p "$base_dir/.opencode/commands"
+      generate_commands opencode md "\$ARGUMENTS" "$base_dir/.opencode/commands" "$script" ;;
     windsurf)
       mkdir -p "$base_dir/.windsurf/workflows"
       generate_commands windsurf md "\$ARGUMENTS" "$base_dir/.windsurf/workflows" "$script" ;;
@@ -263,14 +263,14 @@ build_variant() {
       mkdir -p "$base_dir/.codex/commands"
       generate_commands codex md "\$ARGUMENTS" "$base_dir/.codex/commands" "$script" ;;
     kilocode)
-      mkdir -p "$base_dir/.kilocode/rules"
-      generate_commands kilocode md "\$ARGUMENTS" "$base_dir/.kilocode/rules" "$script" ;;
+      mkdir -p "$base_dir/.kilocode/workflows"
+      generate_commands kilocode md "\$ARGUMENTS" "$base_dir/.kilocode/workflows" "$script" ;;
     auggie)
-      mkdir -p "$base_dir/.augment/rules"
-      generate_commands auggie md "\$ARGUMENTS" "$base_dir/.augment/rules" "$script" ;;
+      mkdir -p "$base_dir/.augment/commands"
+      generate_commands auggie md "\$ARGUMENTS" "$base_dir/.augment/commands" "$script" ;;
     roo)
-      mkdir -p "$base_dir/.roo/rules"
-      generate_commands roo md "\$ARGUMENTS" "$base_dir/.roo/rules" "$script" ;;
+      mkdir -p "$base_dir/.roo/commands"
+      generate_commands roo md "\$ARGUMENTS" "$base_dir/.roo/commands" "$script" ;;
     codebuddy)
       mkdir -p "$base_dir/.codebuddy/commands"
       generate_commands codebuddy md "\$ARGUMENTS" "$base_dir/.codebuddy/commands" "$script" ;;

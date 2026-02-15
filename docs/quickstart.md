@@ -27,6 +27,7 @@ For multi-unit programs, activate the intended unit before refine/design:
 ```text
 /lcs.programs activate --program <program-id> --unit <unit-id>
 /lcs.programs workflow-status --program <program-id>
+/lcs.programs resolve-unit --intent "Generate design artifacts for next unit" --for-stage design --activate-resolved
 ```
 
 ## 3. Confirm artifacts

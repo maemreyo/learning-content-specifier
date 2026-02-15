@@ -634,7 +634,7 @@ class CommandRegistrar:
             "extension": ".toml"
         },
         "opencode": {
-            "dir": ".opencode/command",
+            "dir": ".opencode/commands",
             "format": "markdown",
             "args": "$ARGUMENTS",
             "extension": ".md"
@@ -652,19 +652,19 @@ class CommandRegistrar:
             "extension": ".md"
         },
         "kilocode": {
-            "dir": ".kilocode/rules",
+            "dir": ".kilocode/workflows",
             "format": "markdown",
             "args": "$ARGUMENTS",
             "extension": ".md"
         },
         "auggie": {
-            "dir": ".augment/rules",
+            "dir": ".augment/commands",
             "format": "markdown",
             "args": "$ARGUMENTS",
             "extension": ".md"
         },
         "roo": {
-            "dir": ".roo/rules",
+            "dir": ".roo/commands",
             "format": "markdown",
             "args": "$ARGUMENTS",
             "extension": ".md"

@@ -22,5 +22,6 @@ The standards align with established UX guidance that confirmation and empty sta
 ## LCS Implementation
 
 - Use `/lcs.programs workflow-status` to generate pending-stage status and follow-up commands.
+- Use `/lcs.programs resolve-unit --intent "... next unit ..."` for natural-language unit routing before design/refine.
 - `lcs.design` and `lcs.refine` must call workflow-status and present prioritized follow-up tasks.
 - `lcs.redesign` is available for force-reset design regeneration on the active unit.

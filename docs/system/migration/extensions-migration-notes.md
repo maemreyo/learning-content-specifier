@@ -17,9 +17,10 @@
 Follow `AGENTS.md` as source of truth. Notable paths:
 
 - codex: `.codex/commands/`
-- kilocode: `.kilocode/rules/`
-- auggie: `.augment/rules/`
-- roo: `.roo/rules/`
+- kilocode: `.kilocode/workflows/`
+- opencode: `.opencode/commands/`
+- auggie: `.augment/commands/`
+- roo: `.roo/commands/`
 
 ## Environment Prefix
 

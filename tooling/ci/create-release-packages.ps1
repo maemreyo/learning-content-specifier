@@ -337,7 +337,7 @@ function Build-Variant {
             }
         }
         'opencode' {
-            $cmdDir = Join-Path $baseDir ".opencode/command"
+            $cmdDir = Join-Path $baseDir ".opencode/commands"
             Generate-Commands -Agent 'opencode' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'windsurf' {
@@ -349,15 +349,15 @@ function Build-Variant {
             Generate-Commands -Agent 'codex' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'kilocode' {
-            $cmdDir = Join-Path $baseDir ".kilocode/rules"
+            $cmdDir = Join-Path $baseDir ".kilocode/workflows"
             Generate-Commands -Agent 'kilocode' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'auggie' {
-            $cmdDir = Join-Path $baseDir ".augment/rules"
+            $cmdDir = Join-Path $baseDir ".augment/commands"
             Generate-Commands -Agent 'auggie' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'roo' {
-            $cmdDir = Join-Path $baseDir ".roo/rules"
+            $cmdDir = Join-Path $baseDir ".roo/commands"
             Generate-Commands -Agent 'roo' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'codebuddy' {
@@ -367,6 +367,10 @@ function Build-Variant {
         'amp' {
             $cmdDir = Join-Path $baseDir ".agents/commands"
             Generate-Commands -Agent 'amp' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
+        }
+        'shai' {
+            $cmdDir = Join-Path $baseDir ".shai/commands"
+            Generate-Commands -Agent 'shai' -Extension 'md' -ArgFormat '$ARGUMENTS' -OutputDir $cmdDir -ScriptVariant $Script
         }
         'q' {
             $cmdDir = Join-Path $baseDir ".amazonq/prompts"
@@ -390,7 +394,7 @@ function Build-Variant {
 }
 
 # Define all agents and scripts
-$AllAgents = @('claude', 'gemini', 'copilot', 'cursor-agent', 'qwen', 'opencode', 'windsurf', 'codex', 'kilocode', 'auggie', 'roo', 'codebuddy', 'amp', 'q', 'bob', 'qoder')
+$AllAgents = @('claude', 'gemini', 'copilot', 'cursor-agent', 'qwen', 'opencode', 'windsurf', 'codex', 'kilocode', 'auggie', 'roo', 'codebuddy', 'amp', 'shai', 'q', 'bob', 'qoder')
 $AllScripts = @('sh', 'ps')
 
 function Normalize-List {

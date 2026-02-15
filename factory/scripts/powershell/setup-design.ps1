@@ -3,7 +3,9 @@
 param(
     [switch]$Json,
     [switch]$ForceReset,
-    [switch]$Help
+    [switch]$Help,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$RemainingArgs
 )
 $ErrorActionPreference = 'Stop'
 
@@ -13,10 +15,24 @@ if ($Help) {
 }
 
 . "$PSScriptRoot/common.ps1"
+$repoRoot = Get-RepoRoot
+$manageTool = Resolve-PythonTool -ToolName 'manage_program_context.py'
+$pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
+
+if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
+    $intent = ($RemainingArgs -join ' ').Trim()
+    if ($intent) {
+        try {
+            & $pythonBin $manageTool --repo-root $repoRoot --json resolve-unit --for-stage design --intent $intent --activate-resolved | Out-Null
+        } catch {
+            # Non-blocking preflight: fallback to current context if intent routing fails.
+        }
+    }
+}
+
 $paths = Get-UnitPathsEnv
 $contractVersion = Get-ContractVersion
 $selectorTool = Resolve-PythonTool -ToolName 'generate_template_selection.py'
-$pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
 
 if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
 

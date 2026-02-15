@@ -37,11 +37,16 @@ DESIGN_REQUIRED_FILES = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["list", "current", "recommend", "activate", "list-units", "workflow-status"])
+    parser.add_argument(
+        "action",
+        choices=["list", "current", "recommend", "activate", "list-units", "workflow-status", "resolve-unit"],
+    )
     parser.add_argument("--repo-root", default=".", help="Repository root path")
     parser.add_argument("--program", help="Program id (or slug-like hint)")
     parser.add_argument("--unit", help="Unit id to activate or inspect")
     parser.add_argument("--intent", help="Natural-language program intent for recommendation")
+    parser.add_argument("--for-stage", default="design", help="Workflow stage for unit intent routing")
+    parser.add_argument("--activate-resolved", action="store_true", help="Activate resolved unit context")
     parser.add_argument("--clear-unit", action="store_true", help="Clear current unit when activating a program")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     return parser.parse_args()
@@ -59,6 +64,16 @@ def program_base_slug(program_id: str) -> str:
 
 def now_iso_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse_program_timestamp(program_id: str) -> datetime | None:
+    match = re.search(r"-(\d{8})-(\d{4})(?:-\d{2})?$", program_id)
+    if not match:
+        return None
+    try:
+        return datetime.strptime(f"{match.group(1)}{match.group(2)}", "%Y%m%d%H%M").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -286,6 +301,114 @@ def workflow_status(state: RepoState, program_id: str, current_program: str, cur
     }
 
 
+def _has_any(text: str, values: tuple[str, ...]) -> bool:
+    return any(value in text for value in values)
+
+
+def _extract_explicit_unit_id(intent_text: str, known_units: list[str]) -> str:
+    if not intent_text.strip():
+        return ""
+    normalized = intent_text.lower()
+    for unit_id in known_units:
+        if unit_id.lower() in normalized:
+            return unit_id
+    return ""
+
+
+def resolve_unit_from_intent(
+    state: RepoState,
+    program_id: str,
+    current_program: str,
+    current_unit: str,
+    intent: str,
+    for_stage: str,
+    activate_resolved: bool,
+) -> dict[str, Any]:
+    workflow = workflow_status(state, program_id, current_program, current_unit)
+    units = workflow.get("units", [])
+    known_units = [item.get("unit_id", "") for item in units if isinstance(item.get("unit_id"), str)]
+    explicit_unit = _extract_explicit_unit_id(intent, known_units)
+    selected_unit = ""
+    reason = ""
+    normalized = intent.strip().lower()
+    stage = (for_stage or "design").strip().lower()
+
+    next_cues = ("next unit", "unit next", "next", "unit tiep theo", "đơn vị tiếp theo", "unit kế tiếp", "unit ke tiep")
+    current_cues = ("current unit", "unit hiện tại", "unit hien tai")
+    previous_cues = ("previous unit", "prev unit", "unit trước", "unit truoc")
+
+    units_by_slot = sorted(units, key=lambda item: int(item.get("slot", 0)))
+    unit_to_slot = {item.get("unit_id"): int(item.get("slot", 0)) for item in units_by_slot if item.get("unit_id")}
+    current_slot = unit_to_slot.get(workflow.get("current_unit") or "", 0)
+
+    def _first_after_current(candidates: list[dict[str, Any]]) -> str:
+        if not candidates:
+            return ""
+        after_current = [item for item in candidates if int(item.get("slot", 0)) > current_slot]
+        return (after_current[0] if after_current else candidates[0]).get("unit_id", "")
+
+    if explicit_unit:
+        selected_unit = explicit_unit
+        reason = "Explicit unit id found in intent."
+    elif _has_any(normalized, current_cues):
+        selected_unit = workflow.get("current_unit") or ""
+        reason = "Intent targets current unit."
+    elif _has_any(normalized, previous_cues):
+        previous_candidates = [item for item in units_by_slot if int(item.get("slot", 0)) < current_slot]
+        selected_unit = (previous_candidates[-1] if previous_candidates else {}).get("unit_id", "")
+        reason = "Intent targets previous unit."
+    elif _has_any(normalized, next_cues):
+        if stage == "design":
+            preferred = [
+                item
+                for item in units_by_slot
+                if item.get("next_stage") in {"define", "refine", "design"}
+            ]
+            selected_unit = _first_after_current(preferred)
+        else:
+            selected_unit = _first_after_current(units_by_slot)
+        if not selected_unit:
+            selected_unit = workflow.get("current_unit") or ""
+        reason = "Intent targets next unit."
+    else:
+        selected_unit = workflow.get("current_unit") or ""
+        reason = "No unit routing cue found; using current unit."
+
+    if not selected_unit and units_by_slot:
+        selected_unit = units_by_slot[0].get("unit_id", "")
+        reason = "No active unit found; defaulting to first unit."
+
+    recommended_stage = ""
+    for item in units_by_slot:
+        if item.get("unit_id") == selected_unit:
+            recommended_stage = str(item.get("next_stage", ""))
+            break
+
+    activate_prompt = ""
+    stage_prompt = ""
+    if selected_unit:
+        activate_prompt = f"/lcs.programs activate --program {program_id} --unit {selected_unit}"
+        if stage == "design":
+            stage_prompt = f"/lcs.design Generate design artifacts for unit {selected_unit}."
+
+    activated = False
+    if activate_resolved and selected_unit:
+        activate_context(state, program_id, selected_unit, clear_unit=False)
+        activated = True
+
+    return {
+        "program_id": program_id,
+        "current_unit": workflow.get("current_unit") or "",
+        "selected_unit": selected_unit,
+        "reason": reason,
+        "for_stage": stage,
+        "recommended_stage": recommended_stage,
+        "activate_resolved": activate_resolved,
+        "activated": activated,
+        "recommended_prompts": [cmd for cmd in [activate_prompt, stage_prompt] if cmd],
+    }
+
+
 def list_programs(state: RepoState, current_program: str, current_unit: str) -> dict[str, Any]:
     programs: list[dict[str, Any]] = []
     if state.programs_root.exists():
@@ -391,6 +514,17 @@ def resolve_program_id(state: RepoState, requested_program: str | None) -> str:
     current_program = resolve_current_program(state.repo_root, state.context_program_file)
     if current_program and (state.programs_root / current_program).is_dir():
         return current_program
+
+    if state.programs_root.is_dir():
+        candidates: list[tuple[datetime, float, str]] = []
+        for path in state.programs_root.iterdir():
+            if not path.is_dir():
+                continue
+            ts = parse_program_timestamp(path.name) or datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+            candidates.append((ts, path.stat().st_mtime, path.name))
+        if candidates:
+            candidates.sort(key=lambda item: (item[0], item[1], item[2]))
+            return candidates[-1][2]
 
     raise ValueError("No active program context found")
 
@@ -506,6 +640,19 @@ def main() -> int:
         elif args.action == "workflow-status":
             program_id = resolve_program_id(state, args.program)
             payload = workflow_status(state, program_id, current_program, current_unit)
+        elif args.action == "resolve-unit":
+            if not args.intent:
+                raise ValueError("--intent is required for resolve-unit")
+            program_id = resolve_program_id(state, args.program)
+            payload = resolve_unit_from_intent(
+                state=state,
+                program_id=program_id,
+                current_program=current_program,
+                current_unit=current_unit,
+                intent=args.intent,
+                for_stage=args.for_stage,
+                activate_resolved=args.activate_resolved,
+            )
         else:
             raise ValueError(f"Unsupported action: {args.action}")
     except ValueError as exc:

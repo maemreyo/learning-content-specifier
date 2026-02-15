@@ -4,6 +4,7 @@ set -euo pipefail
 
 JSON_MODE=false
 FORCE_RESET=false
+RAW_ARGS=()
 for arg in "$@"; do
     case "$arg" in
         --json) JSON_MODE=true ;;
@@ -12,20 +13,31 @@ for arg in "$@"; do
             echo "Usage: $0 [--json] [--force-reset]"
             exit 0
             ;;
+        *) RAW_ARGS+=("$arg") ;;
     esac
 done
 
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
+REPO_ROOT="$(get_repo_root)"
+
+MANAGE_CONTEXT_TOOL="$(resolve_python_tool manage_program_context.py)"
+PYTHON_BIN="python3"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+fi
+
+if [[ ${#RAW_ARGS[@]} -gt 0 ]]; then
+    USER_INTENT="${RAW_ARGS[*]}"
+    if "$PYTHON_BIN" "$MANAGE_CONTEXT_TOOL" --repo-root "$REPO_ROOT" --json resolve-unit --for-stage design --intent "$USER_INTENT" --activate-resolved >/dev/null 2>&1; then
+        :
+    fi
+fi
 
 eval "$(get_unit_paths)"
 check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 CONTRACT_VERSION="$(get_contract_version)"
 SELECTOR_TOOL="$(resolve_python_tool generate_template_selection.py)"
-PYTHON_BIN="python3"
-if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-fi
 
 compute_sha256() {
     local target_file="$1"

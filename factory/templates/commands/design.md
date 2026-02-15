@@ -9,8 +9,8 @@ handoffs:
     agent: lcs.rubric
     prompt: Generate hard-gate rubric for this unit.
 scripts:
-  sh: factory/scripts/bash/setup-design.sh --json
-  ps: factory/scripts/powershell/setup-design.ps1 -Json
+  sh: factory/scripts/bash/setup-design.sh --json {ARGS}
+  ps: factory/scripts/powershell/setup-design.ps1 -Json {ARGS}
 agent_scripts:
   sh: factory/scripts/bash/update-agent-context.sh __AGENT__
   ps: factory/scripts/powershell/update-agent-context.ps1 -AgentType __AGENT__
@@ -46,6 +46,7 @@ $ARGUMENTS
 - YOU MUST load subject template catalog (English-first) and produce weighted top-K template candidates.
 - YOU MUST include score breakdown (`lo_fit`, `level_fit`, `duration_fit`, `diversity_fit`) in `template-selection.json`.
 - YOU MUST run `{GATE_SCRIPT}` after design generation and use it to detect pending units.
+- YOU MUST let `{SCRIPT}` resolve unit intent from `$ARGUMENTS` (for example, "next unit") before generating artifacts.
 - YOU MUST include a `Follow-up Tasks` section with ready-to-run prompts.
 - YOU MUST suggest `/lcs.programs activate --program <program_id> --unit <unit_id>` before any unit-specific follow-up command.
 - YOU MUST suggest `/lcs.design ...` for pending design units and `/lcs.redesign ...` for rework requests.

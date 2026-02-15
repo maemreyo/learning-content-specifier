@@ -19,9 +19,9 @@ for agent in claude codex copilot kilocode auggie roo; do
     claude) check_zip_path "$zip" ".claude/commands/lcs.define.md" ;;
     codex) check_zip_path "$zip" ".codex/commands/lcs.define.md" ;;
     copilot) check_zip_path "$zip" ".github/agents/lcs.define.agent.md" ;;
-    kilocode) check_zip_path "$zip" ".kilocode/rules/lcs.define.md" ;;
-    auggie) check_zip_path "$zip" ".augment/rules/lcs.define.md" ;;
-    roo) check_zip_path "$zip" ".roo/rules/lcs.define.md" ;;
+    kilocode) check_zip_path "$zip" ".kilocode/workflows/lcs.define.md" ;;
+    auggie) check_zip_path "$zip" ".augment/commands/lcs.define.md" ;;
+    roo) check_zip_path "$zip" ".roo/commands/lcs.define.md" ;;
   esac
 
   if unzip -l "$zip" | awk '{print $4}' | grep -q "\.lcs\.lcs/"; then
