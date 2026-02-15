@@ -1351,10 +1351,133 @@ def main() -> int:
         )
     )
 
+    brief_payload = artifacts.get("brief.json") if isinstance(artifacts.get("brief.json"), dict) else None
+
+    phase_start = time.perf_counter()
+    prof_findings: list[dict[str, Any]] = []
+    prof_outputs: list[str] = []
+    prof_status: str = "SKIP"
+    prof_severity: str = "INFO"
+
+    if isinstance(brief_payload, dict) and isinstance(brief_payload.get("proficiency_targets"), list):
+        try:
+            from lcs_cli.proficiency.registry import (  # type: ignore
+                load_crosswalks,
+                load_framework_registry,
+                load_subject_pivots,
+            )
+            from lcs_cli.proficiency.normalize import normalize_targets_to_pivot  # type: ignore
+            from lcs_cli.proficiency.validate import validate_proficiency_targets  # type: ignore
+
+            registry = load_framework_registry(repo_root)
+            crosswalks = load_crosswalks(repo_root)
+            pivots = load_subject_pivots(repo_root)
+            subject = str((catalog_payload or {}).get("subject", "")).strip() if isinstance(catalog_payload, dict) else ""
+            targets = brief_payload.get("proficiency_targets", [])
+
+            issues = validate_proficiency_targets(
+                brief=brief_payload,
+                registry=registry,
+                crosswalks=crosswalks,
+                subject=subject,
+            )
+            for issue in issues:
+                if not isinstance(issue, dict):
+                    continue
+                code = str(issue.get("code", "PROF_TARGET_INVALID")).strip() or "PROF_TARGET_INVALID"
+                severity = str(issue.get("severity", "HIGH")).strip().upper() or "HIGH"
+                message = str(issue.get("message", "Invalid proficiency target")).strip() or "Invalid proficiency target"
+                details = issue.get("details", {})
+                prof_findings.append(
+                    _build_finding(
+                        code=code,
+                        category="PROFICIENCY",
+                        severity=severity,
+                        message=message,
+                        path=str(unit_dir / "brief.json"),
+                        rule_id="proficiency-targets",
+                        details=details if isinstance(details, dict) else {},
+                    )
+                )
+
+            normalized = normalize_targets_to_pivot(
+                brief_targets=[t for t in targets if isinstance(t, dict)],
+                subject=subject,
+                pivots=pivots,
+                crosswalks=crosswalks,
+            )
+
+            pivot_targets = normalized.get("pivot_targets", [])
+            unmapped_targets = normalized.get("unmapped_targets", [])
+            if not isinstance(pivot_targets, list) or not pivot_targets:
+                prof_findings.append(
+                    _build_finding(
+                        code="PROF_NORMALIZE_EMPTY",
+                        category="PROFICIENCY",
+                        severity="HIGH",
+                        message="proficiency_targets declared but none could be normalized to subject pivot framework",
+                        path=str(unit_dir / "brief.json"),
+                        rule_id="proficiency-normalize-to-pivot",
+                        details={
+                            "subject": subject,
+                            "pivot_framework_id": normalized.get("pivot_framework_id", ""),
+                            "unmapped_count": len(unmapped_targets) if isinstance(unmapped_targets, list) else None,
+                        },
+                    )
+                )
+            elif isinstance(unmapped_targets, list) and unmapped_targets:
+                prof_findings.append(
+                    _build_finding(
+                        code="PROF_TARGET_UNMAPPED",
+                        category="PROFICIENCY",
+                        severity="MEDIUM",
+                        message="Some proficiency_targets could not be normalized to subject pivot framework",
+                        path=str(unit_dir / "brief.json"),
+                        rule_id="proficiency-normalize-to-pivot",
+                        details={"unmapped_targets": unmapped_targets[:3], "unmapped_count": len(unmapped_targets)},
+                    )
+                )
+
+            if prof_findings:
+                prof_status, prof_severity = _phase_status(prof_findings)
+            else:
+                prof_status, prof_severity = "PASS", "INFO"
+            prof_outputs.append("proficiency.rules")
+        except Exception as exc:  # noqa: BLE001
+            prof_findings.append(
+                _build_finding(
+                    code="PROF_ENGINE_FAILED",
+                    category="SYSTEM",
+                    severity="HIGH",
+                    message=f"Failed to validate proficiency targets: {exc}",
+                    path=str(unit_dir / "brief.json"),
+                    rule_id="proficiency-engine",
+                )
+            )
+            prof_status, prof_severity = _phase_status(prof_findings)
+
+    findings.extend(prof_findings)
+    prof_refs = list(range(len(findings) - len(prof_findings), len(findings))) if prof_findings else []
+    steps.append(
+        _build_step(
+            step_id="PROF_RULE_001",
+            phase="proficiency_rules",
+            status=prof_status,
+            severity=prof_severity,
+            message=(
+                "Proficiency target checks completed" if prof_status != "SKIP" else "Proficiency target checks skipped"
+            ),
+            inputs=[str(unit_dir / "brief.json")] + ([str(template_pack_dir / "catalog.json")] if template_pack_dir else []),
+            outputs=prof_outputs,
+            findings_ref=prof_refs,
+            duration_ms=int((time.perf_counter() - phase_start) * 1000),
+            next_action=("Fix proficiency_targets before authoring." if prof_status == "BLOCK" else ""),
+        )
+    )
+
     phase_start = time.perf_counter()
     template_rule_findings: list[dict[str, Any]] = []
     template_rule_outputs: list[str] = []
-    brief_payload = artifacts.get("brief.json") if isinstance(artifacts.get("brief.json"), dict) else None
     if catalog_payload is not None and (blueprint_payload is not None or selection_payload is not None):
         template_rule_findings, template_rule_outputs = _validate_template_rules(
             unit_dir=unit_dir,

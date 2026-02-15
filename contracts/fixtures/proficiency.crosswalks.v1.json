@@ -1,0 +1,272 @@
+{
+  "crosswalk_version": "1.0.0",
+  "mappings": [
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "overall", "target": {"min": 4.0, "max": 5.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "medium",
+      "source": "https://www.ielts.org/organisations/ielts-for-organisations/compare-ielts/ielts-and-the-cefr",
+      "notes": "Derived from IELTS official CEFR comparison graphic; range is approximate but stable for planning."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "overall", "target": {"min": 5.5, "max": 6.5}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "medium",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "B2 alignment is presented across mid-bands; used as pivot normalization for English."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "overall", "target": {"min": 7.0, "max": 8.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "medium",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "C1 typically corresponds to IELTS 7.0-8.0; 8.0 is described as borderline to C2 in IELTS guidance."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "overall", "target": {"min": 8.5, "max": 9.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C2"}},
+      "confidence": "medium",
+      "source": "https://www.ielts.org/organisations/ielts-for-organisations/compare-ielts/ielts-and-the-cefr",
+      "notes": "IELTS states 8.5 and higher are 'very good users' aligned to C2."
+    },
+
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "speaking", "target": {"min": 4.0, "max": 5.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Applied per-skill for targeting. Official crosswalk is overall-focused; per-skill usage is heuristic."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "speaking", "target": {"min": 5.5, "max": 6.5}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping to enable selector targeting by modality."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "speaking", "target": {"min": 7.0, "max": 8.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "speaking", "target": {"min": 8.5, "max": 9.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C2"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping."
+    },
+
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "writing", "target": {"min": 4.0, "max": 5.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping to support writing-targeted selection."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "writing", "target": {"min": 5.5, "max": 6.5}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "writing", "target": {"min": 7.0, "max": 8.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping."
+    },
+    {
+      "from": {"framework_id": "ielts.v1", "scale_id": "band", "dimension": "writing", "target": {"min": 8.5, "max": 9.0}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C2"}},
+      "confidence": "low",
+      "source": "https://www.ielts.org/-/media/images/research/ielts-and-the-cefr.ashx",
+      "notes": "Heuristic per-skill mapping."
+    },
+
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "listening", "dimension": "listening", "target": {"min": 60, "max": 109}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Listening."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "listening", "dimension": "listening", "target": {"min": 110, "max": 274}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Listening."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "listening", "dimension": "listening", "target": {"min": 275, "max": 399}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Listening."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "listening", "dimension": "listening", "target": {"min": 400, "max": 489}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Listening."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "listening", "dimension": "listening", "target": {"min": 490, "max": 495}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Listening."
+    },
+
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "reading", "dimension": "reading", "target": {"min": 60, "max": 114}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Reading."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "reading", "dimension": "reading", "target": {"min": 115, "max": 274}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Reading."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "reading", "dimension": "reading", "target": {"min": 275, "max": 384}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Reading."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "reading", "dimension": "reading", "target": {"min": 385, "max": 454}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Reading."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "reading", "dimension": "reading", "target": {"min": 455, "max": 495}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Reading."
+    },
+
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "speaking", "dimension": "speaking", "target": {"min": 50, "max": 89}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Speaking."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "speaking", "dimension": "speaking", "target": {"min": 90, "max": 119}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Speaking."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "speaking", "dimension": "speaking", "target": {"min": 120, "max": 159}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Speaking."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "speaking", "dimension": "speaking", "target": {"min": 160, "max": 179}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Speaking."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "speaking", "dimension": "speaking", "target": {"min": 180, "max": 200}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Speaking."
+    },
+
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "writing", "dimension": "writing", "target": {"min": 30, "max": 69}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Writing."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "writing", "dimension": "writing", "target": {"min": 70, "max": 119}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Writing."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "writing", "dimension": "writing", "target": {"min": 120, "max": 149}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Writing."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "writing", "dimension": "writing", "target": {"min": 150, "max": 179}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Writing."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "writing", "dimension": "writing", "target": {"min": 180, "max": 200}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "high",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "ETS CEFR mapping table for TOEIC Writing."
+    },
+
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "lr_total", "dimension": "lr_total", "target": {"min": 120, "max": 224}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A1"}},
+      "confidence": "low",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "Derived by summing ETS Listening+Reading minimums for each CEFR level; use as heuristic only."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "lr_total", "dimension": "lr_total", "target": {"min": 225, "max": 549}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "A2"}},
+      "confidence": "low",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "Derived by summing ETS Listening+Reading minimums for each CEFR level; heuristic only."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "lr_total", "dimension": "lr_total", "target": {"min": 550, "max": 784}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B1"}},
+      "confidence": "low",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "Derived by summing ETS Listening+Reading minimums for each CEFR level; heuristic only."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "lr_total", "dimension": "lr_total", "target": {"min": 785, "max": 944}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "B2"}},
+      "confidence": "low",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "Derived by summing ETS Listening+Reading minimums for each CEFR level; heuristic only."
+    },
+    {
+      "from": {"framework_id": "toeic.v1", "scale_id": "lr_total", "dimension": "lr_total", "target": {"min": 945, "max": 990}},
+      "to": {"framework_id": "cefr.v1", "scale_id": "global", "dimension": "global", "target": {"value": "C1"}},
+      "confidence": "low",
+      "source": "https://www.ets.org/s/toeic/pdf/toeic_cefr_mapping_table.pdf",
+      "notes": "Derived by summing ETS Listening+Reading minimums for each CEFR level; heuristic only."
+    }
+  ]
+}
+

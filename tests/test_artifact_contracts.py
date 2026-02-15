@@ -223,6 +223,68 @@ def test_artifact_contract_validator_blocks_when_brief_has_no_p1_outcome():
         shutil.rmtree(unit_dir, ignore_errors=True)
 
 
+def test_artifact_contract_validator_blocks_when_proficiency_framework_is_unknown():
+    unit_id = "996-artifact-contract-prof-unknown-framework"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+
+    try:
+        _run_setup_design(env)
+        brief_file = unit_dir / "brief.json"
+        brief_data = json.loads(brief_file.read_text(encoding="utf-8"))
+        brief_data["proficiency_targets"] = [
+            {
+                "framework_id": "ielts_typo.v1",
+                "scale_id": "band",
+                "dimension": "speaking",
+                "target": {"value": 7.5},
+                "priority": "P1",
+                "provenance": "test",
+            }
+        ]
+        brief_file.write_text(json.dumps(brief_data, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert any(item["code"] == "PROF_FRAMEWORK_UNKNOWN" for item in payload.get("FINDINGS", []))
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_proficiency_targets_cannot_be_normalized():
+    unit_id = "996-artifact-contract-prof-unmappable"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+
+    try:
+        _run_setup_design(env)
+        brief_file = unit_dir / "brief.json"
+        brief_data = json.loads(brief_file.read_text(encoding="utf-8"))
+        # Intentionally omit dimension for a multi-dimension framework; normalization should fail.
+        brief_data["proficiency_targets"] = [
+            {
+                "framework_id": "toeic.v1",
+                "scale_id": "speaking",
+                "target": {"min": 160, "max": 180},
+                "priority": "P1",
+                "provenance": "test",
+            }
+        ]
+        brief_file.write_text(json.dumps(brief_data, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert any(item["code"] == "PROF_NORMALIZE_EMPTY" for item in payload.get("FINDINGS", []))
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
 def test_artifact_contract_validator_blocks_when_sequence_has_unknown_dependency():
     unit_id = "996-artifact-contract-sequence-unknown-dependency"
     unit_dir = _prepare_unit(unit_id)

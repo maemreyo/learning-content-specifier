@@ -32,8 +32,8 @@
       },
       {
         "path": "contracts/docs/README.md",
-        "sha256": "aaae9a48f7b43455af1b14d385d18a4a2af5be6432cd45e9262da46a1738160b",
-        "size_bytes": 897
+        "sha256": "8331ddf915220a68cb76b04cd6e29098424687b024177fe67c46d438cb12f3df",
+        "size_bytes": 1468
       },
       {
         "path": "contracts/docs/TUTORING-BFF-API-V1.md",
@@ -51,6 +51,21 @@
         "path": "contracts/fixtures/golden_path_snapshot.json",
         "sha256": "7fffe4f2b3ccbd0808afb2f90b5606fced6fd70fa16245dfe3a7aac6b7d25a93",
         "size_bytes": 1187
+      },
+      {
+        "path": "contracts/fixtures/proficiency.crosswalks.v1.json",
+        "sha256": "958c8fab4931b279ec25effdaabc1c9cef797c915d0ebe82a1fad2e652c7b749",
+        "size_bytes": 16227
+      },
+      {
+        "path": "contracts/fixtures/proficiency.framework-registry.v1.json",
+        "sha256": "6ff5dedafe8e853ed01ac126703e7b4aeec56e71e63e023cf02cd767f6e3313f",
+        "size_bytes": 1638
+      },
+      {
+        "path": "contracts/fixtures/proficiency.subject-pivots.v1.json",
+        "sha256": "de627c3243c8d7686ebb19bac795d32a8ace3f3e3e0a5e7fcdc9a830a01a1dca",
+        "size_bytes": 84
       }
     ],
     "schemas": [
@@ -63,8 +78,8 @@
       {
         "id": "lcs.artifact.brief.v1",
         "path": "contracts/schemas/brief.schema.json",
-        "sha256": "c67f9be171c944b430a6422df398be2e5eee6b8746393f130edb5e8a34918558",
-        "size_bytes": 2633
+        "sha256": "cc90d591fb41b9945ef985093a378d1aad7783678b6a12bb2ac6ec873d8d2ee4",
+        "size_bytes": 3998
       },
       {
         "id": "lcs.artifact.design.v1",
@@ -77,6 +92,18 @@
         "path": "contracts/schemas/manifest.schema.json",
         "sha256": "5497c01e46d3fe4cc948ced9e8373da6eed9fbfccdd59cb4b8bdcb2a39903807",
         "size_bytes": 4335
+      },
+      {
+        "id": "lcs.proficiency.crosswalks.v1",
+        "path": "contracts/schemas/proficiency.crosswalks.schema.json",
+        "sha256": "3fbbfa3761f2b72e37ddeea27c9a3f08f1cc526c7f93d52eb25816f16487ff25",
+        "size_bytes": 1745
+      },
+      {
+        "id": "lcs.proficiency.framework-registry.v1",
+        "path": "contracts/schemas/proficiency.framework-registry.schema.json",
+        "sha256": "5e159a3e22e09ff02b16f19eeece7ef76a3f1b9c6918ed613c1797f561dfd3e9",
+        "size_bytes": 2258
       },
       {
         "id": "lcs.artifact.sequence.v1",

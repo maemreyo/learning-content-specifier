@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.proficiency.crosswalks.v1",
+  "title": "LCS Proficiency Crosswalks v1",
+  "type": "object",
+  "required": ["crosswalk_version", "mappings"],
+  "properties": {
+    "crosswalk_version": {"type": "string", "pattern": "^1\\.0\\.0$"},
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "confidence", "source"],
+        "properties": {
+          "from": {"$ref": "#/$defs/endpoint"},
+          "to": {"$ref": "#/$defs/endpoint"},
+          "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+          "source": {"type": "string", "minLength": 6},
+          "notes": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "endpoint": {
+      "type": "object",
+      "required": ["framework_id", "scale_id", "target"],
+      "properties": {
+        "framework_id": {"type": "string", "pattern": "^[a-z0-9-]+\\.v[0-9]+$"},
+        "scale_id": {"type": "string", "minLength": 1},
+        "dimension": {"type": "string", "minLength": 1},
+        "target": {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": ["value"],
+              "properties": {"value": {"type": ["string", "number"]}},
+              "additionalProperties": false
+            },
+            {
+              "required": ["min", "max"],
+              "properties": {"min": {"type": ["string", "number"]}, "max": {"type": ["string", "number"]}},
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+

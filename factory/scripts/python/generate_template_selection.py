@@ -13,10 +13,11 @@ from typing import Any
 
 
 FORMULA_WEIGHTS = {
-    "lo_fit": 0.35,
-    "level_fit": 0.25,
-    "duration_fit": 0.20,
-    "diversity_fit": 0.20,
+    "proficiency_fit": 0.30,
+    "lo_fit": 0.25,
+    "level_fit": 0.20,
+    "duration_fit": 0.15,
+    "diversity_fit": 0.10,
 }
 
 CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -61,6 +62,21 @@ KEYWORD_HINTS = {
     "TFNG": ["true", "false", "not given", "evidence", "passage", "statement", "reading"],
     "YES_NO_NOT_GIVEN": ["yes no not given", "writer views", "writer claims", "author opinion", "stance question"],
     "SENTENCE_REWRITE": ["rewrite", "rephrase", "transform", "sentence", "meaning", "paraphrase"],
+    "MULTIPLE_CHOICE_CLOZE": [
+        "multiple-choice cloze",
+        "choose the correct word",
+        "use of english part 1",
+        "cloze",
+        "gap",
+        "option",
+    ],
+    "SPEAK_OPINION_LONG_TURN": [
+        "express an opinion",
+        "give your opinion",
+        "support your opinion",
+        "speaking opinion",
+        "long turn",
+    ],
 }
 
 
@@ -133,6 +149,118 @@ def derive_level(brief: dict[str, Any], design: dict[str, Any]) -> str:
     if re.search(r"\ba1\b", entry):
         return "A1"
     return "B1"
+
+
+def _extract_proficiency_targets(brief: dict[str, Any]) -> list[dict[str, Any]]:
+    targets = brief.get("proficiency_targets", [])
+    if not isinstance(targets, list):
+        return []
+    return [t for t in targets if isinstance(t, dict)]
+
+
+def _derive_level_from_proficiency(normalized: dict[str, Any]) -> str | None:
+    # Conservative: when we have a CEFR range, pick the minimum.
+    pivot_targets = normalized.get("pivot_targets", [])
+    if not isinstance(pivot_targets, list):
+        return None
+
+    for entry in pivot_targets:
+        if not isinstance(entry, dict):
+            continue
+        target = entry.get("target", {})
+        if not isinstance(target, dict):
+            continue
+        value = target.get("value")
+        if isinstance(value, str) and value.strip().upper() in CEFR_ORDER:
+            return value.strip().upper()
+        mn = target.get("min")
+        if isinstance(mn, str) and mn.strip().upper() in CEFR_ORDER:
+            return mn.strip().upper()
+    return None
+
+
+def _fallback_template_modality(exercise_type: str) -> str:
+    et = exercise_type.strip().upper()
+    if et in {
+        "READ_ALOUD",
+        "DESCRIBE_PICTURE",
+        "REPEAT_SENTENCE",
+        "RETELL_LECTURE",
+        "ANSWER_SHORT_QUESTION",
+        "RESPOND_TO_INFORMATION",
+        "ORAL_INTERVIEW_QA",
+        "CUE_CARD_LONG_TURN",
+        "COLLABORATIVE_DISCUSSION",
+        "SPEAK_OPINION_LONG_TURN",
+    }:
+        return "speaking"
+    if et in {
+        "EMAIL_WRITING",
+        "ESSAY_OPINION",
+        "ESSAY_DISCUSSION",
+        "INTEGRATED_WRITING",
+        "SUMMARIZE_WRITTEN_TEXT",
+        "SUMMARIZE_SPOKEN_TEXT",
+        "REPORT_VISUAL_DATA",
+        "WRITE_SENTENCE_FROM_PICTURE",
+        "RESPOND_TO_WRITTEN_REQUEST",
+    }:
+        return "writing"
+    if et in {"MULTIPLE_RESPONSE"}:
+        return "listening"
+    return "reading"
+
+
+def _proficiency_fit_for_template(
+    *,
+    template: dict[str, Any],
+    catalog: dict[str, Any],
+    requested_modalities: list[str],
+    requested_domains: list[str],
+) -> float:
+    if not requested_modalities and not requested_domains:
+        return 0.75
+
+    taxonomy = catalog.get("taxonomy", {}) if isinstance(catalog.get("taxonomy"), dict) else {}
+    modality_map = (
+        taxonomy.get("exercise_type_modality", {})
+        if isinstance(taxonomy.get("exercise_type_modality"), dict)
+        else {}
+    )
+    domain_map = (
+        taxonomy.get("exercise_type_domains", {})
+        if isinstance(taxonomy.get("exercise_type_domains"), dict)
+        else {}
+    )
+
+    exercise_type = str(template.get("exercise_type", "")).strip().upper()
+    template_modality = str(modality_map.get(exercise_type, "")).strip().lower()
+    if not template_modality:
+        template_modality = _fallback_template_modality(exercise_type)
+
+    template_domains: set[str] = set()
+    raw_domains = domain_map.get(exercise_type, [])
+    if isinstance(raw_domains, list):
+        template_domains |= {str(d).strip().lower() for d in raw_domains if isinstance(d, str) and str(d).strip()}
+
+    lo_tags = template.get("lo_tags", [])
+    if isinstance(lo_tags, list):
+        template_domains |= {str(t).strip().lower() for t in lo_tags if isinstance(t, str) and str(t).strip()}
+
+    rm = {m.strip().lower() for m in requested_modalities if isinstance(m, str) and m.strip()}
+    rd = {d.strip().lower() for d in requested_domains if isinstance(d, str) and d.strip()}
+
+    if rm:
+        modality_score = 1.0 if template_modality in rm else 0.35
+    else:
+        modality_score = 0.75
+
+    if rd:
+        domain_score = 1.0 if (template_domains & rd) else 0.5
+    else:
+        domain_score = 0.75
+
+    return round(0.6 * modality_score + 0.4 * domain_score, 4)
 
 
 def level_fit_for_template(level: str, supported_levels: list[str]) -> float:
@@ -244,6 +372,7 @@ def normalize_distribution(values: list[float]) -> list[int]:
 def build_rationale(score_breakdown: dict[str, float], exercise_type: str) -> str:
     best_key = max(score_breakdown, key=lambda item: score_breakdown[item])
     descriptions = {
+        "proficiency_fit": "proficiency target alignment",
         "lo_fit": "strong LO alignment",
         "level_fit": "good learner-level fit",
         "duration_fit": "time budget compatibility",
@@ -300,6 +429,41 @@ def main() -> int:
         existing_selection = None
 
     level = derive_level(brief, design)
+    requested_modalities: list[str] = []
+    requested_domains: list[str] = []
+    proficiency_context: dict[str, Any] | None = None
+
+    proficiency_targets = _extract_proficiency_targets(brief)
+    if proficiency_targets:
+        try:
+            from lcs_cli.proficiency.registry import load_crosswalks, load_subject_pivots  # type: ignore
+            from lcs_cli.proficiency.normalize import normalize_targets_to_pivot  # type: ignore
+
+            crosswalks = load_crosswalks(repo_root)
+            pivots = load_subject_pivots(repo_root)
+            subject_hint = str(catalog.get("subject", "english"))
+            proficiency_context = normalize_targets_to_pivot(
+                brief_targets=proficiency_targets,
+                subject=subject_hint,
+                pivots=pivots,
+                crosswalks=crosswalks,
+            )
+            if isinstance(proficiency_context, dict):
+                requested_modalities = (
+                    proficiency_context.get("requested_modalities", [])
+                    if isinstance(proficiency_context.get("requested_modalities"), list)
+                    else []
+                )
+            for t in proficiency_targets:
+                tags = t.get("domain_tags", [])
+                if isinstance(tags, list):
+                    requested_domains.extend(str(x) for x in tags if isinstance(x, str))
+
+            derived = _derive_level_from_proficiency(proficiency_context if isinstance(proficiency_context, dict) else {})
+            if derived:
+                level = derived
+        except Exception:  # noqa: BLE001
+            proficiency_context = None
     duration_minutes = int(brief.get("duration_minutes", 60)) if isinstance(brief.get("duration_minutes", 60), int) else 60
     lo_text = extract_lo_text(brief)
     learning_outcomes = brief.get("learning_outcomes", []) if isinstance(brief.get("learning_outcomes"), list) else []
@@ -323,6 +487,12 @@ def main() -> int:
 
         estimated_time = float(item.get("estimated_time_minutes", 3))
         score_breakdown = {
+            "proficiency_fit": _proficiency_fit_for_template(
+                template=item,
+                catalog=catalog,
+                requested_modalities=requested_modalities,
+                requested_domains=requested_domains,
+            ),
             "lo_fit": lo_fit_for_template(lo_text, templates, item),
             "level_fit": level_fit_for_template(level, item.get("supported_levels", [])),
             "duration_fit": duration_fit_for_template(duration_minutes, len(lo_ids), estimated_time),
@@ -399,6 +569,8 @@ def main() -> int:
         "selected_templates": selected,
         "selection_rationale": "Deterministic weighted auto-select from brief/design context.",
     }
+    if proficiency_context is not None:
+        selection["proficiency_context"] = proficiency_context
 
     blueprint_path = unit_dir / "assessment-blueprint.json"
     selection_path = unit_dir / "template-selection.json"

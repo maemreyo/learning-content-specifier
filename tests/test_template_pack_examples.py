@@ -101,6 +101,8 @@ def test_all_valid_examples_pass_schema_and_semantic_validator() -> None:
         ("tfng.label-evidence-mismatch.json", "BLOCK", "TMP_TFNG_LABEL_EVIDENCE_MISMATCH", 1),
         ("sentence-rewrite.single-reference.json", "BLOCK", "TMP_REWRITE_REFERENCE_MIN", 1),
         ("sentence-rewrite.keyword-missing.json", "BLOCK", "TMP_REWRITE_KEYWORD_MISSING", 1),
+        ("multiple-choice-cloze.rationale-mismatch.json", "BLOCK", "TMP_MCC_RATIONALE_COVERAGE", 1),
+        ("speak-opinion-long-turn.point-coverage.json", "BLOCK", "TMP_SOLT_POINT_COVERAGE", 1),
     ],
 )
 def test_regression_examples_hold_expected_validator_behavior(

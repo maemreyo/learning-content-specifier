@@ -76,7 +76,7 @@ def test_template_selector_is_deterministic_for_same_inputs() -> None:
         assert len(selection_payload["selected_templates"]) == selection_payload["top_k"]
         for item in selection_payload["selected_templates"]:
             breakdown = item.get("score_breakdown", {})
-            assert set(breakdown.keys()) == {"lo_fit", "level_fit", "duration_fit", "diversity_fit"}
+            assert set(breakdown.keys()) == {"proficiency_fit", "lo_fit", "level_fit", "duration_fit", "diversity_fit"}
 
         snapshot_a = json.dumps(selection_payload, sort_keys=True)
         _run_selector(unit_dir, env)
@@ -105,5 +105,50 @@ def test_template_selector_prioritizes_sentence_rewrite_for_rewrite_focused_lo()
         selection = json.loads((unit_dir / "template-selection.json").read_text(encoding="utf-8"))
         top_template = selection["selected_templates"][0]["template_id"]
         assert top_template == "sentence-rewrite.v1"
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+@pytest.mark.skipif(not PACK_DIR.is_dir(), reason="english template pack missing")
+def test_template_selector_prefers_speaking_templates_for_ielts_speaking_target() -> None:
+    unit_id = "992-template-selector-ielts-speaking"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+
+    try:
+        _run_setup_design(env)
+        brief_file = unit_dir / "brief.json"
+        brief = json.loads(brief_file.read_text(encoding="utf-8"))
+        brief["proficiency_targets"] = [
+            {
+                "framework_id": "ielts.v1",
+                "scale_id": "band",
+                "dimension": "speaking",
+                "target": {"value": 7.5},
+                "priority": "P1",
+                "provenance": "test",
+            }
+        ]
+        brief["learning_outcomes"][0]["statement"] = "Learner will be able to express and justify an opinion in spoken English."
+        brief["learning_outcomes"][0]["evidence"] = "Assess spoken opinion quality, coherence, and appropriate language use."
+        brief_file.write_text(json.dumps(brief, indent=2), encoding="utf-8")
+
+        _run_selector(unit_dir, env)
+        selection = json.loads((unit_dir / "template-selection.json").read_text(encoding="utf-8"))
+        top_template = selection["selected_templates"][0]["template_id"]
+        speaking_templates = {
+            "oral-interview-qa.v1",
+            "cue-card-long-turn.v1",
+            "collaborative-discussion.v1",
+            "read-aloud.v1",
+            "describe-picture.v1",
+            "repeat-sentence.v1",
+            "retell-lecture.v1",
+            "answer-short-question.v1",
+            "respond-to-information.v1",
+            "speak-opinion-long-turn.v1",
+        }
+        assert top_template in speaking_templates
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)

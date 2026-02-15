@@ -1,0 +1,74 @@
+{
+  "registry_version": "1.0.0",
+  "frameworks": [
+    {
+      "framework_id": "cefr.v1",
+      "title": "Common European Framework of Reference for Languages (CEFR)",
+      "scales": [
+        {
+          "scale_id": "global",
+          "kind": "ordinal",
+          "ordered_values": ["A1", "A2", "B1", "B2", "C1", "C2"]
+        }
+      ],
+      "dimensions": ["global"]
+    },
+    {
+      "framework_id": "ielts.v1",
+      "title": "IELTS Band Scale",
+      "scales": [
+        {
+          "scale_id": "band",
+          "kind": "numeric",
+          "min": 0.0,
+          "max": 9.0,
+          "step": 0.5
+        }
+      ],
+      "dimensions": ["overall", "speaking", "writing", "reading", "listening"]
+    },
+    {
+      "framework_id": "toeic.v1",
+      "title": "TOEIC Score Scale",
+      "scales": [
+        {
+          "scale_id": "listening",
+          "kind": "numeric",
+          "min": 0,
+          "max": 495,
+          "step": 5
+        },
+        {
+          "scale_id": "reading",
+          "kind": "numeric",
+          "min": 0,
+          "max": 495,
+          "step": 5
+        },
+        {
+          "scale_id": "speaking",
+          "kind": "numeric",
+          "min": 0,
+          "max": 200,
+          "step": 10
+        },
+        {
+          "scale_id": "writing",
+          "kind": "numeric",
+          "min": 0,
+          "max": 200,
+          "step": 10
+        },
+        {
+          "scale_id": "lr_total",
+          "kind": "numeric",
+          "min": 0,
+          "max": 990,
+          "step": 5
+        }
+      ],
+      "dimensions": ["listening", "reading", "speaking", "writing", "lr_total"]
+    }
+  ]
+}
+
