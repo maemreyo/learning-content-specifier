@@ -8,6 +8,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PACK_DIR = ROOT.parent / "subjects" / "english" / ".lcs" / "template-pack" / "v1"
 VALIDATOR = PACK_DIR / "validators" / "validate_template_pack.py"
+CATALOG = PACK_DIR / "catalog.json"
 
 
 def _run_validator(item_file: Path) -> tuple[int, dict]:
@@ -22,6 +23,63 @@ def _run_validator(item_file: Path) -> tuple[int, dict]:
     ]
     result = subprocess.run(cmd, cwd=ROOT, check=False, capture_output=True, text=True)
     return result.returncode, json.loads(result.stdout.strip())
+
+
+def _collect_template_ids(examples_dir: Path) -> set[str]:
+    ids: set[str] = set()
+    if not examples_dir.is_dir():
+        return ids
+    for path in examples_dir.glob("*.json"):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        template_id = payload.get("template_id")
+        if isinstance(template_id, str) and template_id.strip():
+            ids.add(template_id.strip().lower())
+    return ids
+
+
+@pytest.mark.skipif(not CATALOG.is_file(), reason="english template pack catalog missing")
+def test_english_template_pack_taxonomy_and_examples_cover_all_templates() -> None:
+    catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+    assert isinstance(catalog, dict)
+
+    taxonomy = catalog.get("taxonomy", {})
+    assert isinstance(taxonomy, dict)
+    modalities = set(taxonomy.get("modalities", []))
+    skill_domains = set(taxonomy.get("skill_domains", []))
+    exercise_type_modality = taxonomy.get("exercise_type_modality", {})
+    exercise_type_domains = taxonomy.get("exercise_type_domains", {})
+    assert isinstance(exercise_type_modality, dict)
+    assert isinstance(exercise_type_domains, dict)
+
+    templates = catalog.get("templates", [])
+    assert isinstance(templates, list) and templates
+
+    template_ids: set[str] = set()
+    for idx, t in enumerate(templates):
+        assert isinstance(t, dict), f"templates[{idx}] must be an object"
+        template_id = str(t.get("template_id", "")).strip().lower()
+        assert template_id, f"templates[{idx}].template_id is required"
+        template_ids.add(template_id)
+
+        exercise_type = str(t.get("exercise_type", "")).strip()
+        assert exercise_type, f"templates[{idx}].exercise_type is required"
+        assert exercise_type in exercise_type_modality, f"missing taxonomy.exercise_type_modality for {exercise_type}"
+        assert exercise_type in exercise_type_domains, f"missing taxonomy.exercise_type_domains for {exercise_type}"
+
+        modality = exercise_type_modality[exercise_type]
+        assert isinstance(modality, str) and modality in modalities, f"invalid modality for {exercise_type}: {modality!r}"
+
+        domains = exercise_type_domains[exercise_type]
+        assert isinstance(domains, list) and domains, f"domains must be non-empty list for {exercise_type}"
+        assert all(isinstance(d, str) and d in skill_domains for d in domains), f"unknown domain in {exercise_type}: {domains}"
+
+    valid_ids = _collect_template_ids(PACK_DIR / "examples" / "valid")
+    regression_ids = _collect_template_ids(PACK_DIR / "examples" / "regression")
+    assert template_ids <= valid_ids, f"missing valid examples for: {sorted(template_ids - valid_ids)}"
+    assert template_ids <= regression_ids, f"missing regression examples for: {sorted(template_ids - regression_ids)}"
 
 
 @pytest.mark.skipif(not VALIDATOR.is_file(), reason="template pack validator missing")
