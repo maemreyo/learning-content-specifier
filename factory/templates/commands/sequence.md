@@ -14,8 +14,8 @@ handoffs:
     prompt: Author outputs from approved sequence.
     send: true
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts
 ---
 
 ## Intent
@@ -33,6 +33,7 @@ $ARGUMENTS
 - YOU MUST map actionable tasks to LOs where applicable.
 - YOU MUST include explicit output file paths under `outputs/`.
 - YOU MUST include gate tasks before `/lcs.author` execution.
+- YOU MUST treat missing design contracts (`assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`) as blocking.
 - YOU MUST update both `sequence.md` and `sequence.json`.
 - YOU MUST propagate `template_id` metadata from `template-selection.json` into task metadata when task maps to an exercise type.
 - YOU MUST map exercise authoring tasks from `exercise-design.json` (one task per `exercise_id` unless explicitly merged).

@@ -29,6 +29,7 @@ $ARGUMENTS
 - YOU MUST define hard-gate policy in testable language (objective criteria, not vague intent).
 - YOU MUST generate/maintain `programs/<program_id>/roadmap.json` and `programs/<program_id>/roadmap.md` when program scope is multi-unit (>=8 study sessions, cadence-flexible).
 - YOU MUST propagate governance-impacting changes into templates under `.lcs/templates/`.
+- YOU MUST enforce fail-closed policy: template-pack contracts are mandatory for `/lcs.design` and downstream stages.
 - YOU MUST NOT leave unresolved placeholders.
 - YOU MUST NOT edit `.lcs/memory/charter.md` in this command.
 

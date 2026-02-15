@@ -33,6 +33,7 @@ if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
 $paths = Get-UnitPathsEnv
 $contractVersion = Get-ContractVersion
 $selectorTool = Resolve-PythonTool -ToolName 'generate_template_selection.py'
+$validatorTool = Resolve-PythonTool -ToolName 'validate_artifact_contracts.py'
 
 if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
 
@@ -132,7 +133,7 @@ if ($ForceReset -or -not (Test-Path $paths.DESIGN_JSON_FILE)) {
   "pedagogy_decisions": {
     "profile": "corporate-lnd-v1",
     "confidence_threshold": 0.7,
-    "confidence": 0.0,
+    "confidence": 0.7,
     "candidate_methods": [
       "direct-instruction",
       "worked-examples",
@@ -222,7 +223,11 @@ if ($ForceReset -or -not (Test-Path $paths.EXERCISE_DESIGN_JSON_FILE)) {
       "template_id": "mcq.v1",
       "day": 1,
       "target_path": "outputs/module-01/exercises/ex001.md",
-      "status": "TODO"
+      "status": "TODO",
+      "template_schema_ref": "schemas/mcq.v1.schema.json",
+      "template_rules_ref": "rules/mcq.v1.rules.md",
+      "scoring_rubric_required_keys": [],
+      "scoring_rubric_source": "template-pack"
     }
   ]
 }
@@ -266,7 +271,7 @@ if ($ForceReset -or -not (Test-Path $paths.DESIGN_DECISIONS_FILE)) {
   "selected_secondary": [],
   "rationale": "Populate from /lcs.design decision process.",
   "confidence_threshold": 0.7,
-  "confidence": 0.0,
+  "confidence": 0.7,
   "web_research_triggers": [
     "time-sensitive domain/tooling",
     "confidence below threshold",
@@ -383,8 +388,8 @@ if ($ForceReset -or -not (Test-Path $paths.TEMPLATE_SELECTION_FILE)) {
 "@ | Set-Content -Path $paths.TEMPLATE_SELECTION_FILE -Encoding utf8
 }
 
-# Attempt deterministic template auto-select (English-first). If template pack is
-# not found, selector exits SKIP and current scaffolds remain.
+# Attempt deterministic template auto-select (English-first).
+# Template pack is mandatory for fail-closed design setup.
 $selectorArgs = @(
     $selectorTool,
     '--repo-root', $paths.REPO_ROOT,
@@ -410,12 +415,14 @@ if (Get-Command uv -ErrorAction SilentlyContinue) {
 if ($selectorRaw) {
     try {
         $selectorObj = $selectorRaw | ConvertFrom-Json
-        if ([string]$selectorObj.STATUS -eq 'BLOCK') {
-            throw "template selector blocked setup-design for $($paths.UNIT_DIR)"
+        if ([string]$selectorObj.STATUS -ne 'PASS') {
+            throw "template selector must return PASS for setup-design ($($paths.UNIT_DIR)); got '$($selectorObj.STATUS)'"
         }
     } catch {
         throw
     }
+} else {
+    throw "template selector produced no output; setup-design cannot continue for $($paths.UNIT_DIR)"
 }
 
 if ($ForceReset -or -not (Test-Path $paths.SEQUENCE_JSON_FILE)) {
@@ -517,6 +524,41 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
   }
 }
 "@ | Set-Content -Path $paths.MANIFEST_FILE -Encoding utf8
+}
+
+$validatorArgs = @(
+    $validatorTool,
+    '--repo-root', $paths.REPO_ROOT,
+    '--unit-dir', $paths.UNIT_DIR,
+    '--json'
+)
+$validatorRaw = ''
+if (Get-Command uv -ErrorAction SilentlyContinue) {
+    try {
+        $validatorRaw = (& uv run python @validatorArgs 2>$null)
+    } catch {
+        $validatorRaw = ''
+    }
+} else {
+    try {
+        $validatorRaw = (& $pythonBin @validatorArgs 2>$null)
+    } catch {
+        $validatorRaw = ''
+    }
+}
+
+if (-not $validatorRaw) {
+    throw "artifact contract validator produced no output for $($paths.UNIT_DIR)"
+}
+
+try {
+    $validatorObj = $validatorRaw | ConvertFrom-Json
+} catch {
+    throw "artifact contract validator returned invalid JSON for $($paths.UNIT_DIR)"
+}
+
+if ([string]$validatorObj.STATUS -ne 'PASS') {
+    throw "setup-design contract validation must PASS for $($paths.UNIT_DIR); got '$($validatorObj.STATUS)'"
 }
 
 if ($Json) {

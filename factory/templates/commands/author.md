@@ -1,8 +1,8 @@
 ---
 description: Execute approved production sequence and author local output assets.
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-sequence --include-sequence
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireSequence -IncludeSequence
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --require-sequence --include-sequence
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -RequireSequence -IncludeSequence
 gate_scripts:
   sh: factory/scripts/bash/validate-author-gates.sh --json
   ps: factory/scripts/powershell/validate-author-gates.ps1 -Json
@@ -28,6 +28,7 @@ $ARGUMENTS
 - YOU MUST mark completed sequence tasks as `[X]` in `sequence.md` and mirror progress in `sequence.json`.
 - YOU MUST use contract validator pipeline trace (`CONTRACT_PIPELINE`, `CONTRACT_BLOCKING_STEPS`, blockers) to report deterministic fix order.
 - YOU MUST NOT bypass rubric/audit blockers.
+- YOU MUST rerun contract validation after writing outputs and stop if post-author validation is `BLOCK`.
 
 ## Execution Steps
 

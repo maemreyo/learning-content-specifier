@@ -35,6 +35,8 @@ $ARGUMENTS
 - YOU MUST generate and maintain `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
 - YOU MUST generate or update `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, and `outputs/manifest.json`.
 - YOU MUST generate or update `exercise-design.md` and `exercise-design.json` with concrete per-exercise specs (`exercise_id`, `lo_id`, `template_id`, `day`, `target_path`).
+- YOU MUST treat template-pack schema `item.scoring_rubric` as the source of truth for exercise scoring rubric requirements.
+- YOU MUST stamp each exercise in `exercise-design.json` with `template_schema_ref`, `template_rules_ref`, `scoring_rubric_required_keys`, and `scoring_rubric_source=template-pack`.
 - YOU MUST apply Corporate L&D default pedagogy weights:
   - `outcome_fit=0.30`
   - `evidence_fit=0.25`
@@ -78,6 +80,7 @@ $ARGUMENTS
 - Gate G-DS-005: `design.json`, `content-model.json`, `design-decisions.json`, and `outputs/manifest.json` are present.
 - Gate G-DS-006: `assessment-blueprint.json` and `template-selection.json` are present and machine-parseable.
 - Gate G-DS-007: `exercise-design.json` is present and each exercise references a valid LO + template.
+- Gate G-DS-008: scoring rubric requirements in `exercise-design.json` are derived from template-pack schema metadata.
 
 ## Failure Modes
 

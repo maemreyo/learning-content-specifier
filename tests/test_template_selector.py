@@ -44,6 +44,21 @@ def _run_selector(unit_dir: Path, env: dict[str, str]) -> dict:
     return json.loads(result.stdout.strip())
 
 
+def _run_selector_raw(unit_dir: Path, env: dict[str, str]) -> subprocess.CompletedProcess:
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(SELECTOR),
+        "--repo-root",
+        str(ROOT),
+        "--unit-dir",
+        str(unit_dir),
+        "--json",
+    ]
+    return subprocess.run(cmd, cwd=ROOT, env=env, check=False, capture_output=True, text=True)
+
+
 def _prepare_unit(unit_id: str) -> Path:
     unit_dir = ROOT / "programs" / PROGRAM_ID / "units" / unit_id
     if unit_dir.exists():
@@ -156,3 +171,31 @@ def test_template_selector_prefers_speaking_templates_for_ielts_speaking_target(
         assert top_template in speaking_templates
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_template_selector_blocks_when_template_pack_is_missing() -> None:
+    unit_id = "992-template-selector-missing-pack"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_TEMPLATE_PACK_DIR"] = str(unit_dir / "__missing_template_pack__")
+
+    try:
+        result = _run_selector_raw(unit_dir, env)
+        assert result.returncode != 0
+        payload = json.loads(result.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert payload["REASON"] == "template-pack-not-found"
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_setup_design_fails_closed_when_template_pack_is_missing() -> None:
+    unit_id = "992-setup-design-missing-pack"
+    _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+    env["LCS_TEMPLATE_PACK_DIR"] = str(ROOT / "__missing_template_pack__")
+
+    with pytest.raises(subprocess.CalledProcessError):
+        _run_setup_design(env)

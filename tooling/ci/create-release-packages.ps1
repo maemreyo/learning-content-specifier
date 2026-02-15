@@ -296,6 +296,20 @@ function Build-Variant {
         Copy-Item -Path "contracts/*" -Destination $contractsDestDir -Recurse -Force
         Write-Host "Copied contracts -> .lcs/contracts"
     }
+
+    $templatePackCandidates = @(
+        "subjects/english/.lcs/template-pack/v1",
+        "../subjects/english/.lcs/template-pack/v1"
+    )
+    $templatePackSrc = $templatePackCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($templatePackSrc) {
+        $templatePackDestDir = Join-Path $specDir "template-pack/v1"
+        New-Item -ItemType Directory -Path $templatePackDestDir -Force | Out-Null
+        Copy-Item -Path "$templatePackSrc/*" -Destination $templatePackDestDir -Recurse -Force
+        Write-Host "Copied $templatePackSrc -> .lcs/template-pack/v1"
+    } else {
+        Write-Warning "Template-pack source not found. Checked: $($templatePackCandidates -join ', ')"
+    }
     
     # Generate agent-specific command files
     switch ($Agent) {

@@ -26,6 +26,9 @@ class ContractPair:
 REQUIRED_CONTRACTS = (
     ContractPair("brief.json", "brief.schema.json"),
     ContractPair("design.json", "design.schema.json"),
+    ContractPair("assessment-blueprint.json", "assessment-blueprint.schema.json"),
+    ContractPair("template-selection.json", "template-selection.schema.json"),
+    ContractPair("exercise-design.json", "exercise-design.schema.json"),
     ContractPair("sequence.json", "sequence.schema.json"),
     ContractPair("audit-report.json", "audit-report.schema.json"),
     ContractPair("outputs/manifest.json", "manifest.schema.json"),
@@ -143,6 +146,8 @@ def _cross_artifact_checks(unit_dir: Path, artifacts: dict[str, dict | list]) ->
             )
 
     brief = artifacts.get("brief.json")
+    design = artifacts.get("design.json")
+    exercise_design = artifacts.get("exercise-design.json")
     sequence = artifacts.get("sequence.json")
     audit = artifacts.get("audit-report.json")
     manifest = artifacts.get("outputs/manifest.json")
@@ -253,6 +258,148 @@ def _cross_artifact_checks(unit_dir: Path, artifacts: dict[str, dict | list]) ->
 
             if cycle_detected:
                 errors.append(f"{unit_dir / 'sequence.json'}: dependency cycle detected in tasks graph")
+
+    if isinstance(sequence, dict) and isinstance(exercise_design, dict):
+        tasks = sequence.get("tasks", [])
+        exercises = exercise_design.get("exercises", [])
+
+        exercise_index: dict[str, dict[str, str]] = {}
+        if isinstance(exercises, list):
+            for exercise in exercises:
+                if not isinstance(exercise, dict):
+                    continue
+                exercise_id = exercise.get("exercise_id")
+                target_path = exercise.get("target_path")
+                template_id = exercise.get("template_id")
+                if (
+                    isinstance(exercise_id, str)
+                    and isinstance(target_path, str)
+                    and isinstance(template_id, str)
+                ):
+                    exercise_index[exercise_id] = {
+                        "target_path": target_path,
+                        "template_id": template_id,
+                    }
+
+        if isinstance(tasks, list) and tasks and exercise_index:
+            tasks_by_target: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+            for index, task in enumerate(tasks):
+                if not isinstance(task, dict):
+                    continue
+                target_path = task.get("target_path")
+                if isinstance(target_path, str):
+                    tasks_by_target.setdefault(target_path, []).append((index, task))
+
+                declared_exercise_ids: set[str] = set()
+                single_exercise_id = task.get("exercise_id")
+                if isinstance(single_exercise_id, str):
+                    declared_exercise_ids.add(single_exercise_id)
+                exercise_refs = task.get("exercise_refs", [])
+                if isinstance(exercise_refs, list):
+                    declared_exercise_ids.update(ref for ref in exercise_refs if isinstance(ref, str))
+
+                declared_template_ids: set[str] = set()
+                single_template_id = task.get("template_id")
+                if isinstance(single_template_id, str):
+                    declared_template_ids.add(single_template_id)
+                template_ids = task.get("template_ids", [])
+                if isinstance(template_ids, list):
+                    declared_template_ids.update(ref for ref in template_ids if isinstance(ref, str))
+
+                if declared_template_ids and not declared_exercise_ids:
+                    errors.append(
+                        f"{unit_dir / 'sequence.json'}: tasks[{index}] declares template metadata but has no "
+                        "exercise_id/exercise_refs mapping"
+                    )
+
+                if declared_exercise_ids and not declared_template_ids:
+                    errors.append(
+                        f"{unit_dir / 'sequence.json'}: tasks[{index}] declares exercise mapping but has no "
+                        "template_id/template_ids metadata"
+                    )
+
+                for exercise_id in sorted(declared_exercise_ids):
+                    exercise_meta = exercise_index.get(exercise_id)
+                    if exercise_meta is None:
+                        errors.append(
+                            f"{unit_dir / 'sequence.json'}: tasks[{index}] references unknown exercise_id "
+                            f"'{exercise_id}'"
+                        )
+                        continue
+
+                    if not isinstance(target_path, str) or target_path != exercise_meta["target_path"]:
+                        errors.append(
+                            f"{unit_dir / 'sequence.json'}: tasks[{index}] exercise '{exercise_id}' must target "
+                            f"'{exercise_meta['target_path']}'"
+                        )
+
+                    expected_template_id = exercise_meta["template_id"]
+                    if declared_template_ids and expected_template_id not in declared_template_ids:
+                        errors.append(
+                            f"{unit_dir / 'sequence.json'}: tasks[{index}] exercise '{exercise_id}' requires "
+                            f"template metadata '{expected_template_id}'"
+                        )
+
+            for exercise_id, exercise_meta in sorted(exercise_index.items()):
+                matched_tasks = tasks_by_target.get(exercise_meta["target_path"], [])
+                if not matched_tasks:
+                    errors.append(
+                        f"{unit_dir / 'sequence.json'}: missing task for exercise '{exercise_id}' "
+                        f"target_path '{exercise_meta['target_path']}'"
+                    )
+                    continue
+
+                has_exercise_mapping = False
+                has_template_mapping = False
+                for _, task in matched_tasks:
+                    mapped_ids: set[str] = set()
+                    if isinstance(task.get("exercise_id"), str):
+                        mapped_ids.add(task["exercise_id"])
+                    refs = task.get("exercise_refs", [])
+                    if isinstance(refs, list):
+                        mapped_ids.update(ref for ref in refs if isinstance(ref, str))
+
+                    if exercise_id not in mapped_ids:
+                        continue
+
+                    has_exercise_mapping = True
+                    mapped_templates: set[str] = set()
+                    if isinstance(task.get("template_id"), str):
+                        mapped_templates.add(task["template_id"])
+                    template_refs = task.get("template_ids", [])
+                    if isinstance(template_refs, list):
+                        mapped_templates.update(ref for ref in template_refs if isinstance(ref, str))
+                    if exercise_meta["template_id"] in mapped_templates:
+                        has_template_mapping = True
+
+                if not has_exercise_mapping:
+                    errors.append(
+                        f"{unit_dir / 'sequence.json'}: tasks targeting '{exercise_meta['target_path']}' must include "
+                        f"exercise mapping for '{exercise_id}'"
+                    )
+                if not has_template_mapping:
+                    errors.append(
+                        f"{unit_dir / 'sequence.json'}: exercise '{exercise_id}' must include template metadata "
+                        f"'{exercise_meta['template_id']}' in mapped task(s)"
+                    )
+
+    if isinstance(design, dict):
+        decisions = design.get("pedagogy_decisions", {})
+        if isinstance(decisions, dict):
+            threshold = decisions.get("confidence_threshold", 0.7)
+            confidence = decisions.get("confidence", 0.0)
+            try:
+                threshold_value = float(threshold)
+                confidence_value = float(confidence)
+                if confidence_value < threshold_value:
+                    errors.append(
+                        f"{unit_dir / 'design.json'}: confidence {confidence_value:.2f} is below threshold "
+                        f"{threshold_value:.2f}; run /lcs.refine or /lcs.design with stronger evidence"
+                    )
+            except (TypeError, ValueError):
+                errors.append(
+                    f"{unit_dir / 'design.json'}: pedagogy_decisions confidence/threshold must be numeric"
+                )
 
     if isinstance(manifest, dict):
         outcomes = manifest.get("outcomes", [])
@@ -402,6 +549,207 @@ def _cross_artifact_checks(unit_dir: Path, artifacts: dict[str, dict | list]) ->
                 )
 
     return errors
+
+
+def _derive_scoring_rubric_required_keys(schema_payload: dict[str, Any]) -> list[str]:
+    if not isinstance(schema_payload, dict):
+        return []
+    props = schema_payload.get("properties", {})
+    if not isinstance(props, dict):
+        return []
+    item_props = props.get("item", {})
+    if not isinstance(item_props, dict):
+        return []
+    item_children = item_props.get("properties", {})
+    if not isinstance(item_children, dict):
+        return []
+    scoring = item_children.get("scoring_rubric", {})
+    if not isinstance(scoring, dict):
+        return []
+    required = scoring.get("required", [])
+    if not isinstance(required, list):
+        return []
+    return sorted(str(key).strip() for key in required if isinstance(key, str) and str(key).strip())
+
+
+def _validate_exercise_design_contract(
+    *,
+    unit_dir: Path,
+    template_pack_dir: Path,
+    catalog: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    findings: list[dict[str, Any]] = []
+    outputs: list[str] = []
+
+    exercise_design_path = unit_dir / "exercise-design.json"
+    payload = _load_json(exercise_design_path)
+    if not isinstance(payload, dict):
+        findings.append(
+            _build_finding(
+                code="TMP_EXERCISE_DESIGN_INVALID_JSON",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="exercise-design.json must be a JSON object",
+                path=str(exercise_design_path),
+                rule_id="exercise-design-json-object",
+            )
+        )
+        return findings, outputs
+
+    outputs.append(str(exercise_design_path))
+    exercises = payload.get("exercises", [])
+    if not isinstance(exercises, list) or not exercises:
+        findings.append(
+            _build_finding(
+                code="TMP_EXERCISE_DESIGN_EMPTY",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="exercise-design.json must include non-empty exercises",
+                path=str(exercise_design_path),
+                rule_id="exercise-design-exercises-required",
+            )
+        )
+        return findings, outputs
+
+    catalog_templates = {
+        _normalize_template_id(item.get("template_id")): item
+        for item in catalog.get("templates", [])
+        if isinstance(item, dict)
+    }
+
+    for index, item in enumerate(exercises):
+        if not isinstance(item, dict):
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_ITEM_INVALID",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="exercise entry must be an object",
+                    path=f"{exercise_design_path}#/exercises/{index}",
+                    rule_id="exercise-design-item-object",
+                )
+            )
+            continue
+
+        template_id = _normalize_template_id(item.get("template_id"))
+        catalog_entry = catalog_templates.get(template_id)
+        if not template_id or catalog_entry is None:
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_TEMPLATE_UNKNOWN",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=f"exercise references unknown template_id '{template_id or 'missing'}'",
+                    path=f"{exercise_design_path}#/exercises/{index}",
+                    rule_id="exercise-template-known",
+                )
+            )
+            continue
+
+        expected_schema_ref = str(catalog_entry.get("schema", "")).strip()
+        expected_rules_ref = str(catalog_entry.get("rules", "")).strip()
+        actual_schema_ref = str(item.get("template_schema_ref", "")).strip()
+        actual_rules_ref = str(item.get("template_rules_ref", "")).strip()
+        scoring_source = str(item.get("scoring_rubric_source", "")).strip()
+
+        if actual_schema_ref != expected_schema_ref:
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_SCHEMA_REF_MISMATCH",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=f"template_schema_ref '{actual_schema_ref}' must match catalog schema '{expected_schema_ref}'",
+                    path=f"{exercise_design_path}#/exercises/{index}/template_schema_ref",
+                    rule_id="exercise-template-schema-ref",
+                )
+            )
+
+        if actual_rules_ref != expected_rules_ref:
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_RULES_REF_MISMATCH",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=f"template_rules_ref '{actual_rules_ref}' must match catalog rules '{expected_rules_ref}'",
+                    path=f"{exercise_design_path}#/exercises/{index}/template_rules_ref",
+                    rule_id="exercise-template-rules-ref",
+                )
+            )
+
+        if scoring_source != "template-pack":
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_SCORING_SOURCE_INVALID",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="scoring_rubric_source must be 'template-pack'",
+                    path=f"{exercise_design_path}#/exercises/{index}/scoring_rubric_source",
+                    rule_id="exercise-scoring-source",
+                )
+            )
+
+        schema_path = (template_pack_dir / expected_schema_ref).resolve()
+        if not schema_path.is_file():
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_TEMPLATE_SCHEMA_MISSING",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=f"template schema file not found for template '{template_id}'",
+                    path=str(schema_path),
+                    rule_id="exercise-template-schema-file",
+                )
+            )
+            continue
+
+        schema_payload = _load_json(schema_path)
+        if not isinstance(schema_payload, dict):
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_TEMPLATE_SCHEMA_INVALID_JSON",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=f"template schema is invalid JSON for template '{template_id}'",
+                    path=str(schema_path),
+                    rule_id="exercise-template-schema-json",
+                )
+            )
+            continue
+
+        expected_rubric_keys = _derive_scoring_rubric_required_keys(schema_payload)
+        provided_keys = item.get("scoring_rubric_required_keys", [])
+        if not isinstance(provided_keys, list):
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_SCORING_RUBRIC_KEYS_INVALID",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message="scoring_rubric_required_keys must be a list",
+                    path=f"{exercise_design_path}#/exercises/{index}/scoring_rubric_required_keys",
+                    rule_id="exercise-scoring-rubric-keys-list",
+                )
+            )
+            continue
+
+        normalized_provided = sorted(
+            str(key).strip() for key in provided_keys if isinstance(key, str) and str(key).strip()
+        )
+        if normalized_provided != expected_rubric_keys:
+            findings.append(
+                _build_finding(
+                    code="TMP_EXERCISE_SCORING_RUBRIC_KEYS_MISMATCH",
+                    category="TEMPLATE",
+                    severity="HIGH",
+                    message=(
+                        f"scoring_rubric_required_keys {normalized_provided} do not match template schema "
+                        f"required keys {expected_rubric_keys}"
+                    ),
+                    path=f"{exercise_design_path}#/exercises/{index}/scoring_rubric_required_keys",
+                    rule_id="exercise-scoring-rubric-keys-match-template",
+                )
+            )
+
+    return findings, outputs
 
 
 def _extract_path_hint(message: str) -> str:
@@ -1280,7 +1628,17 @@ def main() -> int:
         )
         catalog_status, catalog_severity = _phase_status(catalog_phase_findings)
     else:
-        catalog_status, catalog_severity = "SKIP", "INFO"
+        catalog_phase_findings.append(
+            _build_finding(
+                code="TMP_PACK_DIR_MISSING",
+                category="TEMPLATE",
+                severity="HIGH",
+                message="Template pack directory not found; fail-closed policy blocks workflow",
+                path=str(repo_root),
+                rule_id="template-pack-required",
+            )
+        )
+        catalog_status, catalog_severity = _phase_status(catalog_phase_findings)
 
     findings.extend(catalog_phase_findings)
     catalog_refs = list(range(len(findings) - len(catalog_phase_findings), len(findings))) if catalog_phase_findings else []
@@ -1293,7 +1651,7 @@ def main() -> int:
             message=(
                 "Template catalog loaded"
                 if catalog_status != "SKIP"
-                else "Template catalog not found; template checks skipped"
+                else "Template catalog not found"
             ),
             inputs=[str(template_pack_dir)] if template_pack_dir else [],
             outputs=catalog_outputs,
@@ -1315,6 +1673,14 @@ def main() -> int:
             blueprint_payload,
             selection_payload,
         ) = _validate_blueprint_schema(unit_dir=unit_dir, catalog=catalog_payload)
+        if template_pack_dir is not None:
+            exercise_design_findings, exercise_design_outputs = _validate_exercise_design_contract(
+                unit_dir=unit_dir,
+                template_pack_dir=template_pack_dir,
+                catalog=catalog_payload,
+            )
+            template_schema_findings.extend(exercise_design_findings)
+            template_schema_outputs.extend(exercise_design_outputs)
         if not template_schema_outputs and not template_schema_findings:
             template_schema_status, template_schema_severity = "SKIP", "INFO"
         else:
@@ -1339,7 +1705,11 @@ def main() -> int:
                 if template_schema_status != "SKIP"
                 else "Template schema checks skipped"
             ),
-            inputs=[str(unit_dir / "assessment-blueprint.json"), str(unit_dir / "template-selection.json")],
+            inputs=[
+                str(unit_dir / "assessment-blueprint.json"),
+                str(unit_dir / "template-selection.json"),
+                str(unit_dir / "exercise-design.json"),
+            ],
             outputs=template_schema_outputs,
             findings_ref=template_schema_refs,
             duration_ms=int((time.perf_counter() - phase_start) * 1000),
@@ -1515,7 +1885,11 @@ def main() -> int:
                 if template_rule_status != "SKIP"
                 else "Template semantic checks skipped"
             ),
-            inputs=[str(unit_dir / "assessment-blueprint.json"), str(unit_dir / "template-selection.json")],
+            inputs=[
+                str(unit_dir / "assessment-blueprint.json"),
+                str(unit_dir / "template-selection.json"),
+                str(unit_dir / "exercise-design.json"),
+            ],
             outputs=template_rule_outputs,
             findings_ref=template_rule_refs,
             duration_ms=int((time.perf_counter() - phase_start) * 1000),

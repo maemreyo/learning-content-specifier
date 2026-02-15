@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import sys
 from pathlib import Path
@@ -101,9 +102,15 @@ def dump_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def resolve_template_pack_dir(repo_root: Path, override: str | None) -> Path | None:
-    candidates: list[Path] = []
+    env_override = os.getenv("LCS_TEMPLATE_PACK_DIR", "").strip()
     if override:
-        candidates.append(Path(override).expanduser())
+        candidate = Path(override).expanduser().resolve()
+        return candidate if candidate.is_dir() else None
+    if env_override:
+        candidate = Path(env_override).expanduser().resolve()
+        return candidate if candidate.is_dir() else None
+
+    candidates: list[Path] = []
 
     candidates.extend(
         [
@@ -394,12 +401,16 @@ def main() -> int:
     template_pack_dir = resolve_template_pack_dir(repo_root, args.template_pack_dir)
     if template_pack_dir is None:
         payload = {
-            "STATUS": "SKIP",
+            "STATUS": "BLOCK",
             "REASON": "template-pack-not-found",
             "UNIT_DIR": str(unit_dir),
         }
-        print(json.dumps(payload, separators=(",", ":")) if args.json else "Template pack not found; skipped selector")
-        return 0
+        print(
+            json.dumps(payload, separators=(",", ":"))
+            if args.json
+            else "Template pack not found; selector blocked."
+        )
+        return 1
 
     catalog_path = template_pack_dir / "catalog.json"
     catalog = load_json(catalog_path)

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.artifact.rubric-gates.v1",
+  "title": "LCS Rubric Gates Artifact v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "unit_id",
+    "generated_at",
+    "rubric_file",
+    "gates"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
+    },
+    "unit_id": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}-[a-z0-9-]+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rubric_file": {
+      "type": "string",
+      "pattern": "^rubrics/.+\\.md$"
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "gate_id",
+          "group",
+          "status",
+          "severity",
+          "evidence",
+          "checked"
+        ],
+        "properties": {
+          "gate_id": {
+            "type": "string",
+            "pattern": "^RB[0-9]{3}$"
+          },
+          "group": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "BLOCK", "UNSET", "TODO"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checked": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

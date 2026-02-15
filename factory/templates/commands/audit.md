@@ -1,8 +1,8 @@
 ---
 description: Perform deterministic cross-artifact audit across brief, design, sequence, and rubric artifacts.
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-sequence --include-sequence
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireSequence -IncludeSequence
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --require-sequence --include-sequence
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -RequireSequence -IncludeSequence
 ---
 
 ## Intent
@@ -24,6 +24,7 @@ $ARGUMENTS
 - YOU MUST include role readiness booleans: `teacher_ready`, `creator_ready`, `ops_ready`.
 - YOU MUST apply web-research triggers when confidence is low, domain is time-sensitive, or artifact signals conflict.
 - YOU MUST NOT allow `/lcs.author` when decision is `BLOCK`.
+- YOU MUST treat template-pack availability/compliance findings as blocking when severity is `CRITICAL|HIGH`.
 
 ## Execution Steps
 

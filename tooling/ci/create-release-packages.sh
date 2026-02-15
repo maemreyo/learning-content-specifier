@@ -223,6 +223,26 @@ build_variant() {
     cp -r contracts/* "$SPEC_DIR/contracts/"
     echo "Copied contracts -> .lcs/contracts"
   fi
+
+  TEMPLATE_PACK_CANDIDATES=(
+    "subjects/english/.lcs/template-pack/v1"
+    "../subjects/english/.lcs/template-pack/v1"
+  )
+  TEMPLATE_PACK_SRC=""
+  for candidate in "${TEMPLATE_PACK_CANDIDATES[@]}"; do
+    if [[ -d "$candidate" ]]; then
+      TEMPLATE_PACK_SRC="$candidate"
+      break
+    fi
+  done
+
+  if [[ -n "$TEMPLATE_PACK_SRC" ]]; then
+    mkdir -p "$SPEC_DIR/template-pack/v1"
+    cp -r "$TEMPLATE_PACK_SRC/"* "$SPEC_DIR/template-pack/v1/"
+    echo "Copied $TEMPLATE_PACK_SRC -> .lcs/template-pack/v1"
+  else
+    echo "WARNING: template-pack source not found. Checked: ${TEMPLATE_PACK_CANDIDATES[*]}" >&2
+  fi
   
   # NOTE: We substitute {ARGS} internally. Outward tokens differ intentionally:
   #   * Markdown/prompt (claude, copilot, cursor-agent, opencode): $ARGUMENTS

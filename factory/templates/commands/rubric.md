@@ -1,8 +1,8 @@
 ---
 description: Generate a hard-gate rubric for learning-content quality validation.
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts
 ---
 
 ## Intent
@@ -23,6 +23,7 @@ $ARGUMENTS
 - YOU MUST include gate groups: alignment, pedagogy, accessibility/readability, metadata.
 - YOU MUST include template compliance gates for schema and semantic rule conformance.
 - YOU MUST NOT mark PASS without evidence reference.
+- YOU MUST NOT generate or mutate exercise `scoring_rubric` content in this command; `/lcs.rubric` is quality-gate only.
 
 ## Execution Steps
 

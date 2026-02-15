@@ -10,6 +10,7 @@ Use one line per gate with this format:
 `- [ ] Gate ID: RB### | Group: <group> | Status: PASS|FAIL|BLOCK|UNSET | Severity: CRITICAL|HIGH|MEDIUM|LOW | Evidence: <file-or-note>`
 
 Mark checkbox `[x]` only when status is PASS and evidence exists.
+This rubric tracks workflow quality gates only. Exercise `scoring_rubric` lives in template-pack exercise contracts.
 
 ## Objective-Activity-Assessment Alignment
 

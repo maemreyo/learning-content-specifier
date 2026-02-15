@@ -88,7 +88,7 @@ def test_artifact_contract_validator_passes_for_generated_contracts():
         proc = _run_contract_validator(unit_dir, env)
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "PASS"
-        assert len(payload["VALIDATED"]) >= 5
+        assert len(payload["VALIDATED"]) >= 8
         assert payload["RESPONSE_VERSION"] == "1.0.0"
         assert payload["PIPELINE"]["mode"] == "collect-all-per-phase"
         assert isinstance(payload["STEPS"], list) and len(payload["STEPS"]) >= 1
@@ -96,6 +96,62 @@ def test_artifact_contract_validator_passes_for_generated_contracts():
         if _template_pack_available():
             template_rule_step = next(step for step in payload["STEPS"] if step["step_id"] == "TMP_RULE_001")
             assert any(str(output).endswith("validate_template_pack.py") for output in template_rule_step["outputs"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_exercise_design_missing_template_contract_fields():
+    unit_id = "996-artifact-contract-exercise-fields-missing"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        exercise_file = unit_dir / "exercise-design.json"
+        payload = json.loads(exercise_file.read_text(encoding="utf-8"))
+        payload["exercises"][0].pop("template_schema_ref", None)
+        payload["exercises"][0].pop("template_rules_ref", None)
+        payload["exercises"][0].pop("scoring_rubric_required_keys", None)
+        payload["exercises"][0].pop("scoring_rubric_source", None)
+        exercise_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        result = json.loads(proc.stdout.strip())
+        assert result["STATUS"] == "BLOCK"
+        assert any(
+            item["code"] == "SCHEMA_VALIDATION_ERROR" and "exercise-design.json" in item["message"]
+            for item in result["FINDINGS"]
+        )
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_scoring_rubric_keys_do_not_match_template_schema():
+    unit_id = "996-artifact-contract-scoring-rubric-mismatch"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        exercise_file = unit_dir / "exercise-design.json"
+        payload = json.loads(exercise_file.read_text(encoding="utf-8"))
+        payload["exercises"][0]["template_id"] = "speak-opinion-long-turn.v1"
+        payload["exercises"][0]["template_schema_ref"] = "schemas/speak-opinion-long-turn.v1.schema.json"
+        payload["exercises"][0]["template_rules_ref"] = "rules/speak-opinion-long-turn.v1.rules.md"
+        payload["exercises"][0]["scoring_rubric_source"] = "template-pack"
+        payload["exercises"][0]["scoring_rubric_required_keys"] = ["fluency_coherence"]
+        exercise_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        result = json.loads(proc.stdout.strip())
+        assert result["STATUS"] == "BLOCK"
+        assert any(item["code"] == "TMP_EXERCISE_SCORING_RUBRIC_KEYS_MISMATCH" for item in result["FINDINGS"])
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 
@@ -362,6 +418,112 @@ def test_artifact_contract_validator_blocks_when_sequence_has_dependency_cycle()
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "BLOCK"
         assert any("dependency cycle detected" in msg for msg in payload["ERRORS"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_sequence_missing_exercise_target_mapping():
+    unit_id = "996-artifact-contract-sequence-missing-exercise-target"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        sequence_file = unit_dir / "sequence.json"
+        sequence_data = json.loads(sequence_file.read_text(encoding="utf-8"))
+        sequence_data["tasks"] = [
+            {
+                "task_id": "S001",
+                "title": "Draft lesson body",
+                "target_path": "outputs/module-01/lesson-01.md",
+                "status": "TODO",
+                "lo_refs": ["LO1"],
+                "depends_on": [],
+            }
+        ]
+        sequence_file.write_text(json.dumps(sequence_data, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert any("missing task for exercise" in msg for msg in payload["ERRORS"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_sequence_exercise_template_metadata_mismatches():
+    unit_id = "996-artifact-contract-sequence-template-metadata-mismatch"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        exercise_file = unit_dir / "exercise-design.json"
+        exercise_data = json.loads(exercise_file.read_text(encoding="utf-8"))
+        exercise = exercise_data["exercises"][0]
+
+        sequence_file = unit_dir / "sequence.json"
+        sequence_data = json.loads(sequence_file.read_text(encoding="utf-8"))
+        sequence_data["tasks"] = [
+            {
+                "task_id": "S001",
+                "title": "Author exercise EX001",
+                "target_path": exercise["target_path"],
+                "status": "TODO",
+                "lo_refs": [exercise["lo_id"]],
+                "depends_on": [],
+                "exercise_id": exercise["exercise_id"],
+                "template_id": "multiple-response.v1",
+            }
+        ]
+        sequence_file.write_text(json.dumps(sequence_data, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert any("requires template metadata" in msg for msg in payload["ERRORS"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_passes_when_sequence_maps_exercise_with_template_metadata():
+    unit_id = "996-artifact-contract-sequence-exercise-mapped"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        exercise_file = unit_dir / "exercise-design.json"
+        exercise_data = json.loads(exercise_file.read_text(encoding="utf-8"))
+        exercise = exercise_data["exercises"][0]
+
+        sequence_file = unit_dir / "sequence.json"
+        sequence_data = json.loads(sequence_file.read_text(encoding="utf-8"))
+        sequence_data["tasks"] = [
+            {
+                "task_id": "S001",
+                "title": "Author exercise EX001",
+                "target_path": exercise["target_path"],
+                "status": "TODO",
+                "lo_refs": [exercise["lo_id"]],
+                "depends_on": [],
+                "exercise_id": exercise["exercise_id"],
+                "template_id": exercise["template_id"],
+            }
+        ]
+        sequence_file.write_text(json.dumps(sequence_data, indent=2), encoding="utf-8")
+
+        proc = _run_contract_validator(unit_dir, env)
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "PASS"
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 

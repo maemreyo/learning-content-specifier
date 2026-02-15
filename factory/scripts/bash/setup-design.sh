@@ -38,6 +38,7 @@ eval "$(get_unit_paths)"
 check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 CONTRACT_VERSION="$(get_contract_version)"
 SELECTOR_TOOL="$(resolve_python_tool generate_template_selection.py)"
+VALIDATOR_TOOL="$(resolve_python_tool validate_artifact_contracts.py)"
 
 compute_sha256() {
     local target_file="$1"
@@ -174,7 +175,7 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_JSON_FILE" ]]; then
   "pedagogy_decisions": {
     "profile": "corporate-lnd-v1",
     "confidence_threshold": 0.7,
-    "confidence": 0.0,
+    "confidence": 0.7,
     "candidate_methods": [
       "direct-instruction",
       "worked-examples",
@@ -264,7 +265,11 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$EXERCISE_DESIGN_JSON_FILE" ]]; then
       "template_id": "mcq.v1",
       "day": 1,
       "target_path": "outputs/module-01/exercises/ex001.md",
-      "status": "TODO"
+      "status": "TODO",
+      "template_schema_ref": "schemas/mcq.v1.schema.json",
+      "template_rules_ref": "rules/mcq.v1.rules.md",
+      "scoring_rubric_required_keys": [],
+      "scoring_rubric_source": "template-pack"
     }
   ]
 }
@@ -308,7 +313,7 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_DECISIONS_FILE" ]]; then
   "selected_secondary": [],
   "rationale": "Populate from /lcs.design decision process.",
   "confidence_threshold": 0.7,
-  "confidence": 0.0,
+  "confidence": 0.7,
   "web_research_triggers": [
     "time-sensitive domain/tooling",
     "confidence below threshold",
@@ -453,8 +458,8 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$AUDIT_REPORT_JSON_FILE" ]]; then
 EOF
 fi
 
-# Attempt deterministic template auto-select (English-first). If no template pack
-# is available for the current repo, the selector returns SKIP and scaffolds remain.
+# Attempt deterministic template auto-select (English-first).
+# Template pack is mandatory for fail-closed design setup.
 selector_args=(
     "$SELECTOR_TOOL"
     --repo-root "$REPO_ROOT"
@@ -484,10 +489,13 @@ except Exception:
 print(str(payload.get("STATUS", "")).upper())
 PY
     )"
-    if [[ "$selector_status" == "BLOCK" ]]; then
-        echo "ERROR: template selector blocked setup-design for $UNIT_DIR" >&2
+    if [[ "$selector_status" != "PASS" ]]; then
+        echo "ERROR: template selector must return PASS for setup-design ($UNIT_DIR); got '$selector_status'" >&2
         exit 1
     fi
+else
+    echo "ERROR: template selector produced no output; setup-design cannot continue for $UNIT_DIR" >&2
+    exit 1
 fi
 
 ASSESSMENT_BLUEPRINT_CHECKSUM="$(compute_sha256 "$ASSESSMENT_BLUEPRINT_FILE")"
@@ -561,6 +569,41 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
   }
 }
 EOF
+fi
+
+validator_args=(
+    "$VALIDATOR_TOOL"
+    --repo-root "$REPO_ROOT"
+    --unit-dir "$UNIT_DIR"
+    --json
+)
+if command -v uv >/dev/null 2>&1; then
+    validator_output="$(uv run python "${validator_args[@]}" 2>/dev/null || true)"
+else
+    validator_output="$("$PYTHON_BIN" "${validator_args[@]}" 2>/dev/null || true)"
+fi
+
+if [[ -z "$validator_output" ]]; then
+    echo "ERROR: artifact contract validator produced no output for $UNIT_DIR" >&2
+    exit 1
+fi
+
+validator_status="$(
+    "$PYTHON_PARSE_BIN" - "$validator_output" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("")
+    raise SystemExit(0)
+print(str(payload.get("STATUS", "")).upper())
+PY
+)"
+
+if [[ "$validator_status" != "PASS" ]]; then
+    echo "ERROR: setup-design contract validation must PASS for $UNIT_DIR; got '$validator_status'" >&2
+    exit 1
 fi
 
 if $JSON_MODE; then

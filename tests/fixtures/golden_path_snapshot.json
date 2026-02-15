@@ -35,9 +35,9 @@
     "artifact_ids": [
       "assessment-blueprint-json",
       "brief-md",
+      "exercise-001-md",
       "exercise-design-json",
       "exercise-design-md",
-      "lesson-01-md",
       "template-selection-json"
     ],
     "xapi_activity_count": 1,

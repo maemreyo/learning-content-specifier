@@ -75,6 +75,12 @@
     ],
     "schemas": [
       {
+        "id": "lcs.artifact.assessment-blueprint.v1",
+        "path": "contracts/schemas/assessment-blueprint.schema.json",
+        "sha256": "e6fa5078fd654fd0007f5ca89728b11438a897bdc59b01309cd876aeaa9a094b",
+        "size_bytes": 1859
+      },
+      {
         "id": "lcs.artifact.audit-report.v1",
         "path": "contracts/schemas/audit-report.schema.json",
         "sha256": "1b63c84490bff1d9bb6454e7ed1815b001b8bd671570c8d65e704b808e4cd7fb",
@@ -91,6 +97,12 @@
         "path": "contracts/schemas/design.schema.json",
         "sha256": "8091cc3867456bee5fd310799e86b66baaaec9c494772f9235039cec7d51dce8",
         "size_bytes": 4804
+      },
+      {
+        "id": "lcs.artifact.exercise-design.v1",
+        "path": "contracts/schemas/exercise-design.schema.json",
+        "sha256": "ffd1a9c30edc979e144a3be8f98d1b4b6df25d2197be083bcc6ce7f8e7bbe91d",
+        "size_bytes": 2816
       },
       {
         "id": "lcs.artifact.manifest.v1",
@@ -111,10 +123,22 @@
         "size_bytes": 2258
       },
       {
+        "id": "lcs.artifact.rubric-gates.v1",
+        "path": "contracts/schemas/rubric-gates.schema.json",
+        "sha256": "796b84c34418a1656fa85e9259a69e72dfe9af316cbfdc5830188644ff006419",
+        "size_bytes": 1652
+      },
+      {
         "id": "lcs.artifact.sequence.v1",
         "path": "contracts/schemas/sequence.schema.json",
-        "sha256": "7f732a8c8736af089141079cf64b610ea3ee66e39995538c0d13e8a975494e44",
-        "size_bytes": 1418
+        "sha256": "5ec9a30d84b621795fd4995d1ce7b859d31eca76b85ce9e5258c896f12c4548a",
+        "size_bytes": 2389
+      },
+      {
+        "id": "lcs.artifact.template-selection.v1",
+        "path": "contracts/schemas/template-selection.schema.json",
+        "sha256": "4482990ecd4b1ebd704d5d1ab180ee7614df408f4350f23479342367261a3d48",
+        "size_bytes": 2471
       },
       {
         "id": "lcs.validation.pipeline-response.v1",

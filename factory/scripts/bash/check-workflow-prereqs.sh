@@ -7,6 +7,7 @@ REQUIRE_SEQUENCE=false
 INCLUDE_SEQUENCE=false
 PATHS_ONLY=false
 SKIP_BRANCH_CHECK=false
+REQUIRE_DESIGN_CONTRACTS=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -15,6 +16,7 @@ for arg in "$@"; do
         --include-sequence) INCLUDE_SEQUENCE=true ;;
         --paths-only) PATHS_ONLY=true ;;
         --skip-branch-check) SKIP_BRANCH_CHECK=true ;;
+        --require-design-contracts) REQUIRE_DESIGN_CONTRACTS=true ;;
         --help|-h)
             cat <<HELP
 Usage: check-workflow-prereqs.sh [OPTIONS]
@@ -25,6 +27,7 @@ OPTIONS:
   --include-sequence
   --paths-only
   --skip-branch-check
+  --require-design-contracts
 HELP
             exit 0
             ;;
@@ -86,6 +89,19 @@ if $REQUIRE_SEQUENCE && [[ ! -f "$SEQUENCE_FILE" ]]; then
     echo "ERROR: sequence.md not found in $UNIT_DIR" >&2
     echo "Run /lcs.sequence first." >&2
     exit 1
+fi
+
+if $REQUIRE_DESIGN_CONTRACTS; then
+    missing_design_contracts=()
+    [[ -f "$ASSESSMENT_BLUEPRINT_FILE" ]] || missing_design_contracts+=("assessment-blueprint.json")
+    [[ -f "$TEMPLATE_SELECTION_FILE" ]] || missing_design_contracts+=("template-selection.json")
+    [[ -f "$EXERCISE_DESIGN_JSON_FILE" ]] || missing_design_contracts+=("exercise-design.json")
+
+    if [[ ${#missing_design_contracts[@]} -gt 0 ]]; then
+        echo "ERROR: missing required design contract artifacts in $UNIT_DIR: ${missing_design_contracts[*]}" >&2
+        echo "Run /lcs.design first and resolve design contract blockers." >&2
+        exit 1
+    fi
 fi
 
 docs=()

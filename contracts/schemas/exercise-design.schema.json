@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lcs.artifact.exercise-design.v1",
+  "title": "LCS Exercise Design Artifact v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "unit_id",
+    "generated_at",
+    "source_files",
+    "exercises"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.0$"
+    },
+    "unit_id": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}-[a-z0-9-]+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_files": {
+      "type": "object",
+      "required": ["assessment_blueprint", "template_selection"],
+      "properties": {
+        "assessment_blueprint": {
+          "type": "string",
+          "pattern": "^assessment-blueprint\\.json$"
+        },
+        "template_selection": {
+          "type": "string",
+          "pattern": "^template-selection\\.json$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "exercises": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "exercise_id",
+          "lo_id",
+          "template_id",
+          "day",
+          "target_path",
+          "status",
+          "template_schema_ref",
+          "template_rules_ref",
+          "scoring_rubric_required_keys",
+          "scoring_rubric_source"
+        ],
+        "properties": {
+          "exercise_id": {
+            "type": "string",
+            "pattern": "^EX[0-9]{3,}$"
+          },
+          "lo_id": {
+            "type": "string",
+            "pattern": "^LO[1-9][0-9]*$"
+          },
+          "template_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9.-]*\\.v[0-9]+$"
+          },
+          "day": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "target_path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*\\.\\./)[A-Za-z0-9._/-]+$"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"]
+          },
+          "template_schema_ref": {
+            "type": "string",
+            "pattern": "^schemas/.+\\.schema\\.json$"
+          },
+          "template_rules_ref": {
+            "type": "string",
+            "pattern": "^rules/.+\\.rules\\.md$"
+          },
+          "scoring_rubric_required_keys": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "scoring_rubric_source": {
+            "type": "string",
+            "const": "template-pack"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

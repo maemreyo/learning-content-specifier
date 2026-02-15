@@ -3,6 +3,7 @@
 param(
     [switch]$Json,
     [switch]$RequireSequence,
+    [switch]$RequireDesignContracts,
     [switch]$IncludeSequence,
     [switch]$PathsOnly,
     [switch]$SkipBranchCheck,
@@ -11,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($Help) {
-    Write-Output 'Usage: ./check-workflow-prereqs.ps1 [-Json] [-RequireSequence] [-IncludeSequence] [-PathsOnly] [-SkipBranchCheck]'
+    Write-Output 'Usage: ./check-workflow-prereqs.ps1 [-Json] [-RequireSequence] [-RequireDesignContracts] [-IncludeSequence] [-PathsOnly] [-SkipBranchCheck]'
     exit 0
 }
 
@@ -96,6 +97,19 @@ if ($RequireSequence -and -not (Test-Path $paths.SEQUENCE_FILE -PathType Leaf)) 
     Write-Output "ERROR: sequence.md not found in $($paths.UNIT_DIR)"
     Write-Output 'Run /lcs.sequence first.'
     exit 1
+}
+
+if ($RequireDesignContracts) {
+    $missingContracts = @()
+    if (-not (Test-Path $paths.ASSESSMENT_BLUEPRINT_FILE -PathType Leaf)) { $missingContracts += 'assessment-blueprint.json' }
+    if (-not (Test-Path $paths.TEMPLATE_SELECTION_FILE -PathType Leaf)) { $missingContracts += 'template-selection.json' }
+    if (-not (Test-Path $paths.EXERCISE_DESIGN_JSON_FILE -PathType Leaf)) { $missingContracts += 'exercise-design.json' }
+
+    if ($missingContracts.Count -gt 0) {
+        Write-Output "ERROR: missing required design contract artifacts in $($paths.UNIT_DIR): $($missingContracts -join ', ')"
+        Write-Output 'Run /lcs.design first and resolve design contract blockers.'
+        exit 1
+    }
 }
 
 $docs = @()

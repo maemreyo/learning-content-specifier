@@ -113,11 +113,13 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
     try:
         # define/refine/design baseline
         _run_setup_design(env)
+        exercise_design = json.loads((unit_dir / "exercise-design.json").read_text(encoding="utf-8"))
+        exercise = exercise_design["exercises"][0]
 
         # sequence
         (unit_dir / "sequence.md").write_text(
             "# Sequence\n"
-            f"- [ ] S001 [LO1] Draft core lesson in programs/{PROGRAM_ID}/units/993-e2e-golden-path/outputs/module-01/lesson-01.md\n"
+            f"- [ ] S001 [LO1] Author exercise {exercise['exercise_id']} in programs/{PROGRAM_ID}/units/993-e2e-golden-path/{exercise['target_path']}\n"
             "- [ ] S013 Run rubric and resolve blocking items\n",
             encoding="utf-8",
         )
@@ -129,11 +131,13 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
                     "tasks": [
                         {
                             "task_id": "S001",
-                            "title": "Draft core lesson",
-                            "target_path": "outputs/module-01/lesson-01.md",
+                            "title": f"Author exercise {exercise['exercise_id']}",
+                            "target_path": exercise["target_path"],
                             "status": "TODO",
-                            "lo_refs": ["LO1"],
+                            "lo_refs": [exercise["lo_id"]],
                             "depends_on": [],
+                            "exercise_id": exercise["exercise_id"],
+                            "template_id": exercise["template_id"],
                         },
                         {
                             "task_id": "S013",
@@ -196,21 +200,21 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         )
 
         # author outputs + manifest update
-        lesson_file = unit_dir / "outputs" / "module-01" / "lesson-01.md"
-        lesson_file.parent.mkdir(parents=True, exist_ok=True)
-        lesson_file.write_text("# Lesson 01\n", encoding="utf-8")
-        lesson_checksum = hashlib.sha256(lesson_file.read_bytes()).hexdigest()
+        exercise_file = unit_dir / exercise["target_path"]
+        exercise_file.parent.mkdir(parents=True, exist_ok=True)
+        exercise_file.write_text("# Exercise EX001\n", encoding="utf-8")
+        exercise_checksum = hashlib.sha256(exercise_file.read_bytes()).hexdigest()
 
         manifest_file = unit_dir / "outputs" / "manifest.json"
         manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
         manifest["gate_status"] = {"decision": "PASS", "open_critical": 0, "open_high": 0}
         manifest["artifacts"].append(
             {
-                "id": "lesson-01-md",
-                "type": "lesson",
-                "path": "outputs/module-01/lesson-01.md",
+                "id": "exercise-001-md",
+                "type": "exercise",
+                "path": exercise["target_path"],
                 "media_type": "text/markdown",
-                "checksum": f"sha256:{lesson_checksum}",
+                "checksum": f"sha256:{exercise_checksum}",
             }
         )
         manifest_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
