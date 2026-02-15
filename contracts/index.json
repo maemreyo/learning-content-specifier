@@ -31,6 +31,11 @@
         "size_bytes": 2297
       },
       {
+        "path": "contracts/docs/PROFICIENCY-GOVERNANCE.md",
+        "sha256": "a656a55c9288398f6bf9fc9bb29a63bd886b21cb5c35dd6897edfe959c3bf43a",
+        "size_bytes": 2672
+      },
+      {
         "path": "contracts/docs/README.md",
         "sha256": "8331ddf915220a68cb76b04cd6e29098424687b024177fe67c46d438cb12f3df",
         "size_bytes": 1468
