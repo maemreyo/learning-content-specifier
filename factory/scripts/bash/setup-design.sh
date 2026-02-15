@@ -475,9 +475,11 @@ EOF
 fi
 
 if $JSON_MODE; then
-    printf '{"BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":%s}\n' \
-        "$BRIEF_FILE" "$DESIGN_FILE" "$UNIT_DIR" "$CURRENT_BRANCH" "$HAS_GIT"
+    printf '{"PROGRAM_ID":"%s","UNIT_ID":"%s","BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":%s}\n' \
+        "$PROGRAM_ID" "$CURRENT_UNIT" "$BRIEF_FILE" "$DESIGN_FILE" "$UNIT_DIR" "$CURRENT_BRANCH" "$HAS_GIT"
 else
+    echo "PROGRAM_ID: $PROGRAM_ID"
+    echo "UNIT_ID: $CURRENT_UNIT"
     echo "BRIEF_FILE: $BRIEF_FILE"
     echo "DESIGN_FILE: $DESIGN_FILE"
     echo "UNIT_DIR: $UNIT_DIR"

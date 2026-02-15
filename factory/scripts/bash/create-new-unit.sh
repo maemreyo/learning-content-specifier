@@ -5,6 +5,7 @@ set -euo pipefail
 JSON_MODE=false
 SHORT_NAME=""
 UNIT_NUMBER=""
+PROGRAM_OVERRIDE=""
 CHECKOUT_BRANCH=false
 ARGS=()
 
@@ -22,12 +23,16 @@ while [[ $# -gt 0 ]]; do
             UNIT_NUMBER="${2:-}"
             shift 2
             ;;
+        --program)
+            PROGRAM_OVERRIDE="${2:-}"
+            shift 2
+            ;;
         --checkout-branch)
             CHECKOUT_BRANCH=true
             shift
             ;;
         --help|-h)
-            echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>"
+            echo "Usage: $0 [--json] [--program <id>] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>"
             exit 0
             ;;
         *)
@@ -38,45 +43,26 @@ while [[ $# -gt 0 ]]; do
 done
 
 UNIT_DESCRIPTION="${ARGS[*]:-}"
-[[ -z "$UNIT_DESCRIPTION" ]] && { echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>" >&2; exit 1; }
+[[ -z "$UNIT_DESCRIPTION" ]] && {
+    echo "Usage: $0 [--json] [--program <id>] [--short-name <name>] [--number N] [--checkout-branch] <unit_description>" >&2
+    exit 1
+}
 
-get_contract_version() {
-    local index_file py
-    index_file="$REPO_ROOT/contracts/index.json"
-    if [[ ! -f "$index_file" ]]; then
-        index_file="$REPO_ROOT/.lcs/contracts/index.json"
-    fi
-    if [[ ! -f "$index_file" ]]; then
-        echo "ERROR: Missing contract index. Checked: $REPO_ROOT/contracts/index.json and $REPO_ROOT/.lcs/contracts/index.json" >&2
-        return 1
-    fi
+SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
 
-    py="python3"
-    if ! command -v "$py" >/dev/null 2>&1; then
-        py="python"
-    fi
-    if ! command -v "$py" >/dev/null 2>&1; then
-        echo "ERROR: python3/python is required to read contract_version" >&2
-        return 1
-    fi
+REPO_ROOT="$(get_repo_root)"
+CONTEXT_DIR="$REPO_ROOT/.lcs/context"
+PROGRAMS_ROOT="$REPO_ROOT/programs"
 
-    "$py" - "$index_file" <<'PY'
-import json
-import re
-import sys
-from pathlib import Path
+mkdir -p "$CONTEXT_DIR" "$PROGRAMS_ROOT"
 
-index_file = Path(sys.argv[1])
-payload = json.loads(index_file.read_text(encoding="utf-8"))
-version = str(payload.get("contract_version", "")).strip()
-if not re.fullmatch(r"\d+\.\d+\.\d+", version):
-    raise SystemExit(f"Invalid contract_version '{version}' in {index_file} (expected X.Y.Z)")
-print(version)
-PY
+slugify() {
+    echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
 }
 
 clean_name() {
-    echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//'
+    slugify "$1" | cut -c1-60
 }
 
 generate_name() {
@@ -99,91 +85,72 @@ generate_name() {
     echo "${out[*]}"
 }
 
-find_repo_root() {
-    local dir="$1"
-    while [[ "$dir" != "/" ]]; do
-        if [[ -d "$dir/.git" || -d "$dir/.lcs" ]]; then
-            echo "$dir"
-            return 0
+resolve_program_id() {
+    local candidate=""
+    if [[ -n "$PROGRAM_OVERRIDE" ]]; then
+        candidate="$(slugify "$PROGRAM_OVERRIDE")"
+    elif [[ -n "${LCS_PROGRAM:-}" ]]; then
+        candidate="$(slugify "$LCS_PROGRAM")"
+    else
+        candidate="$(read_context_value "$CONTEXT_DIR/current-program" || true)"
+        if [[ -z "$candidate" ]]; then
+            candidate="$(infer_program_from_pwd "$REPO_ROOT" || true)"
         fi
-        dir="$(dirname "$dir")"
-    done
-    return 1
+    fi
+    echo "$candidate"
 }
 
-get_highest_from_specs() {
-    local specs_dir="$1" highest=0
-    [[ -d "$specs_dir" ]] || { echo 0; return; }
-    for dir in "$specs_dir"/*; do
+get_highest_from_units() {
+    local units_dir="$1" highest=0
+    [[ -d "$units_dir" ]] || { echo 0; return; }
+    for dir in "$units_dir"/*; do
         [[ -d "$dir" ]] || continue
         local base num
         base="$(basename "$dir")"
-        num="$(echo "$base" | grep -o '^[0-9]\+' || echo 0)"
-        num=$((10#$num))
-        [[ "$num" -gt "$highest" ]] && highest="$num"
+        if [[ "$base" =~ ^([0-9]{3})- ]]; then
+            num=$((10#${BASH_REMATCH[1]}))
+            [[ "$num" -gt "$highest" ]] && highest="$num"
+        fi
     done
     echo "$highest"
 }
 
-get_highest_from_branches() {
-    local highest=0
-    local branches
-    branches="$(git branch -a 2>/dev/null || true)"
-    [[ -z "$branches" ]] && { echo 0; return; }
-    while IFS= read -r branch; do
-        local clean num
-        clean="$(echo "$branch" | sed 's/^[* ]*//; s|^remotes/[^/]*/||')"
-        if echo "$clean" | grep -q '^[0-9]\{3\}-'; then
-            num="$(echo "$clean" | grep -o '^[0-9]\{3\}' || echo 0)"
-            num=$((10#$num))
-            [[ "$num" -gt "$highest" ]] && highest="$num"
-        fi
-    done <<< "$branches"
-    echo "$highest"
-}
-
-SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if git rev-parse --show-toplevel >/dev/null 2>&1; then
-    REPO_ROOT="$(git rev-parse --show-toplevel)"
-    HAS_GIT=true
-else
-    REPO_ROOT="$(find_repo_root "$SCRIPT_DIR")"
-    HAS_GIT=false
+PROGRAM_ID="$(resolve_program_id)"
+if [[ -z "$PROGRAM_ID" ]]; then
+    echo "ERROR: No active program context found." >&2
+    echo "Run /lcs.charter first or pass --program <id>." >&2
+    exit 1
 fi
 
-cd "$REPO_ROOT"
-SPECS_DIR="$REPO_ROOT/specs"
-mkdir -p "$SPECS_DIR"
+PROGRAM_DIR="$PROGRAMS_ROOT/$PROGRAM_ID"
+if [[ ! -d "$PROGRAM_DIR" ]]; then
+    echo "ERROR: Program directory does not exist: $PROGRAM_DIR" >&2
+    echo "Run /lcs.charter first to scaffold the program." >&2
+    exit 1
+fi
+
+UNITS_DIR="$PROGRAM_DIR/units"
+mkdir -p "$UNITS_DIR"
 
 UNIT_SUFFIX="$(clean_name "${SHORT_NAME:-$(generate_name "$UNIT_DESCRIPTION")}")"
+[[ -z "$UNIT_SUFFIX" ]] && UNIT_SUFFIX="unit"
 
 if [[ -z "$UNIT_NUMBER" ]]; then
-    if [[ "$HAS_GIT" == true ]]; then
-        git fetch --all --prune 2>/dev/null || true
-        b="$(get_highest_from_branches)"
-        s="$(get_highest_from_specs "$SPECS_DIR")"
-        (( s > b )) && UNIT_NUMBER="$((s + 1))" || UNIT_NUMBER="$((b + 1))"
-    else
-        s="$(get_highest_from_specs "$SPECS_DIR")"
-        UNIT_NUMBER="$((s + 1))"
-    fi
+    local_highest="$(get_highest_from_units "$UNITS_DIR")"
+    UNIT_NUMBER="$((local_highest + 1))"
 fi
 
-UNIT_NUM="$(printf "%03d" "$((10#$UNIT_NUMBER))")"
+UNIT_NUM="$(printf '%03d' "$((10#$UNIT_NUMBER))")"
 UNIT_NAME="${UNIT_NUM}-${UNIT_SUFFIX}"
+UNIT_DIR="$UNITS_DIR/$UNIT_NAME"
 
-if [[ "$HAS_GIT" == true ]]; then
-    if [[ "$CHECKOUT_BRANCH" == true ]]; then
-        git checkout -b "$UNIT_NAME" >/dev/null
-    else
-        >&2 echo "[lcs] Info: Branch auto-checkout disabled. Staying on current branch."
-        >&2 echo "[lcs] Info: Run 'git checkout -b $UNIT_NAME' manually if you want branch-per-unit."
-    fi
-else
-    >&2 echo "[lcs] Warning: Git repository not detected; skipped branch creation for $UNIT_NAME"
+if has_git && [[ "$CHECKOUT_BRANCH" == "true" ]]; then
+    BRANCH_NAME="${PROGRAM_ID}-${UNIT_NAME}"
+    git checkout -b "$BRANCH_NAME" >/dev/null
+elif has_git; then
+    >&2 echo "[lcs] Info: Branch auto-checkout disabled. Staying on current branch."
 fi
 
-UNIT_DIR="$SPECS_DIR/$UNIT_NAME"
 mkdir -p "$UNIT_DIR"
 CONTRACT_VERSION="$(get_contract_version)"
 
@@ -197,10 +164,11 @@ else
 fi
 
 if [[ ! -f "$BRIEF_JSON_FILE" ]]; then
-    cat > "$BRIEF_JSON_FILE" <<EOF
+    cat > "$BRIEF_JSON_FILE" <<EOF_JSON
 {
   "contract_version": "$CONTRACT_VERSION",
   "unit_id": "$UNIT_NAME",
+  "program_id": "$PROGRAM_ID",
   "title": "$UNIT_NAME",
   "audience": {
     "primary": "general learners",
@@ -224,15 +192,23 @@ if [[ ! -f "$BRIEF_JSON_FILE" ]]; then
     "out_of_scope": []
   }
 }
-EOF
+EOF_JSON
 fi
 
+write_context_value "$CONTEXT_DIR/current-program" "$PROGRAM_ID"
+write_context_value "$CONTEXT_DIR/current-unit" "$UNIT_NAME"
+
+export LCS_PROGRAM="$PROGRAM_ID"
 export LCS_UNIT="$UNIT_NAME"
 
 if $JSON_MODE; then
-    printf '{"UNIT_NAME":"%s","BRIEF_FILE":"%s","UNIT_NUM":"%s"}\n' "$UNIT_NAME" "$BRIEF_FILE" "$UNIT_NUM"
+    printf '{"PROGRAM_ID":"%s","PROGRAM_DIR":"%s","UNIT_NAME":"%s","UNIT_DIR":"%s","BRIEF_FILE":"%s","UNIT_NUM":"%s"}\n' \
+        "$PROGRAM_ID" "$PROGRAM_DIR" "$UNIT_NAME" "$UNIT_DIR" "$BRIEF_FILE" "$UNIT_NUM"
 else
+    echo "PROGRAM_ID: $PROGRAM_ID"
+    echo "PROGRAM_DIR: $PROGRAM_DIR"
     echo "UNIT_NAME: $UNIT_NAME"
+    echo "UNIT_DIR: $UNIT_DIR"
     echo "BRIEF_FILE: $BRIEF_FILE"
     echo "UNIT_NUM: $UNIT_NUM"
 fi

@@ -24,6 +24,7 @@ Or install globally:
 """
 
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -241,9 +242,10 @@ BANNER = """
 
 TAGLINE = "LCS - Learning Content Specifier"
 
-DEFAULT_TEMPLATE_REPO_OWNER = os.getenv("LCS_TEMPLATE_REPO_OWNER", "github")
+DEFAULT_TEMPLATE_REPO_OWNER = os.getenv("LCS_TEMPLATE_REPO_OWNER", "maemreyo")
 DEFAULT_TEMPLATE_REPO_NAME = os.getenv("LCS_TEMPLATE_REPO_NAME", "learning-content-specifier")
 DEFAULT_TEMPLATE_ASSET_PREFIX = os.getenv("LCS_TEMPLATE_ASSET_PREFIX", "learning-content-specifier-template")
+LOCAL_TEMPLATE_BUILD_VERSION = "v0.0.0-local"
 class StepTracker:
     """Track and render hierarchical steps without emojis, similar to Claude Code tree output.
     Supports live auto-refresh via an attached refresh callback.
@@ -786,37 +788,17 @@ def download_template_from_github(ai_assistant: str, download_dir: Path, *, scri
     }
     return zip_path, metadata
 
-def download_and_extract_template(project_path: Path, ai_assistant: str, script_type: str, is_current_dir: bool = False, *, verbose: bool = True, tracker: StepTracker | None = None, client: httpx.Client = None, debug: bool = False, github_token: str = None) -> Path:
-    """Download the latest release and extract it to create a new project.
-    Returns project_path. Uses tracker if provided (with keys: fetch, download, extract, cleanup)
-    """
-    current_dir = Path.cwd()
-
-    if tracker:
-        tracker.start("fetch", "contacting GitHub API")
-    try:
-        zip_path, meta = download_template_from_github(
-            ai_assistant,
-            current_dir,
-            script_type=script_type,
-            verbose=verbose and tracker is None,
-            show_progress=(tracker is None),
-            client=client,
-            debug=debug,
-            github_token=github_token
-        )
-        if tracker:
-            tracker.complete("fetch", f"release {meta['release']} ({meta['size']:,} bytes)")
-            tracker.add("download", "Download template")
-            tracker.complete("download", meta['filename'])
-    except Exception as e:
-        if tracker:
-            tracker.error("fetch", str(e))
-        else:
-            if verbose:
-                console.print(f"[red]Error downloading template:[/red] {e}")
-        raise
-
+def extract_template_archive(
+    archive_path: Path,
+    project_path: Path,
+    is_current_dir: bool = False,
+    *,
+    verbose: bool = True,
+    tracker: StepTracker | None = None,
+    debug: bool = False,
+    cleanup_archive: bool = True,
+) -> Path:
+    """Extract a template archive into target project path."""
     if tracker:
         tracker.add("extract", "Extract template")
         tracker.start("extract")
@@ -827,7 +809,7 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
         if not is_current_dir:
             project_path.mkdir(parents=True)
 
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
             zip_contents = zip_ref.namelist()
             if tracker:
                 tracker.start("zip-list")
@@ -854,7 +836,7 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                             tracker.add("flatten", "Flatten nested directory")
                             tracker.complete("flatten")
                         elif verbose:
-                            console.print(f"[cyan]Found nested directory structure[/cyan]")
+                            console.print("[cyan]Found nested directory structure[/cyan]")
 
                     for item in source_dir.iterdir():
                         dest_path = project_path / item.name
@@ -862,12 +844,11 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                             if dest_path.exists():
                                 if verbose and not tracker:
                                     console.print(f"[yellow]Merging directory:[/yellow] {item.name}")
-                                for sub_item in item.rglob('*'):
+                                for sub_item in item.rglob("*"):
                                     if sub_item.is_file():
                                         rel_path = sub_item.relative_to(item)
                                         dest_file = dest_path / rel_path
                                         dest_file.parent.mkdir(parents=True, exist_ok=True)
-                                        # Special handling for .vscode/settings.json - merge instead of overwrite
                                         if dest_file.name == "settings.json" and dest_file.parent.name == ".vscode":
                                             handle_vscode_settings(sub_item, dest_file, rel_path, verbose, tracker)
                                         else:
@@ -879,7 +860,7 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                                 console.print(f"[yellow]Overwriting file:[/yellow] {item.name}")
                             shutil.copy2(item, dest_path)
                     if verbose and not tracker:
-                        console.print(f"[cyan]Template files merged into current directory[/cyan]")
+                        console.print("[cyan]Template files merged into current directory[/cyan]")
             else:
                 zip_ref.extractall(project_path)
 
@@ -895,17 +876,14 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                 if len(extracted_items) == 1 and extracted_items[0].is_dir():
                     nested_dir = extracted_items[0]
                     temp_move_dir = project_path.parent / f"{project_path.name}_temp"
-
                     shutil.move(str(nested_dir), str(temp_move_dir))
-
                     project_path.rmdir()
-
                     shutil.move(str(temp_move_dir), str(project_path))
                     if tracker:
                         tracker.add("flatten", "Flatten nested directory")
                         tracker.complete("flatten")
                     elif verbose:
-                        console.print(f"[cyan]Flattened nested directory structure[/cyan]")
+                        console.print("[cyan]Flattened nested directory structure[/cyan]")
 
     except Exception as e:
         if tracker:
@@ -915,7 +893,6 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                 console.print(f"[red]Error extracting template:[/red] {e}")
                 if debug:
                     console.print(Panel(str(e), title="Extraction Error", border_style="red"))
-
         if not is_current_dir and project_path.exists():
             shutil.rmtree(project_path)
         raise typer.Exit(1)
@@ -925,15 +902,56 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
     finally:
         if tracker:
             tracker.add("cleanup", "Remove temporary archive")
-
-        if zip_path.exists():
-            zip_path.unlink()
+        if cleanup_archive and archive_path.exists():
+            archive_path.unlink()
             if tracker:
                 tracker.complete("cleanup")
             elif verbose:
-                console.print(f"Cleaned up: {zip_path.name}")
+                console.print(f"Cleaned up: {archive_path.name}")
+        elif tracker and not cleanup_archive:
+            tracker.skip("cleanup", "local archive retained")
 
     return project_path
+
+
+def download_and_extract_template(project_path: Path, ai_assistant: str, script_type: str, is_current_dir: bool = False, *, verbose: bool = True, tracker: StepTracker | None = None, client: httpx.Client = None, debug: bool = False, github_token: str = None) -> Path:
+    """Download latest template release and extract it."""
+    current_dir = Path.cwd()
+
+    if tracker:
+        tracker.start("fetch", "contacting GitHub API")
+    try:
+        zip_path, meta = download_template_from_github(
+            ai_assistant,
+            current_dir,
+            script_type=script_type,
+            verbose=verbose and tracker is None,
+            show_progress=(tracker is None),
+            client=client,
+            debug=debug,
+            github_token=github_token
+        )
+        if tracker:
+            tracker.complete("fetch", f"release {meta['release']} ({meta['size']:,} bytes)")
+            tracker.add("download", "Download template")
+            tracker.complete("download", meta["filename"])
+    except Exception as e:
+        if tracker:
+            tracker.error("fetch", str(e))
+        else:
+            if verbose:
+                console.print(f"[red]Error downloading template:[/red] {e}")
+        raise
+
+    return extract_template_archive(
+        zip_path,
+        project_path,
+        is_current_dir=is_current_dir,
+        verbose=verbose,
+        tracker=tracker,
+        debug=debug,
+        cleanup_archive=True,
+    )
 
 
 def ensure_executable_scripts(project_path: Path, tracker: StepTracker | None = None) -> None:
@@ -1015,6 +1033,108 @@ def ensure_charter_from_template(project_path: Path, tracker: StepTracker | None
         else:
             console.print(f"[yellow]Warning: Could not initialize charter: {e}[/yellow]")
 
+
+def ensure_context_directory(project_path: Path, tracker: StepTracker | None = None) -> None:
+    """Ensure the program/unit context directory exists."""
+    context_dir = project_path / ".lcs" / "context"
+    try:
+        context_dir.mkdir(parents=True, exist_ok=True)
+        if tracker:
+            tracker.add("context", "Context setup")
+            tracker.complete("context", "ready")
+    except Exception as e:
+        if tracker:
+            tracker.add("context", "Context setup")
+            tracker.error("context", str(e))
+        else:
+            console.print(f"[yellow]Warning: Could not initialize context directory: {e}[/yellow]")
+
+
+def _is_local_template_source_root(candidate: Path) -> bool:
+    if not candidate:
+        return False
+    required_paths = [
+        candidate / "factory" / "templates",
+        candidate / "factory" / "scripts",
+        candidate / "tooling" / "ci",
+        candidate / "contracts",
+    ]
+    return all(path.exists() for path in required_paths)
+
+
+def detect_local_template_source_root() -> Path | None:
+    """Best-effort discovery for a local template source repository."""
+    candidates: list[Path] = []
+    cwd = Path.cwd().resolve()
+    module_file = Path(__file__).resolve()
+
+    for base in [cwd, *cwd.parents]:
+        candidates.append(base)
+        candidates.append(base / "_learning-content-specifier")
+
+    for base in module_file.parents:
+        candidates.append(base)
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        if _is_local_template_source_root(candidate):
+            return candidate
+    return None
+
+
+def build_local_template_archive(local_root: Path, ai_assistant: str, script_type: str, debug: bool = False) -> Path:
+    """Build a local release archive for the requested agent/script variant."""
+    genreleases_dir = local_root / ".genreleases"
+    archive_name = f"{DEFAULT_TEMPLATE_ASSET_PREFIX}-{ai_assistant}-{script_type}-{LOCAL_TEMPLATE_BUILD_VERSION}.zip"
+    archive_path = genreleases_dir / archive_name
+
+    env = os.environ.copy()
+    env["AGENTS"] = ai_assistant
+    env["SCRIPTS"] = script_type
+    env["SKIP_CONTRACT_PACKAGE"] = "1"
+
+    if os.name == "nt":
+        pack_script = local_root / "tooling" / "ci" / "create-release-packages.ps1"
+        command = ["pwsh", "-File", str(pack_script), LOCAL_TEMPLATE_BUILD_VERSION]
+    else:
+        pack_script = local_root / "tooling" / "ci" / "create-release-packages.sh"
+        command = ["bash", str(pack_script), LOCAL_TEMPLATE_BUILD_VERSION]
+
+    if not pack_script.exists():
+        raise RuntimeError(f"Local template packaging script not found: {pack_script}")
+
+    result = subprocess.run(
+        command,
+        cwd=str(local_root),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stdout_tail = "\n".join(result.stdout.strip().splitlines()[-20:])
+        stderr_tail = "\n".join(result.stderr.strip().splitlines()[-20:])
+        details = []
+        if stdout_tail:
+            details.append(f"stdout:\n{stdout_tail}")
+        if stderr_tail:
+            details.append(f"stderr:\n{stderr_tail}")
+        message = "Failed to build local template package."
+        if details:
+            message = f"{message}\n\n" + "\n\n".join(details)
+        raise RuntimeError(message)
+
+    if debug and result.stdout:
+        console.print(Panel(result.stdout[-4000:], title="Local Build Output", border_style="cyan"))
+
+    if not archive_path.exists():
+        raise RuntimeError(f"Local template archive not found after build: {archive_path}")
+
+    return archive_path
+
 @app.command()
 def init(
     project_name: str = typer.Argument(None, help="Name for your new project directory (optional if using --here, or use '.' for current directory)"),
@@ -1025,6 +1145,7 @@ def init(
     here: bool = typer.Option(False, "--here", help="Initialize project in the current directory instead of creating a new one"),
     force: bool = typer.Option(False, "--force", help="Force merge/overwrite when using --here (skip confirmation)"),
     skip_tls: bool = typer.Option(False, "--skip-tls", help="Skip SSL/TLS verification (not recommended)"),
+    template_source: str = typer.Option("release", "--template-source", help="Template source: release or local"),
     debug: bool = typer.Option(False, "--debug", help="Show verbose diagnostic output for network and extraction failures"),
     github_token: str = typer.Option(None, "--github-token", help="GitHub token to use for API requests (or set GH_TOKEN or GITHUB_TOKEN environment variable)"),
 ):
@@ -1051,6 +1172,7 @@ def init(
         lcs init --here --ai codebuddy
         lcs init --here
         lcs init --here --force  # Skip confirmation when current directory not empty
+        lcs init . --ai codex --template-source local
     """
 
     show_banner()
@@ -1164,6 +1286,12 @@ def init(
     console.print(f"[cyan]Selected AI assistant:[/cyan] {selected_ai}")
     console.print(f"[cyan]Selected script type:[/cyan] {selected_script}")
 
+    allowed_template_sources = {"release", "local"}
+    if template_source not in allowed_template_sources:
+        console.print(f"[red]Error:[/red] Invalid template source '{template_source}'. Choose from: {', '.join(sorted(allowed_template_sources))}")
+        raise typer.Exit(1)
+    console.print(f"[cyan]Template source:[/cyan] {template_source}")
+
     tracker = StepTracker("Initialize LCS Project")
 
     sys._lcs_tracker_active = True
@@ -1182,6 +1310,7 @@ def init(
         ("extracted-summary", "Extraction summary"),
         ("chmod", "Ensure scripts executable"),
         ("charter", "Charter setup"),
+        ("context", "Context setup"),
         ("cleanup", "Cleanup"),
         ("git", "Initialize git repository"),
         ("final", "Finalize")
@@ -1198,11 +1327,35 @@ def init(
             local_ssl_context = ssl_context if verify else False
             local_client = httpx.Client(verify=local_ssl_context)
 
-            download_and_extract_template(project_path, selected_ai, selected_script, here, verbose=False, tracker=tracker, client=local_client, debug=debug, github_token=github_token)
+            if template_source == "local":
+                tracker.start("fetch", "building local template package")
+                local_source_root = detect_local_template_source_root()
+                if not local_source_root:
+                    tracker.error("fetch", "local source not found")
+                    raise RuntimeError(
+                        "Unable to locate local template source. Expected a repository containing "
+                        "factory/templates, factory/scripts, tooling/ci, memory, and contracts."
+                    )
+                local_archive = build_local_template_archive(local_source_root, selected_ai, selected_script, debug=debug)
+                tracker.complete("fetch", f"built from {local_source_root}")
+                tracker.add("download", "Download template")
+                tracker.complete("download", local_archive.name)
+                extract_template_archive(
+                    local_archive,
+                    project_path,
+                    is_current_dir=here,
+                    verbose=False,
+                    tracker=tracker,
+                    debug=debug,
+                    cleanup_archive=False,
+                )
+            else:
+                download_and_extract_template(project_path, selected_ai, selected_script, here, verbose=False, tracker=tracker, client=local_client, debug=debug, github_token=github_token)
 
             ensure_executable_scripts(project_path, tracker=tracker)
 
             ensure_charter_from_template(project_path, tracker=tracker)
+            ensure_context_directory(project_path, tracker=tracker)
 
             if not no_git:
                 tracker.start("git")
@@ -1295,14 +1448,15 @@ def init(
 
     steps_lines.append(f"{step_num}. Start using slash commands with your AI agent:")
 
-    steps_lines.append("   2.1 [cyan]/lcs.charter[/] - Establish learning-content governance")
-    steps_lines.append("   2.2 [cyan]/lcs.define[/] - Create the unit brief")
-    steps_lines.append("   2.3 [cyan]/lcs.refine[/] - Clarify ambiguity in the brief")
-    steps_lines.append("   2.4 [cyan]/lcs.design[/] - Build learning design artifacts")
-    steps_lines.append("   2.5 [cyan]/lcs.sequence[/] - Generate production sequence")
-    steps_lines.append("   2.6 [cyan]/lcs.rubric[/] - Generate hard-gate rubric")
-    steps_lines.append("   2.7 [cyan]/lcs.audit[/] - Run consistency audit")
-    steps_lines.append("   2.8 [cyan]/lcs.author[/] - Author local output assets")
+    steps_lines.append("   2.1 [cyan]/lcs.charter[/] - Create/update active program charter")
+    steps_lines.append("   2.2 [cyan]/lcs.subject.charter[/] - Update subject governance charter (optional)")
+    steps_lines.append("   2.3 [cyan]/lcs.define[/] - Create the unit brief")
+    steps_lines.append("   2.4 [cyan]/lcs.refine[/] - Clarify ambiguity in the brief")
+    steps_lines.append("   2.5 [cyan]/lcs.design[/] - Build learning design artifacts")
+    steps_lines.append("   2.6 [cyan]/lcs.sequence[/] - Generate production sequence")
+    steps_lines.append("   2.7 [cyan]/lcs.rubric[/] - Generate hard-gate rubric")
+    steps_lines.append("   2.8 [cyan]/lcs.audit[/] - Run consistency audit")
+    steps_lines.append("   2.9 [cyan]/lcs.author[/] - Author local output assets")
 
     steps_panel = Panel("\n".join(steps_lines), title="Next Steps", border_style="cyan", padding=(1,2))
     console.print()

@@ -35,7 +35,7 @@ flowchart TB
         S7["validate-author-gates.*"]
     end
 
-    subgraph A["Artifact Layer: specs/<unit>/"]
+    subgraph A["Artifact Layer: programs/<program>/units/<unit>/"]
         A0["brief.md + brief.json"]
         A1["design.md + design.json"]
         A2["design-decisions.json"]

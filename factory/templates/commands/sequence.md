@@ -62,7 +62,7 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Artifacts: `specs/<unit>/sequence.md`, `specs/<unit>/sequence.json`.
+- Artifacts: `programs/<program_id>/units/<unit_id>/sequence.md`, `programs/<program_id>/units/<unit_id>/sequence.json`.
 - Summary: task total, LO coverage summary, gating tasks.
 
 ## Examples

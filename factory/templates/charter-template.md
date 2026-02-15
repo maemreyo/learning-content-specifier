@@ -25,7 +25,8 @@ All generated assets MUST be packaged in repository-local output structures for 
 
 ## Workflow Governance
 
-- Required command flow: `/lcs.charter -> /lcs.define -> /lcs.refine -> /lcs.design -> /lcs.sequence -> /lcs.rubric -> /lcs.audit -> /lcs.author`
+- Required program command flow: `/lcs.charter -> /lcs.define -> /lcs.refine -> /lcs.design -> /lcs.sequence -> /lcs.rubric -> /lcs.audit -> /lcs.author`
+- Subject governance updates use: `/lcs.subject.charter`
 - Skipping rubric or audit is prohibited in hard-gate mode.
 - Amendments to this charter require rationale and impact summary.
 

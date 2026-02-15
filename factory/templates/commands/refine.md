@@ -48,8 +48,8 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Updated `specs/<unit>/brief.md`.
-- Updated `specs/<unit>/brief.json`.
+- Updated `programs/<program_id>/units/<unit_id>/brief.md`.
+- Updated `programs/<program_id>/units/<unit_id>/brief.json`.
 - Report includes: clarification count, sections touched, unresolved blockers.
 
 ## Examples

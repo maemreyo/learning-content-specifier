@@ -1,6 +1,6 @@
 # Canonical Terminology
 
-- `unit`: A numbered learning-content work package under `specs/<###-slug>/`.
+- `unit`: A numbered learning-content work package under `programs/<program-id>/units/<###-slug>/`.
 - `brief.md`: Outcome and scope contract for a unit.
 - `design.md`: Learning design strategy and constraints.
 - `sequence.md`: Dependency-ordered authoring tasks.

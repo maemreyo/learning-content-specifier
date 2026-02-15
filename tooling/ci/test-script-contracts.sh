@@ -2,8 +2,18 @@
 set -euo pipefail
 
 ROOT="$(pwd)"
+PROGRAM_ID="seed-contract-tests"
 UNIT="999-ci-contract"
-UNIT_DIR="$ROOT/specs/$UNIT"
+UNIT_DIR="$ROOT/programs/$PROGRAM_ID/units/$UNIT"
+
+cleanup_contract_test_artifacts() {
+  rm -rf "$ROOT/programs/$PROGRAM_ID" >/dev/null 2>&1 || true
+  rm -f "$ROOT/.lcs/context/current-program" "$ROOT/.lcs/context/current-unit" >/dev/null 2>&1 || true
+  rmdir "$ROOT/.lcs/context" >/dev/null 2>&1 || true
+  rmdir "$ROOT/.lcs" >/dev/null 2>&1 || true
+}
+
+trap cleanup_contract_test_artifacts EXIT
 
 normalize_json() {
   local raw="${1:-}"
@@ -40,6 +50,11 @@ PY
 
 rm -rf "$UNIT_DIR"
 mkdir -p "$UNIT_DIR/rubrics" "$UNIT_DIR/outputs"
+mkdir -p "$ROOT/.lcs/context"
+: > "$ROOT/.lcs/context/current-program"
+: > "$ROOT/.lcs/context/current-unit"
+printf '%s\n' "$PROGRAM_ID" > "$ROOT/.lcs/context/current-program"
+printf '%s\n' "$UNIT" > "$ROOT/.lcs/context/current-unit"
 : > "$UNIT_DIR/brief.md"
 : > "$UNIT_DIR/design.md"
 : > "$UNIT_DIR/sequence.md"
@@ -56,23 +71,27 @@ cat > "$UNIT_DIR/rubrics/default.md" <<RUB
 RUB
 
 export LCS_UNIT="$UNIT"
+export LCS_PROGRAM="$PROGRAM_ID"
 
 tmp_nogit="$(pwd)/tmp-contract-test-$$"
-mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/specs"
+mkdir -p "$tmp_nogit/.lcs/templates" "$tmp_nogit/.lcs/context" "$tmp_nogit/programs/$PROGRAM_ID/units"
 cp factory/templates/brief-template.md "$tmp_nogit/.lcs/templates/brief-template.md"
 cp -r contracts "$tmp_nogit/contracts"
+cat > "$tmp_nogit/programs/$PROGRAM_ID/program.json" <<EOF
+{"program_id":"$PROGRAM_ID","title":"Contract test","status":"draft"}
+EOF
 tmp_unit_number="$(date +%s)"
 used_define_fallback=false
-json_define_raw="$(cd "$tmp_nogit" && LCS_UNIT="$UNIT" bash "$ROOT/factory/scripts/bash/create-new-unit.sh" --json --number "$tmp_unit_number" "temporary unit for contract test" 2>&1 || true)"
+json_define_raw="$(cd "$tmp_nogit" && LCS_PROGRAM="$PROGRAM_ID" bash "$ROOT/factory/scripts/bash/create-new-unit.sh" --json --number "$tmp_unit_number" "temporary unit for contract test" 2>&1 || true)"
 json_define="$(normalize_json "$json_define_raw" || true)"
 if [[ -z "$json_define" ]]; then
   used_define_fallback=true
-  json_define='{"UNIT_NAME":"999-ci-contract","BRIEF_FILE":"specs/999-ci-contract/brief.md","UNIT_NUM":"999"}'
+  json_define='{"PROGRAM_ID":"seed-contract-tests","UNIT_NAME":"999-ci-contract","UNIT_DIR":"programs/seed-contract-tests/units/999-ci-contract","BRIEF_FILE":"programs/seed-contract-tests/units/999-ci-contract/brief.md","UNIT_NUM":"999"}'
 fi
 uv run python3 - <<'PY' "$json_define"
 import json,sys
 obj=json.loads(sys.argv[1])
-for k in ["UNIT_NAME","BRIEF_FILE","UNIT_NUM"]:
+for k in ["PROGRAM_ID","UNIT_NAME","BRIEF_FILE","UNIT_NUM"]:
     assert k in obj, f"missing {k}"
 PY
 if [[ "$used_define_fallback" != "true" ]]; then
@@ -90,8 +109,14 @@ rm -rf "$tmp_nogit"
 
 tmp_git="$(pwd)/tmp-contract-git-test-$$"
 mkdir -p "$tmp_git/.lcs/templates"
+mkdir -p "$tmp_git/.lcs/context"
 cp factory/templates/brief-template.md "$tmp_git/.lcs/templates/brief-template.md"
 cp -r contracts "$tmp_git/contracts"
+mkdir -p "$tmp_git/programs/$PROGRAM_ID/units"
+cat > "$tmp_git/programs/$PROGRAM_ID/program.json" <<EOF
+{"program_id":"$PROGRAM_ID","title":"Contract test","status":"draft"}
+EOF
+printf '%s\n' "$PROGRAM_ID" > "$tmp_git/.lcs/context/current-program"
 (
   cd "$tmp_git"
   git init >/dev/null 2>&1
@@ -101,7 +126,7 @@ cp -r contracts "$tmp_git/contracts"
   git add .gitkeep
   git commit -m "init" >/dev/null 2>&1
   start_branch="$(git rev-parse --abbrev-ref HEAD)"
-  bash "$ROOT/factory/scripts/bash/create-new-unit.sh" --json --number 997 "verify no auto branch switch" >/dev/null
+  LCS_PROGRAM="$PROGRAM_ID" bash "$ROOT/factory/scripts/bash/create-new-unit.sh" --json --number 997 "verify no auto branch switch" >/dev/null
   end_branch="$(git rev-parse --abbrev-ref HEAD)"
   [[ "$start_branch" == "$end_branch" ]] || {
     echo "create-new-unit.sh unexpectedly switched branch: $start_branch -> $end_branch" >&2
@@ -120,7 +145,7 @@ fi
 uv run python3 - <<'PY' "$json_setup"
 import json,sys
 obj=json.loads(sys.argv[1])
-for k in ["BRIEF_FILE","DESIGN_FILE","UNIT_DIR","BRANCH","HAS_GIT"]:
+for k in ["PROGRAM_ID","UNIT_ID","BRIEF_FILE","DESIGN_FILE","UNIT_DIR","BRANCH","HAS_GIT"]:
     assert k in obj, f"missing {k}"
 assert isinstance(obj["HAS_GIT"], bool), "HAS_GIT must be bool"
 PY
@@ -188,9 +213,9 @@ uv run python3 - <<'PY' "$json_paths"
 import json,sys
 obj=json.loads(sys.argv[1])
 for k in [
-    "UNIT_REPO_ROOT","UNIT_BRANCH","UNIT_HAS_GIT","UNIT_DIR","UNIT_BRIEF_FILE","UNIT_BRIEF_JSON_FILE",
+    "UNIT_REPO_ROOT","UNIT_BRANCH","UNIT_ID","UNIT_HAS_GIT","PROGRAM_ID","PROGRAM_DIR","PROGRAM_CHARTER_FILE","UNIT_DIR","UNIT_BRIEF_FILE","UNIT_BRIEF_JSON_FILE",
     "UNIT_DESIGN_FILE","UNIT_DESIGN_JSON_FILE","UNIT_SEQUENCE_FILE","UNIT_SEQUENCE_JSON_FILE",
-    "UNIT_AUDIT_REPORT_FILE","UNIT_AUDIT_REPORT_JSON_FILE","UNIT_MANIFEST_FILE","UNIT_CHARTER_FILE"
+    "UNIT_AUDIT_REPORT_FILE","UNIT_AUDIT_REPORT_JSON_FILE","UNIT_MANIFEST_FILE","UNIT_CHARTER_FILE","SUBJECT_CHARTER_FILE"
 ]:
     assert k in obj, f"missing {k}"
 PY

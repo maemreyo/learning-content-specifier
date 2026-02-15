@@ -15,7 +15,7 @@ scripts:
 
 ## Intent
 
-Transform a raw learning-content request into a complete `brief.md` contract.
+Transform a raw learning-content request into a complete unit brief contract under the active program.
 
 ## Inputs
 
@@ -34,10 +34,10 @@ $ARGUMENTS
 
 ## Execution Steps
 
-1. Run `{SCRIPT}` and parse `UNIT_NAME`, `BRIEF_FILE`, `UNIT_NUM`.
+1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `UNIT_NAME`, `UNIT_DIR`, `BRIEF_FILE`, `UNIT_NUM`.
 2. Load `.lcs/templates/brief-template.md`.
 3. Write brief sections: audience/context, outcomes, scope boundaries, requirements, accessibility/readability, metrics, risks.
-4. Create/update `specs/<unit>/brief.json` with matching LO IDs and metadata.
+4. Create/update `programs/<program_id>/units/<unit_id>/brief.json` with matching LO IDs and metadata.
 5. Save to `BRIEF_FILE`.
 6. Return completion summary and next command options.
 
@@ -55,9 +55,9 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Artifact: `specs/<unit>/brief.md`.
-- Artifact: `specs/<unit>/brief.json`.
-- Completion report: `UNIT_NAME`, `BRIEF_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
+- Artifact: `programs/<program_id>/units/<unit_id>/brief.md`.
+- Artifact: `programs/<program_id>/units/<unit_id>/brief.json`.
+- Completion report: `PROGRAM_ID`, `UNIT_NAME`, `BRIEF_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
 
 ## Examples
 

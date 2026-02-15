@@ -28,7 +28,7 @@ Hard gates enforce:
 
 ## Local-First Output Strategy
 
-All deliverables are produced under `specs/<unit>/outputs/` so downstream repositories or pipelines can consume deterministic artifacts.
+All deliverables are produced under `programs/<program-id>/units/<unit-id>/outputs/` so downstream repositories or pipelines can consume deterministic artifacts.
 
 Machine-consumable contracts are versioned json sidecars validated by schema, with `outputs/manifest.json` as the downstream entrypoint.
 

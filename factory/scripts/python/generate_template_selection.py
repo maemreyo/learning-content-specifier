@@ -83,7 +83,7 @@ KEYWORD_HINTS = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", required=True, help="Factory repository root")
-    parser.add_argument("--unit-dir", required=True, help="Unit directory under specs/")
+    parser.add_argument("--unit-dir", required=True, help="Unit directory under programs/<program-id>/units/")
     parser.add_argument("--template-pack-dir", help="Override template pack directory")
     parser.add_argument("--json", action="store_true", help="Emit JSON output")
     return parser.parse_args()

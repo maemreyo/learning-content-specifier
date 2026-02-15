@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "golden_path_snapshot.json"
+PROGRAM_ID = "seed-e2e-golden"
 
 
 def _run_setup_design(env: dict[str, str]) -> None:
@@ -91,7 +92,7 @@ def _run_gate_validator(env: dict[str, str]) -> dict:
 
 
 def _prepare_unit(unit_id: str) -> Path:
-    unit_dir = ROOT / "specs" / unit_id
+    unit_dir = ROOT / "programs" / PROGRAM_ID / "units" / unit_id
     if unit_dir.exists():
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
@@ -107,6 +108,7 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         # define/refine/design baseline
@@ -115,7 +117,7 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         # sequence
         (unit_dir / "sequence.md").write_text(
             "# Sequence\n"
-            "- [ ] S001 [LO1] Draft core lesson in specs/993-e2e-golden-path/outputs/module-01/lesson-01.md\n"
+            f"- [ ] S001 [LO1] Draft core lesson in programs/{PROGRAM_ID}/units/993-e2e-golden-path/outputs/module-01/lesson-01.md\n"
             "- [ ] S013 Run rubric and resolve blocking items\n",
             encoding="utf-8",
         )

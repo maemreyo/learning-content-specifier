@@ -26,7 +26,7 @@ Release artifact:
 
 ## MVP Scope (v1)
 
-- Filesystem ingestion (`specs/*`).
+- Filesystem ingestion (`programs/*/units/*`).
 - Deterministic contract validation.
 - Unit index and query API.
 - Gate status projection.

@@ -441,6 +441,8 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
 
 if ($Json) {
     [PSCustomObject]@{
+        PROGRAM_ID = $paths.PROGRAM_ID
+        UNIT_ID = $paths.CURRENT_UNIT
         BRIEF_FILE = $paths.BRIEF_FILE
         DESIGN_FILE = $paths.DESIGN_FILE
         UNIT_DIR = $paths.UNIT_DIR
@@ -448,6 +450,8 @@ if ($Json) {
         HAS_GIT = $paths.HAS_GIT
     } | ConvertTo-Json -Compress
 } else {
+    Write-Output "PROGRAM_ID: $($paths.PROGRAM_ID)"
+    Write-Output "UNIT_ID: $($paths.CURRENT_UNIT)"
     Write-Output "BRIEF_FILE: $($paths.BRIEF_FILE)"
     Write-Output "DESIGN_FILE: $($paths.DESIGN_FILE)"
     Write-Output "UNIT_DIR: $($paths.UNIT_DIR)"

@@ -21,7 +21,7 @@ Command flow:
 8. `/lcs.author`
 9. `/lcs.issueize`
 
-Primary artifacts under `specs/<###-unit-name>/`:
+Primary artifacts under `programs/<program-id>/units/<###-unit-name>/`:
 
 - `brief.md`
 - `design.md`
@@ -55,7 +55,7 @@ Governance artifact:
 ```text
 /lcs.define
   -> create-new-unit.sh --json
-  -> creates numbered unit branch/directory
+  -> creates numbered unit directory under active program
   -> writes brief.md from brief-template.md
 ```
 

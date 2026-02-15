@@ -1,17 +1,20 @@
 ---
-description: Create or update the project learning-content charter and propagate governance changes.
+description: Create or update the active learning-program charter and keep program context deterministic.
 handoffs:
+  - label: Update Subject Governance Charter
+    agent: lcs.subject.charter
+    prompt: Update subject-level governance charter in .lcs/memory/charter.md.
   - label: Define Learning Unit
     agent: lcs.define
-    prompt: Define a new learning unit from this charter.
+    prompt: Define a new learning unit from this program charter.
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly -SkipBranchCheck
+  sh: factory/scripts/bash/ensure-program-context.sh --json "{ARGS}"
+  ps: factory/scripts/powershell/ensure-program-context.ps1 -Json "{ARGS}"
 ---
 
 ## Intent
 
-Establish or amend the governance source of truth in `.lcs/memory/charter.md`.
+Establish or amend the active program charter in `programs/<program_id>/charter.md`.
 
 ## Inputs
 
@@ -21,17 +24,18 @@ $ARGUMENTS
 
 ## Mandatory Rules (YOU MUST / MUST NOT)
 
-- YOU MUST maintain a deterministic charter version line: `Version`, `Ratified`, `Last Amended`.
+- YOU MUST run `{SCRIPT}` exactly once to resolve/create active program context.
+- YOU MUST maintain deterministic charter version lines: `Version`, `Ratified`, `Last Amended`.
 - YOU MUST define hard-gate policy in testable language (objective criteria, not vague intent).
 - YOU MUST propagate governance-impacting changes into templates under `.lcs/templates/`.
 - YOU MUST NOT leave unresolved placeholders.
-- YOU MUST NOT require unit branch context for this command.
+- YOU MUST NOT edit `.lcs/memory/charter.md` in this command.
 
 ## Execution Steps
 
-1. Run `{SCRIPT}` and parse `UNIT_REPO_ROOT`, `UNIT_CHARTER_FILE`.
-2. Load existing charter or bootstrap from `.lcs/templates/charter-template.md`.
-3. Integrate user intent and enforce command chain: `charter -> define -> refine -> design -> sequence -> rubric -> audit -> author -> issueize`.
+1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `PROGRAM_DIR`, `PROGRAM_CHARTER_FILE`, `SUBJECT_CHARTER_FILE`.
+2. Load existing program charter or bootstrap from `.lcs/templates/charter-template.md`.
+3. Integrate user intent and enforce command chain: `charter -> define -> refine -> design -> sequence -> rubric -> audit -> author`.
 4. Apply semver bump rationale:
    - MAJOR: governance-breaking change.
    - MINOR: new mandatory principle or gate.
@@ -52,13 +56,15 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Primary artifact: `.lcs/memory/charter.md`.
+- Primary artifact: `programs/<program_id>/charter.md`.
+- Context artifacts: `.lcs/context/current-program` set to active `program_id` and `.lcs/context/current-unit` cleared.
 - Report includes:
+  - `program_id`,
   - old/new version,
   - amendment scope,
-  - affected factory/templates/commands.
+  - affected `.lcs/templates/*` files.
 
 ## Examples
 
-- Success: charter updated with explicit gate criteria and semver bump rationale.
+- Success: program charter updated with explicit gate criteria and semver bump rationale.
 - Fail: unresolved `[TODO]` governance token remains.

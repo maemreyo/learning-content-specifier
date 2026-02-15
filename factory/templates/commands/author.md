@@ -53,9 +53,9 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Updated `specs/<unit>/outputs/*` assets.
-- Updated `specs/<unit>/outputs/manifest.json`.
-- Updated `specs/<unit>/sequence.md` and `specs/<unit>/sequence.json` completion state.
+- Updated `programs/<program_id>/units/<unit_id>/outputs/*` assets.
+- Updated `programs/<program_id>/units/<unit_id>/outputs/manifest.json`.
+- Updated `programs/<program_id>/units/<unit_id>/sequence.md` and `programs/<program_id>/units/<unit_id>/sequence.json` completion state.
 - Final summary includes produced files + remaining tasks.
 
 ## Examples

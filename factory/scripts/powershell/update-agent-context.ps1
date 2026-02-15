@@ -47,15 +47,16 @@ $duration = Extract-LearningField 'Duration Budget'
 $modality = Extract-LearningField 'Modality Mix'
 $mode = Extract-LearningField 'Delivery Mode'
 
-$techLine = "- Audience: $($audience ? $audience : 'unknown') | Level: $($level ? $level : 'unknown') | Duration: $($duration ? $duration : 'unknown') | Modality: $($modality ? $modality : 'unknown') | Mode: $($mode ? $mode : 'unknown') ($($paths.CURRENT_BRANCH))"
-$recentLine = "- $($paths.CURRENT_BRANCH): Updated unit learning profile ($($modality ? $modality : 'unknown'))"
+$structurePath = "programs/$($paths.PROGRAM_ID ? $paths.PROGRAM_ID : '<program-id>')/units/$($paths.CURRENT_UNIT ? $paths.CURRENT_UNIT : '<unit-id>')"
+$techLine = "- Audience: $($audience ? $audience : 'unknown') | Level: $($level ? $level : 'unknown') | Duration: $($duration ? $duration : 'unknown') | Modality: $($modality ? $modality : 'unknown') | Mode: $($mode ? $mode : 'unknown') ($structurePath)"
+$recentLine = "- $structurePath: Updated unit learning profile ($($modality ? $modality : 'unknown'))"
 
 function New-AgentFile([string]$TargetFile) {
     $content = Get-Content -Path $template -Raw -Encoding utf8
     $content = $content.Replace('[PROJECT NAME]', (Split-Path $paths.REPO_ROOT -Leaf))
     $content = $content.Replace('[DATE]', (Get-Date -Format 'yyyy-MM-dd'))
     $content = $content.Replace('[EXTRACTED FROM ALL DESIGN.MD FILES]', $techLine)
-    $content = $content.Replace('[ACTUAL STRUCTURE FROM PLANS]', 'specs/' + [Environment]::NewLine + '  outputs/')
+    $content = $content.Replace('[ACTUAL STRUCTURE FROM PLANS]', $structurePath + '/' + [Environment]::NewLine + '  outputs/')
     $content = $content.Replace('[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]', '/lcs.define, /lcs.design, /lcs.sequence, /lcs.rubric, /lcs.audit, /lcs.author')
     $content = $content.Replace('[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE]', 'Use concise, learner-centered writing and consistent terminology.')
     $content = $content.Replace('[LAST 3 FEATURES AND WHAT THEY ADDED]', $recentLine)

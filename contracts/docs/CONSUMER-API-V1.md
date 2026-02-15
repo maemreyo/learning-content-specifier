@@ -13,7 +13,7 @@ Request:
   "source_repo_id": "repo.math",
   "source_repo_ref": {"repo": "math-content", "branch": "main"},
   "repo_path": "/absolute/path/to/project",
-  "unit_glob": "specs/*",
+  "unit_glob": "programs/*/units/*",
   "contract_version": "1.0.0"
 }
 ```
@@ -21,7 +21,7 @@ Request:
 Behavior:
 
 - Discover units from filesystem.
-- Require `specs/<unit>/outputs/manifest.json`.
+- Require `programs/<program-id>/units/<unit>/outputs/manifest.json`.
 - Validate contract checksum policy before ingestion.
 - Run schema + consistency + gate checks.
 
@@ -31,7 +31,7 @@ Request:
 
 ```json
 {
-  "unit_path": "/absolute/path/to/project/specs/993-e2e-golden-path",
+  "unit_path": "/absolute/path/to/project/programs/seed-001/units/993-e2e-golden-path",
   "source_repo_id": "repo.math"
 }
 ```

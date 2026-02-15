@@ -1,7 +1,7 @@
 # Learning Design Plan: [UNIT]
 
 **Branch**: `[###-unit-name]` | **Date**: [DATE] | **Brief**: [link]
-**Input**: Unit brief from `/specs/[###-unit-name]/brief.md`
+**Input**: Unit brief from `/programs/[program-id]/units/[###-unit-name]/brief.md`
 
 ## Summary
 
@@ -32,7 +32,7 @@
 ### Documentation (this unit)
 
 ```text
-specs/[###-unit]/
+programs/[program-id]/units/[###-unit]/
 |-- design.md                # This file (/lcs.design output)
 |-- design.json              # Machine-readable design contract
 |-- research.md              # Optional background decisions

@@ -1,5 +1,5 @@
 ---
-description: Generate learning design artifacts from the unit brief and charter.
+description: Generate learning design artifacts from the unit brief and active program charter.
 handoffs:
   - label: Build Production Sequence
     agent: lcs.sequence
@@ -45,8 +45,8 @@ $ARGUMENTS
 
 ## Execution Steps
 
-1. Run `{SCRIPT}` and parse `BRIEF_FILE`, `DESIGN_FILE`, `UNIT_DIR`, `BRANCH`, `HAS_GIT`.
-2. Load `BRIEF_FILE`, `.lcs/memory/charter.md`, and `.lcs/templates/design-template.md`.
+1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `UNIT_ID`, `BRIEF_FILE`, `DESIGN_FILE`, `UNIT_DIR`, `BRANCH`, `HAS_GIT`.
+2. Load `BRIEF_FILE`, `programs/<program_id>/charter.md`, and `.lcs/templates/design-template.md`.
 3. Produce/update design artifacts under `UNIT_DIR`.
 4. Update decision contracts (`design.json`, `design-decisions.json`) with scored pedagogy rationale.
 5. If confidence `< 0.70` OR domain is time-sensitive OR artifacts conflict, add evidence references to `research.md` and `design-decisions.json`.

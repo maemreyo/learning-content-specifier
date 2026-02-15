@@ -47,15 +47,17 @@ lcs init . --ai codex
 
 This will scaffold `.lcs/`, command files for your selected agent, templates, and workflow scripts so you can start authoring learning content immediately.
 
-Note: unit creation no longer auto-switches Git branch. If you want branch-per-unit, run `git checkout -b <unit-name>` manually (or use script flag `--checkout-branch`).
+Note: unit creation no longer depends on branch naming. Context is tracked in `.lcs/context/current-program` and `.lcs/context/current-unit`.
 
 ## Core Command Flow
 
 `/lcs.charter -> /lcs.define -> /lcs.refine -> /lcs.design -> /lcs.sequence -> /lcs.rubric -> /lcs.audit -> /lcs.author -> /lcs.issueize`
 
+Subject governance can be updated separately with `/lcs.subject.charter`.
+
 ## Artifact Contract
 
-For each unit under `specs/<###-slug>/`:
+For each unit under `programs/<program-id>/units/<###-slug>/`:
 
 - `brief.md`
 - `brief.json`
@@ -74,7 +76,10 @@ For each unit under `specs/<###-slug>/`:
 - `outputs/`
 - `outputs/manifest.json`
 
-Governance source: `.lcs/memory/charter.md`.
+Governance sources:
+
+- Subject-level charter: `.lcs/memory/charter.md`
+- Program-level charter: `programs/<program-id>/charter.md`
 
 ## Proficiency Targets (Optional)
 

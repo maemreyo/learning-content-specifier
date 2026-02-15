@@ -19,8 +19,8 @@ This document is the canonical integration boundary between:
 - Consumer MUST verify checksum entries from `contracts/index.json`.
 
 2. Artifact channel (data plane)
-- Producer writes artifacts under `specs/<unit>/` in the content repo.
-- Consumer entrypoint is strictly `specs/<unit>/outputs/manifest.json`.
+- Producer writes artifacts under `programs/<program-id>/units/<unit>/` in the content repo.
+- Consumer entrypoint is strictly `programs/<program-id>/units/<unit>/outputs/manifest.json`.
 - Consumer MUST NOT resolve files by path guessing outside manifest references.
 
 3. Compatibility channel (version policy)

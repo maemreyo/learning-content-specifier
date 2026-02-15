@@ -6,7 +6,7 @@ graph TB
     CLI[LCS CLI]
     Cmd[Command Templates]
     Script[Shell/PowerShell Scripts]
-    Artifacts[specs/<unit> artifacts]
+    Artifacts[programs/<program>/<unit> artifacts]
     Gates[Rubric + Audit + Author Gate Validator]
     Extensions[Extension Runtime]
 

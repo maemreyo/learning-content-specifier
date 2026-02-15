@@ -10,6 +10,7 @@ uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs in
 
 ```text
 /lcs.charter
+/lcs.subject.charter (optional, subject governance only)
 /lcs.define Build a learning unit for ...
 /lcs.refine
 /lcs.design
@@ -21,7 +22,7 @@ uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs in
 
 ## 3. Confirm artifacts
 
-Expected under `specs/<###-slug>/`:
+Expected under `programs/<program-id>/units/<###-slug>/`:
 
 - `brief.md`
 - `brief.json`

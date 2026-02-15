@@ -4,6 +4,7 @@ param(
     [switch]$Json,
     [string]$ShortName,
     [int]$Number = 0,
+    [string]$Program,
     [switch]$CheckoutBranch,
     [switch]$Help,
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -12,50 +13,45 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($Help) {
-    Write-Host 'Usage: ./create-new-unit.ps1 [-Json] [-ShortName <name>] [-Number N] [-CheckoutBranch] <unit description>'
+    Write-Host 'Usage: ./create-new-unit.ps1 [-Json] [-Program <id>] [-ShortName <name>] [-Number N] [-CheckoutBranch] <unit description>'
     exit 0
 }
 
 if (-not $UnitDescription -or $UnitDescription.Count -eq 0) {
-    Write-Error 'Usage: ./create-new-unit.ps1 [-Json] [-ShortName <name>] [-Number N] [-CheckoutBranch] <unit description>'
+    Write-Error 'Usage: ./create-new-unit.ps1 [-Json] [-Program <id>] [-ShortName <name>] [-Number N] [-CheckoutBranch] <unit description>'
     exit 1
 }
 
-$unitDesc = ($UnitDescription -join ' ').Trim()
+. "$PSScriptRoot/common.ps1"
 
-function ConvertTo-CleanName([string]$Name) {
-    return ($Name.ToLower() -replace '[^a-z0-9]', '-' -replace '-{2,}', '-' -replace '^-', '' -replace '-$', '')
+$unitDesc = ($UnitDescription -join ' ').Trim()
+$repoRoot = Get-RepoRoot
+$contextDir = Join-Path $repoRoot '.lcs/context'
+$programsRoot = Join-Path $repoRoot 'programs'
+New-Item -ItemType Directory -Path $contextDir -Force | Out-Null
+New-Item -ItemType Directory -Path $programsRoot -Force | Out-Null
+
+function Convert-ToSlug([string]$Name) {
+    return ($Name.ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+', '' -replace '-+$', '' -replace '-{2,}', '-')
 }
 
-function Get-BranchName([string]$Description) {
+function Get-UnitSuffix([string]$Description) {
     $stopWords = @('i','a','an','the','to','for','of','in','on','at','by','with','from','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','should','could','can','may','might','must','shall','this','that','these','those','my','your','our','their','want','need','add','get','set')
     $clean = $Description.ToLower() -replace '[^a-z0-9\s]', ' '
     $words = $clean -split '\s+' | Where-Object { $_ -and $_.Length -ge 3 -and ($stopWords -notcontains $_) }
     if ($words.Count -eq 0) {
-        $fallback = ConvertTo-CleanName $Description
+        $fallback = Convert-ToSlug $Description
+        if (-not $fallback) { return 'unit' }
         return (($fallback -split '-') | Select-Object -First 3) -join '-'
     }
-    return ($words | Select-Object -First 3) -join '-'
+    return (($words | Select-Object -First 3) -join '-')
 }
 
-function Find-RepositoryRoot([string]$StartDir) {
-    if (-not $StartDir) { return $null }
-    $resolved = Resolve-Path -LiteralPath $StartDir -ErrorAction SilentlyContinue
-    if (-not $resolved) { return $null }
-    $current = $resolved.Path
-    while ($true) {
-        if ((Test-Path (Join-Path $current '.git')) -or (Test-Path (Join-Path $current '.lcs'))) { return $current }
-        $parent = Split-Path $current -Parent
-        if ($parent -eq $current) { return $null }
-        $current = $parent
-    }
-}
-
-function Get-HighestFromSpecs([string]$SpecsDir) {
+function Get-HighestUnitNumber([string]$UnitsDir) {
     $highest = 0
-    if (Test-Path $SpecsDir) {
-        Get-ChildItem -Path $SpecsDir -Directory | ForEach-Object {
-            if ($_.Name -match '^(\d+)') {
+    if (Test-Path $UnitsDir -PathType Container) {
+        Get-ChildItem -Path $UnitsDir -Directory | ForEach-Object {
+            if ($_.Name -match '^(\d{3})-') {
                 $n = [int]$matches[1]
                 if ($n -gt $highest) { $highest = $n }
             }
@@ -64,113 +60,69 @@ function Get-HighestFromSpecs([string]$SpecsDir) {
     return $highest
 }
 
-function Get-HighestFromBranches() {
-    $highest = 0
-    try {
-        $branches = git branch -a 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            foreach ($branch in $branches) {
-                $clean = $branch.Trim() -replace '^\*?\s+', '' -replace '^remotes/[^/]+/', ''
-                if ($clean -match '^(\d+)-') {
-                    $n = [int]$matches[1]
-                    if ($n -gt $highest) { $highest = $n }
-                }
-            }
-        }
-    } catch {}
-    return $highest
+function Resolve-ProgramId {
+    if ($Program) { return (Convert-ToSlug $Program) }
+    if ($env:LCS_PROGRAM) { return (Convert-ToSlug $env:LCS_PROGRAM) }
+
+    $fromContext = Get-ContextValue -FilePath (Join-Path $contextDir 'current-program')
+    if ($fromContext) { return $fromContext }
+
+    $fromPwd = Get-ProgramFromPwd -RepoRoot $repoRoot
+    if ($fromPwd) { return $fromPwd }
+
+    return $null
 }
 
-function Get-ContractVersion([string]$RepoRoot) {
-    $indexFile = Join-Path $RepoRoot 'contracts/index.json'
-    if (-not (Test-Path $indexFile -PathType Leaf)) {
-        $indexFile = Join-Path $RepoRoot '.lcs/contracts/index.json'
-    }
-    if (-not (Test-Path $indexFile -PathType Leaf)) {
-        throw "Missing contract index. Checked: $RepoRoot/contracts/index.json and $RepoRoot/.lcs/contracts/index.json"
-    }
-
-    $payload = Get-Content -Path $indexFile -Encoding utf8 | ConvertFrom-Json
-    $version = [string]$payload.contract_version
-    if (-not ($version -match '^\d+\.\d+\.\d+$')) {
-        throw "Invalid contract_version '$version' in $indexFile (expected X.Y.Z)"
-    }
-    return $version
+$programId = Resolve-ProgramId
+if (-not $programId) {
+    Write-Error 'No active program context found. Run /lcs.charter first or pass -Program <id>.'
+    exit 1
 }
 
-$scriptBase = $PSScriptRoot
-if (-not $scriptBase -and $MyInvocation.MyCommand.Path) {
-    $scriptBase = Split-Path -Parent $MyInvocation.MyCommand.Path
-}
-if (-not $scriptBase) {
-    $scriptBase = (Get-Location).Path
+$programDir = Join-Path $programsRoot $programId
+if (-not (Test-Path $programDir -PathType Container)) {
+    Write-Error "Program directory does not exist: $programDir`nRun /lcs.charter first to scaffold the program."
+    exit 1
 }
 
-$fallbackRoot = Find-RepositoryRoot -StartDir $scriptBase
-if (-not $fallbackRoot) {
-    $fallbackRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptBase '../..'))
-}
-if (-not $fallbackRoot) { Write-Error 'Could not determine repository root.'; exit 1 }
+$unitsDir = Join-Path $programDir 'units'
+New-Item -ItemType Directory -Path $unitsDir -Force | Out-Null
 
-$repoRoot = $null
-$hasGit = $false
-try {
-    $gitRoot = (git rev-parse --show-toplevel 2>$null)
-    if ($LASTEXITCODE -eq 0 -and $gitRoot) {
-        $repoRoot = (@($gitRoot) | Where-Object { $_ -and "$_".Trim() } | Select-Object -First 1)
-        $hasGit = $true
-    }
-} catch {}
-
-if (-not $repoRoot) {
-    $repoRoot = $fallbackRoot
-    $hasGit = $false
-}
-
-Set-Location $repoRoot
-$specsDir = Join-Path $repoRoot 'specs'
-New-Item -ItemType Directory -Path $specsDir -Force | Out-Null
-
-$unitSuffix = if ($ShortName) { ConvertTo-CleanName $ShortName } else { Get-BranchName $unitDesc }
+$unitSuffix = if ($ShortName) { Convert-ToSlug $ShortName } else { Get-UnitSuffix $unitDesc }
+if (-not $unitSuffix) { $unitSuffix = 'unit' }
 
 if ($Number -eq 0) {
-    if ($hasGit) {
-        try { git fetch --all --prune 2>$null | Out-Null } catch {}
-        $max = [Math]::Max((Get-HighestFromBranches), (Get-HighestFromSpecs $specsDir))
-        $Number = $max + 1
-    } else {
-        $Number = (Get-HighestFromSpecs $specsDir) + 1
-    }
+    $Number = (Get-HighestUnitNumber -UnitsDir $unitsDir) + 1
 }
 
 $unitNum = ('{0:000}' -f $Number)
 $unitName = "$unitNum-$unitSuffix"
+$unitDir = Join-Path $unitsDir $unitName
+New-Item -ItemType Directory -Path $unitDir -Force | Out-Null
 
-if ($hasGit) {
-    if ($CheckoutBranch) {
-        try { git checkout -b $unitName | Out-Null } catch { Write-Warning "Failed to create git branch: $unitName" }
-    } else {
-        Write-Warning '[lcs] Branch auto-checkout disabled. Staying on current branch.'
-        Write-Warning "[lcs] Run 'git checkout -b $unitName' manually if you want branch-per-unit."
-    }
-} else {
-    Write-Warning "[lcs] Warning: Git repository not detected; skipped branch creation for $unitName"
+if ((Test-HasGit) -and $CheckoutBranch) {
+    $branchName = "$programId-$unitName"
+    git checkout -b $branchName | Out-Null
+} elseif (Test-HasGit) {
+    Write-Warning '[lcs] Branch auto-checkout disabled. Staying on current branch.'
 }
 
-$unitDir = Join-Path $specsDir $unitName
-New-Item -ItemType Directory -Path $unitDir -Force | Out-Null
-$contractVersion = Get-ContractVersion -RepoRoot $repoRoot
-
+$contractVersion = Get-ContractVersion
 $template = Join-Path $repoRoot '.lcs/templates/brief-template.md'
 $briefFile = Join-Path $unitDir 'brief.md'
 $briefJsonFile = Join-Path $unitDir 'brief.json'
-if (Test-Path $template) { Copy-Item $template $briefFile -Force } else { New-Item -ItemType File -Path $briefFile -Force | Out-Null }
+if (Test-Path $template -PathType Leaf) {
+    Copy-Item -Path $template -Destination $briefFile -Force
+} else {
+    New-Item -ItemType File -Path $briefFile -Force | Out-Null
+}
 
-if (-not (Test-Path $briefJsonFile)) {
+if (-not (Test-Path $briefJsonFile -PathType Leaf)) {
 @"
 {
   "contract_version": "$contractVersion",
   "unit_id": "$unitName",
+  "program_id": "$programId",
   "title": "$unitName",
   "audience": {
     "primary": "general learners",
@@ -197,12 +149,25 @@ if (-not (Test-Path $briefJsonFile)) {
 "@ | Set-Content -Path $briefJsonFile -Encoding utf8
 }
 
+Set-ContextValue -FilePath (Join-Path $contextDir 'current-program') -Value $programId
+Set-ContextValue -FilePath (Join-Path $contextDir 'current-unit') -Value $unitName
+$env:LCS_PROGRAM = $programId
 $env:LCS_UNIT = $unitName
 
 if ($Json) {
-    [PSCustomObject]@{ UNIT_NAME=$unitName; BRIEF_FILE=$briefFile; UNIT_NUM=$unitNum } | ConvertTo-Json -Compress
+    [PSCustomObject]@{
+        PROGRAM_ID = $programId
+        PROGRAM_DIR = $programDir
+        UNIT_NAME = $unitName
+        UNIT_DIR = $unitDir
+        BRIEF_FILE = $briefFile
+        UNIT_NUM = $unitNum
+    } | ConvertTo-Json -Compress
 } else {
+    Write-Output "PROGRAM_ID: $programId"
+    Write-Output "PROGRAM_DIR: $programDir"
     Write-Output "UNIT_NAME: $unitName"
+    Write-Output "UNIT_DIR: $unitDir"
     Write-Output "BRIEF_FILE: $briefFile"
     Write-Output "UNIT_NUM: $unitNum"
 }

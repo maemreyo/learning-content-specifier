@@ -21,7 +21,7 @@ This updates:
 - `.lcs/templates/`
 - `.lcs/memory/`
 
-This does not update your authored unit artifacts in `specs/`.
+This does not update your authored unit artifacts under `programs/<program-id>/units/`.
 
 ## Recommended Backup
 

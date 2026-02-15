@@ -32,11 +32,15 @@ rm -rf "$GENRELEASES_DIR"/* || true
 
 rewrite_paths() {
   sed -E \
-    -e 's@(^|[[:space:]"'"'"'(])memory/@\1.lcs/memory/@g' \
-    -e 's@(^|[[:space:]"'"'"'(])factory/scripts/@\1.lcs/scripts/@g' \
-    -e 's@(^|[[:space:]"'"'"'(])scripts/@\1.lcs/scripts/@g' \
-    -e 's@(^|[[:space:]"'"'"'(])factory/templates/@\1.lcs/templates/@g' \
+    -e 's@(^|[[:space:]"'"'"'`(])memory/@\1.lcs/memory/@g' \
+    -e 's@(^|[[:space:]"'"'"'`(])factory/scripts/@\1.lcs/scripts/@g' \
+    -e 's@(^|[[:space:]"'"'"'`(])scripts/@\1.lcs/scripts/@g' \
+    -e 's@(^|[[:space:]"'"'"'`(])factory/templates/@\1.lcs/templates/@g' \
     -e 's@\.specify\.lcs/@.lcs/@g'
+}
+
+normalize_command_path() {
+  printf '%s\n' "$1" | rewrite_paths
 }
 
 compute_sha256() {
@@ -117,14 +121,17 @@ generate_commands() {
       in_gate_scripts && /^[a-zA-Z]/ { in_gate_scripts=0 }
     ')
     
+    script_command="$(normalize_command_path "$script_command")"
     # Replace {SCRIPT} placeholder with the script command
     body=$(printf '%s\n' "$file_content" | sed "s|{SCRIPT}|${script_command}|g")
     
     # Replace {AGENT_SCRIPT} placeholder with the agent script command if found
     if [[ -n $agent_script_command ]]; then
+      agent_script_command="$(normalize_command_path "$agent_script_command")"
       body=$(printf '%s\n' "$body" | sed "s|{AGENT_SCRIPT}|${agent_script_command}|g")
     fi
     if [[ -n $gate_script_command ]]; then
+      gate_script_command="$(normalize_command_path "$gate_script_command")"
       body=$(printf '%s\n' "$body" | sed "s|{GATE_SCRIPT}|${gate_script_command}|g")
     fi
     
@@ -344,18 +351,24 @@ for agent in "${AGENT_LIST[@]}"; do
   done
 done
 
-if command -v uv >/dev/null 2>&1; then
-  uv run python factory/scripts/python/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
-else
-  PYTHON_BIN="python3"
-  if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-    PYTHON_BIN="python"
+if [[ "${SKIP_CONTRACT_PACKAGE:-0}" != "1" ]]; then
+  if command -v uv >/dev/null 2>&1; then
+    uv run python factory/scripts/python/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
+  else
+    PYTHON_BIN="python3"
+    if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+      PYTHON_BIN="python"
+    fi
+    "$PYTHON_BIN" factory/scripts/python/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
   fi
-  "$PYTHON_BIN" factory/scripts/python/build_contract_package.py --verify --package-version "$NEW_VERSION" --output-dir "$GENRELEASES_DIR"
+  write_sha256_sidecar "$GENRELEASES_DIR/lcs-contracts-${NEW_VERSION}.zip"
+else
+  echo "Skipping contract package build (SKIP_CONTRACT_PACKAGE=1)"
 fi
-write_sha256_sidecar "$GENRELEASES_DIR/lcs-contracts-${NEW_VERSION}.zip"
 
 echo "Archives in $GENRELEASES_DIR:"
 ls -1 "$GENRELEASES_DIR"/learning-content-specifier-template-*-"${NEW_VERSION}".zip
-ls -1 "$GENRELEASES_DIR"/lcs-contracts-"${NEW_VERSION}".zip
+if [[ "${SKIP_CONTRACT_PACKAGE:-0}" != "1" ]]; then
+  ls -1 "$GENRELEASES_DIR"/lcs-contracts-"${NEW_VERSION}".zip
+fi
 ls -1 "$GENRELEASES_DIR"/*.sha256

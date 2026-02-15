@@ -56,8 +56,8 @@ $ARGUMENTS
 
 Write these artifacts:
 
-- `specs/<unit>/audit-report.md`
-- `specs/<unit>/audit-report.json`
+- `programs/<program_id>/units/<unit_id>/audit-report.md`
+- `programs/<program_id>/units/<unit_id>/audit-report.json`
 
 Required markdown headers:
 

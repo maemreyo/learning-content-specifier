@@ -24,11 +24,18 @@ if (-not $repoRoot -or -not (Test-Path $repoRoot)) {
 }
 
 # 1) create-new-unit contract in temp non-git workspace
+$programId = 'seed-contract-tests-ps'
 $tempRoot = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-" + [guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $tempRoot '.lcs/templates') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tempRoot '.lcs/context') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tempRoot "programs/$programId/units") -Force | Out-Null
 Copy-Item (Join-Path $repoRoot 'factory/templates/brief-template.md') (Join-Path $tempRoot '.lcs/templates/brief-template.md') -Force
 Copy-Item -Recurse (Join-Path $repoRoot 'contracts') (Join-Path $tempRoot 'contracts') -Force
+@"
+{"program_id":"$programId","title":"Contract test","status":"draft"}
+"@ | Set-Content -Path (Join-Path $tempRoot "programs/$programId/program.json") -Encoding utf8
+Set-Content -Path (Join-Path $tempRoot '.lcs/context/current-program') -Value $programId -Encoding utf8
 $createNewUnitScript = Join-Path $repoRoot 'factory/scripts/powershell/create-new-unit.ps1'
 $setupDesignScript = Join-Path $repoRoot 'factory/scripts/powershell/setup-design.ps1'
 $validateContractsScript = Join-Path $repoRoot 'factory/scripts/powershell/validate-artifact-contracts.ps1'
@@ -37,9 +44,9 @@ $validateGatesScript = Join-Path $repoRoot 'factory/scripts/powershell/validate-
 
 Push-Location $tempRoot
 try {
-    $createJson = & $createNewUnitScript -Json -UnitDescription "temporary unit for contract test"
+    $createJson = & $createNewUnitScript -Json -Program $programId -UnitDescription "temporary unit for contract test"
     $createObj = $createJson | ConvertFrom-Json
-    foreach ($k in @('UNIT_NAME','BRIEF_FILE','UNIT_NUM')) {
+    foreach ($k in @('PROGRAM_ID','UNIT_NAME','BRIEF_FILE','UNIT_NUM')) {
         if (-not $createObj.PSObject.Properties.Name.Contains($k)) {
             throw "create-new-unit missing key: $k"
         }
@@ -63,8 +70,14 @@ finally {
 $tempGit = Join-Path $env:RUNNER_TEMP ("lcs-contract-ps-git-" + [guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $tempGit -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $tempGit '.lcs/templates') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tempGit '.lcs/context') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tempGit "programs/$programId/units") -Force | Out-Null
 Copy-Item (Join-Path $repoRoot 'factory/templates/brief-template.md') (Join-Path $tempGit '.lcs/templates/brief-template.md') -Force
 Copy-Item -Recurse (Join-Path $repoRoot 'contracts') (Join-Path $tempGit 'contracts') -Force
+@"
+{"program_id":"$programId","title":"Contract test","status":"draft"}
+"@ | Set-Content -Path (Join-Path $tempGit "programs/$programId/program.json") -Encoding utf8
+Set-Content -Path (Join-Path $tempGit '.lcs/context/current-program') -Value $programId -Encoding utf8
 Push-Location $tempGit
 try {
     git init | Out-Null
@@ -74,7 +87,7 @@ try {
     git add .gitkeep
     git commit -m init | Out-Null
     $startBranch = (git rev-parse --abbrev-ref HEAD).Trim()
-    & $createNewUnitScript -Json -Number 997 "verify no auto branch switch" | Out-Null
+    & $createNewUnitScript -Json -Program $programId -Number 997 "verify no auto branch switch" | Out-Null
     $endBranch = (git rev-parse --abbrev-ref HEAD).Trim()
     if ($startBranch -ne $endBranch) {
         throw "create-new-unit.ps1 unexpectedly switched branch: $startBranch -> $endBranch"
@@ -87,9 +100,12 @@ finally {
 
 # 2) setup/check/validate contracts in repo workspace
 $unit = '999-ci-contract-ps'
-$unitDir = Join-Path $repoRoot "specs/$unit"
+$unitDir = Join-Path $repoRoot "programs/$programId/units/$unit"
 New-Item -ItemType Directory -Path (Join-Path $unitDir 'rubrics') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $unitDir 'outputs') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $repoRoot '.lcs/context') -Force | Out-Null
+Set-Content -Path (Join-Path $repoRoot '.lcs/context/current-program') -Value $programId -Encoding utf8
+Set-Content -Path (Join-Path $repoRoot '.lcs/context/current-unit') -Value $unit -Encoding utf8
 '' | Set-Content (Join-Path $unitDir 'brief.md')
 '' | Set-Content (Join-Path $unitDir 'design.md')
 '' | Set-Content (Join-Path $unitDir 'sequence.md')
@@ -104,11 +120,12 @@ Open High: 0
 '- [x] Gate ID: RB001 | Group: alignment | Status: PASS | Severity: LOW | Evidence: design.md' | Set-Content (Join-Path $unitDir 'rubrics/default.md')
 
 $env:LCS_UNIT = $unit
+$env:LCS_PROGRAM = $programId
 
 try {
     $setupJson = & $setupDesignScript -Json
     $setupObj = $setupJson | ConvertFrom-Json
-    foreach ($k in @('BRIEF_FILE','DESIGN_FILE','UNIT_DIR','BRANCH','HAS_GIT')) {
+    foreach ($k in @('PROGRAM_ID','UNIT_ID','BRIEF_FILE','DESIGN_FILE','UNIT_DIR','BRANCH','HAS_GIT')) {
         if (-not $setupObj.PSObject.Properties.Name.Contains($k)) {
             throw "setup-design missing key: $k"
         }
@@ -157,12 +174,12 @@ try {
     $pathsJson = & $checkWorkflowScript -Json -PathsOnly -SkipBranchCheck
     $pathsObj = $pathsJson | ConvertFrom-Json
     foreach ($k in @(
-        'UNIT_REPO_ROOT','UNIT_BRANCH','UNIT_HAS_GIT','UNIT_DIR',
+        'UNIT_REPO_ROOT','UNIT_BRANCH','UNIT_ID','UNIT_HAS_GIT','PROGRAM_ID','PROGRAM_DIR','PROGRAM_CHARTER_FILE','UNIT_DIR',
         'UNIT_BRIEF_FILE','UNIT_BRIEF_JSON_FILE',
         'UNIT_DESIGN_FILE','UNIT_DESIGN_JSON_FILE',
         'UNIT_SEQUENCE_FILE','UNIT_SEQUENCE_JSON_FILE',
         'UNIT_AUDIT_REPORT_FILE','UNIT_AUDIT_REPORT_JSON_FILE',
-        'UNIT_MANIFEST_FILE','UNIT_CHARTER_FILE'
+        'UNIT_MANIFEST_FILE','UNIT_CHARTER_FILE','SUBJECT_CHARTER_FILE'
     )) {
         if (-not $pathsObj.PSObject.Properties.Name.Contains($k)) {
             throw "check-workflow-prereqs missing key: $k"
@@ -180,9 +197,18 @@ try {
 }
 finally {
     Remove-Item Env:LCS_UNIT -ErrorAction SilentlyContinue
-    Remove-Item -Recurse -Force (Join-Path $repoRoot 'specs/999-ci-contract-ps') -ErrorAction SilentlyContinue
-    if ((Test-Path (Join-Path $repoRoot 'specs')) -and -not (Get-ChildItem (Join-Path $repoRoot 'specs') -Force | Measure-Object).Count) {
-        Remove-Item (Join-Path $repoRoot 'specs') -Force -ErrorAction SilentlyContinue
+    Remove-Item Env:LCS_PROGRAM -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force (Join-Path $repoRoot "programs/$programId/units/999-ci-contract-ps") -ErrorAction SilentlyContinue
+    if ((Test-Path (Join-Path $repoRoot "programs/$programId/units")) -and -not (Get-ChildItem (Join-Path $repoRoot "programs/$programId/units") -Force | Measure-Object).Count) {
+        Remove-Item -Recurse -Force (Join-Path $repoRoot "programs/$programId") -ErrorAction SilentlyContinue
+    }
+    Remove-Item -Path (Join-Path $repoRoot '.lcs/context/current-program') -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path $repoRoot '.lcs/context/current-unit') -ErrorAction SilentlyContinue
+    if ((Test-Path (Join-Path $repoRoot '.lcs/context')) -and -not (Get-ChildItem (Join-Path $repoRoot '.lcs/context') -Force | Measure-Object).Count) {
+        Remove-Item (Join-Path $repoRoot '.lcs/context') -Force -ErrorAction SilentlyContinue
+    }
+    if ((Test-Path (Join-Path $repoRoot '.lcs')) -and -not (Get-ChildItem (Join-Path $repoRoot '.lcs') -Force | Measure-Object).Count) {
+        Remove-Item (Join-Path $repoRoot '.lcs') -Force -ErrorAction SilentlyContinue
     }
 }
 

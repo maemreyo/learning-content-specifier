@@ -47,7 +47,7 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Artifact: `specs/<unit>/rubrics/<name>.md`.
+- Artifact: `programs/<program_id>/units/<unit_id>/rubrics/<name>.md`.
 - Initial status should default to non-pass unless evidence exists.
 
 ## Examples

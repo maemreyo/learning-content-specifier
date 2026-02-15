@@ -61,11 +61,17 @@ New-Item -ItemType Directory -Path $GenReleasesDir -Force | Out-Null
 function Rewrite-Paths {
     param([string]$Content)
     
-    $Content = $Content -replace '(^|[\s\"''(])memory/', '$1.lcs/memory/'
-    $Content = $Content -replace '(^|[\s\"''(])factory/scripts/', '$1.lcs/scripts/'
-    $Content = $Content -replace '(^|[\s\"''(])scripts/', '$1.lcs/scripts/'
-    $Content = $Content -replace '(^|[\s\"''(])factory/templates/', '$1.lcs/templates/'
+    $Content = $Content -replace '(^|[\s\"''`(])memory/', '$1.lcs/memory/'
+    $Content = $Content -replace '(^|[\s\"''`(])factory/scripts/', '$1.lcs/scripts/'
+    $Content = $Content -replace '(^|[\s\"''`(])scripts/', '$1.lcs/scripts/'
+    $Content = $Content -replace '(^|[\s\"''`(])factory/templates/', '$1.lcs/templates/'
+    $Content = $Content -replace '\.specify\.lcs/', '.lcs/'
     return $Content
+}
+
+function Normalize-CommandPath {
+    param([string]$Command)
+    return Rewrite-Paths -Content $Command
 }
 
 function Generate-Commands {
@@ -103,6 +109,7 @@ function Generate-Commands {
             Write-Warning "No script command found for $ScriptVariant in $($template.Name)"
             $scriptCommand = "(Missing script command for $ScriptVariant)"
         }
+        $scriptCommand = Normalize-CommandPath -Command $scriptCommand
         
         # Extract agent_script command from YAML frontmatter if present
         $agentScriptCommand = ""
@@ -121,9 +128,11 @@ function Generate-Commands {
         
         # Replace {AGENT_SCRIPT} placeholder with the agent script command if found
         if (-not [string]::IsNullOrEmpty($agentScriptCommand)) {
+            $agentScriptCommand = Normalize-CommandPath -Command $agentScriptCommand
             $body = $body -replace '\{AGENT_SCRIPT\}', $agentScriptCommand
         }
         if (-not [string]::IsNullOrEmpty($gateScriptCommand)) {
+            $gateScriptCommand = Normalize-CommandPath -Command $gateScriptCommand
             $body = $body -replace '\{GATE_SCRIPT\}', $gateScriptCommand
         }
         
@@ -443,26 +452,34 @@ foreach ($agent in $AgentList) {
     }
 }
 
-$contractBuilder = "factory/scripts/python/build_contract_package.py"
-if (Get-Command uv -ErrorAction SilentlyContinue) {
-    & uv run python $contractBuilder --verify --package-version $Version --output-dir $GenReleasesDir
+$skipContractPackage = ($env:SKIP_CONTRACT_PACKAGE -eq '1')
+if (-not $skipContractPackage) {
+    $contractBuilder = "factory/scripts/python/build_contract_package.py"
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+        & uv run python $contractBuilder --verify --package-version $Version --output-dir $GenReleasesDir
+    }
+    else {
+        $pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
+        & $pythonBin $contractBuilder --verify --package-version $Version --output-dir $GenReleasesDir
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+    Write-Sha256Sidecar -FilePath (Join-Path $GenReleasesDir "lcs-contracts-${Version}.zip")
 }
 else {
-    $pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
-    & $pythonBin $contractBuilder --verify --package-version $Version --output-dir $GenReleasesDir
+    Write-Host "Skipping contract package build (SKIP_CONTRACT_PACKAGE=1)"
 }
-
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
-Write-Sha256Sidecar -FilePath (Join-Path $GenReleasesDir "lcs-contracts-${Version}.zip")
 
 Write-Host "`nArchives in ${GenReleasesDir}:"
 Get-ChildItem -Path $GenReleasesDir -Filter "learning-content-specifier-template-*-${Version}.zip" | ForEach-Object {
     Write-Host "  $($_.Name)"
 }
-Get-ChildItem -Path $GenReleasesDir -Filter "lcs-contracts-${Version}.zip" | ForEach-Object {
-    Write-Host "  $($_.Name)"
+if (-not $skipContractPackage) {
+    Get-ChildItem -Path $GenReleasesDir -Filter "lcs-contracts-${Version}.zip" | ForEach-Object {
+        Write-Host "  $($_.Name)"
+    }
 }
 Get-ChildItem -Path $GenReleasesDir -Filter "*.sha256" | ForEach-Object {
     Write-Host "  $($_.Name)"

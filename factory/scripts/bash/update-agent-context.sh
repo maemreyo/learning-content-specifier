@@ -61,8 +61,9 @@ MODALITY="$(extract_learning_field "Modality Mix")"
 DELIVERY_MODE="$(extract_learning_field "Delivery Mode")"
 LEVEL="$(extract_learning_field "Entry Level")"
 
-TECH_LINE="- Audience: ${AUDIENCE:-unknown} | Level: ${LEVEL:-unknown} | Duration: ${DURATION:-unknown} | Modality: ${MODALITY:-unknown} | Mode: ${DELIVERY_MODE:-unknown} (${CURRENT_BRANCH})"
-RECENT_LINE="- ${CURRENT_BRANCH}: Updated unit learning profile (${MODALITY:-unknown})"
+STRUCTURE_PATH="programs/${PROGRAM_ID:-<program-id>}/units/${CURRENT_UNIT:-<unit-id>}"
+TECH_LINE="- Audience: ${AUDIENCE:-unknown} | Level: ${LEVEL:-unknown} | Duration: ${DURATION:-unknown} | Modality: ${MODALITY:-unknown} | Mode: ${DELIVERY_MODE:-unknown} (${STRUCTURE_PATH})"
+RECENT_LINE="- ${STRUCTURE_PATH}: Updated unit learning profile (${MODALITY:-unknown})"
 
 create_from_template() {
     local target_file="$1" project_name
@@ -72,7 +73,7 @@ create_from_template() {
         -e "s|\[PROJECT NAME\]|$project_name|g" \
         -e "s|\[DATE\]|$(date +%Y-%m-%d)|g" \
         -e "s|\[EXTRACTED FROM ALL DESIGN.MD FILES\]|$TECH_LINE|g" \
-        -e "s|\[ACTUAL STRUCTURE FROM PLANS\]|specs/\\n  outputs/|g" \
+        -e "s|\[ACTUAL STRUCTURE FROM PLANS\]|${STRUCTURE_PATH}/\\n  outputs/|g" \
         -e "s|\[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES\]|/lcs.define, /lcs.design, /lcs.sequence, /lcs.rubric, /lcs.audit, /lcs.author|g" \
         -e "s|\[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE\]|Use concise, learner-centered writing and consistent terminology.|g" \
         -e "s|\[LAST 3 FEATURES AND WHAT THEY ADDED\]|$RECENT_LINE|g" \

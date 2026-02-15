@@ -16,10 +16,14 @@ if ($Help) {
 }
 
 . "$PSScriptRoot/common.ps1"
-$paths = Get-UnitPathsEnv
+if ($PathsOnly -and $SkipBranchCheck) {
+    $paths = Get-UnitPathsEnv -AllowMissingUnit
+} else {
+    $paths = Get-UnitPathsEnv
+}
 
 if (-not $SkipBranchCheck) {
-    if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
+    if (-not (Test-UnitBranch -Branch $paths.CURRENT_UNIT -HasGit $paths.HAS_GIT)) { exit 1 }
 }
 
 if ($PathsOnly) {
@@ -27,7 +31,11 @@ if ($PathsOnly) {
         [PSCustomObject]@{
             UNIT_REPO_ROOT = $paths.REPO_ROOT
             UNIT_BRANCH = $paths.CURRENT_BRANCH
+            UNIT_ID = $paths.CURRENT_UNIT
             UNIT_HAS_GIT = $paths.HAS_GIT
+            PROGRAM_ID = $paths.PROGRAM_ID
+            PROGRAM_DIR = $paths.PROGRAM_DIR
+            PROGRAM_CHARTER_FILE = $paths.PROGRAM_CHARTER_FILE
             UNIT_DIR = $paths.UNIT_DIR
             UNIT_BRIEF_FILE = $paths.BRIEF_FILE
             UNIT_BRIEF_JSON_FILE = $paths.BRIEF_JSON_FILE
@@ -38,12 +46,17 @@ if ($PathsOnly) {
             UNIT_AUDIT_REPORT_FILE = $paths.AUDIT_REPORT_FILE
             UNIT_AUDIT_REPORT_JSON_FILE = $paths.AUDIT_REPORT_JSON_FILE
             UNIT_MANIFEST_FILE = $paths.MANIFEST_FILE
-            UNIT_CHARTER_FILE = $paths.CHARTER_FILE
+            UNIT_CHARTER_FILE = $paths.PROGRAM_CHARTER_FILE
+            SUBJECT_CHARTER_FILE = $paths.SUBJECT_CHARTER_FILE
         } | ConvertTo-Json -Compress
     } else {
         Write-Output "UNIT_REPO_ROOT: $($paths.REPO_ROOT)"
         Write-Output "UNIT_BRANCH: $($paths.CURRENT_BRANCH)"
+        Write-Output "UNIT_ID: $($paths.CURRENT_UNIT)"
         Write-Output "UNIT_HAS_GIT: $($paths.HAS_GIT)"
+        Write-Output "PROGRAM_ID: $($paths.PROGRAM_ID)"
+        Write-Output "PROGRAM_DIR: $($paths.PROGRAM_DIR)"
+        Write-Output "PROGRAM_CHARTER_FILE: $($paths.PROGRAM_CHARTER_FILE)"
         Write-Output "UNIT_DIR: $($paths.UNIT_DIR)"
         Write-Output "UNIT_BRIEF_FILE: $($paths.BRIEF_FILE)"
         Write-Output "UNIT_BRIEF_JSON_FILE: $($paths.BRIEF_JSON_FILE)"
@@ -54,7 +67,8 @@ if ($PathsOnly) {
         Write-Output "UNIT_AUDIT_REPORT_FILE: $($paths.AUDIT_REPORT_FILE)"
         Write-Output "UNIT_AUDIT_REPORT_JSON_FILE: $($paths.AUDIT_REPORT_JSON_FILE)"
         Write-Output "UNIT_MANIFEST_FILE: $($paths.MANIFEST_FILE)"
-        Write-Output "UNIT_CHARTER_FILE: $($paths.CHARTER_FILE)"
+        Write-Output "UNIT_CHARTER_FILE: $($paths.PROGRAM_CHARTER_FILE)"
+        Write-Output "SUBJECT_CHARTER_FILE: $($paths.SUBJECT_CHARTER_FILE)"
     }
     exit 0
 }
