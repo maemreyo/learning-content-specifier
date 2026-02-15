@@ -23,6 +23,7 @@ uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs in
 
 - `--script sh` for Bash/Zsh
 - `--script ps` for PowerShell
+- `--template-source auto|release|local` (default `auto`)
 
 ## Verify
 

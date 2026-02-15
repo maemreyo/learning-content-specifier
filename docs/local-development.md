@@ -56,6 +56,12 @@ Re-running after code edits requires no reinstall because of editable mode.
 uvx --from . lcs init demo-uvx --ai copilot --ignore-agent-tools --script sh
 ```
 
+To force local template packaging (skip GitHub release assets):
+
+```bash
+uvx --from . lcs init demo-uvx-local --ai copilot --ignore-agent-tools --script sh --template-source local
+```
+
 You can also point uvx at a specific branch without merging:
 
 ```bash
@@ -78,6 +84,13 @@ Set an environment variable for convenience:
 ```bash
 export LCS_SRC=/mnt/c/GitHub/learning-content-specifier
 uvx --from "$LCS_SRC" lcs init demo-env --ai copilot --ignore-agent-tools --script ps
+```
+
+If your source repo is in a non-standard location, set `LCS_TEMPLATE_LOCAL_ROOT`:
+
+```bash
+export LCS_TEMPLATE_LOCAL_ROOT=/mnt/c/GitHub/learning-content-specifier
+uvx --from "$LCS_SRC" lcs init demo-env-local --ai copilot --ignore-agent-tools --script sh --template-source auto
 ```
 
 (Optional) Define a shell function:

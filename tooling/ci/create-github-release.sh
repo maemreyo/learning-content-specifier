@@ -20,7 +20,12 @@ if [[ ! -d .genreleases ]]; then
   exit 1
 fi
 
-mapfile -t ASSETS < <(find .genreleases -maxdepth 1 -type f | sort)
+ASSETS=()
+while IFS= read -r asset; do
+  [[ -n "$asset" ]] || continue
+  ASSETS+=("$asset")
+done < <(find .genreleases -maxdepth 1 -type f | sort)
+
 if [[ ${#ASSETS[@]} -eq 0 ]]; then
   echo "No release assets found in .genreleases" >&2
   exit 1

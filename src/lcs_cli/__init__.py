@@ -1067,10 +1067,15 @@ def detect_local_template_source_root() -> Path | None:
     candidates: list[Path] = []
     cwd = Path.cwd().resolve()
     module_file = Path(__file__).resolve()
+    env_override = os.getenv("LCS_TEMPLATE_LOCAL_ROOT")
+
+    if env_override:
+        candidates.append(Path(env_override).expanduser().resolve())
 
     for base in [cwd, *cwd.parents]:
         candidates.append(base)
         candidates.append(base / "_learning-content-specifier")
+        candidates.append(base / "learning-content-specifier")
 
     for base in module_file.parents:
         candidates.append(base)
@@ -1145,7 +1150,7 @@ def init(
     here: bool = typer.Option(False, "--here", help="Initialize project in the current directory instead of creating a new one"),
     force: bool = typer.Option(False, "--force", help="Force merge/overwrite when using --here (skip confirmation)"),
     skip_tls: bool = typer.Option(False, "--skip-tls", help="Skip SSL/TLS verification (not recommended)"),
-    template_source: str = typer.Option("release", "--template-source", help="Template source: release or local"),
+    template_source: str = typer.Option("auto", "--template-source", help="Template source: auto, release, or local"),
     debug: bool = typer.Option(False, "--debug", help="Show verbose diagnostic output for network and extraction failures"),
     github_token: str = typer.Option(None, "--github-token", help="GitHub token to use for API requests (or set GH_TOKEN or GITHUB_TOKEN environment variable)"),
 ):
@@ -1286,11 +1291,18 @@ def init(
     console.print(f"[cyan]Selected AI assistant:[/cyan] {selected_ai}")
     console.print(f"[cyan]Selected script type:[/cyan] {selected_script}")
 
-    allowed_template_sources = {"release", "local"}
+    allowed_template_sources = {"auto", "release", "local"}
     if template_source not in allowed_template_sources:
         console.print(f"[red]Error:[/red] Invalid template source '{template_source}'. Choose from: {', '.join(sorted(allowed_template_sources))}")
         raise typer.Exit(1)
-    console.print(f"[cyan]Template source:[/cyan] {template_source}")
+
+    resolved_template_source = template_source
+    detected_local_root: Path | None = None
+    if template_source == "auto":
+        detected_local_root = detect_local_template_source_root()
+        resolved_template_source = "local" if detected_local_root else "release"
+
+    console.print(f"[cyan]Template source:[/cyan] {template_source} -> {resolved_template_source}")
 
     tracker = StepTracker("Initialize LCS Project")
 
@@ -1327,9 +1339,9 @@ def init(
             local_ssl_context = ssl_context if verify else False
             local_client = httpx.Client(verify=local_ssl_context)
 
-            if template_source == "local":
+            if resolved_template_source == "local":
                 tracker.start("fetch", "building local template package")
-                local_source_root = detect_local_template_source_root()
+                local_source_root = detected_local_root or detect_local_template_source_root()
                 if not local_source_root:
                     tracker.error("fetch", "local source not found")
                     raise RuntimeError(
