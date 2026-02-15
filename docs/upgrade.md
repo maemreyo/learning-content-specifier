@@ -35,3 +35,5 @@ Before upgrade, commit or back up:
 1. Run `lcs check`.
 2. Confirm new command files (`lcs.charter`, `lcs.define`, `lcs.design`, `lcs.sequence`, `lcs.author`).
 3. Run one workflow smoke on a test unit through `/lcs.audit`.
+4. For multi-unit programs, confirm `programs/<program-id>/roadmap.json` and `programs/<program-id>/roadmap.md` are generated with `session_start/session_end`.
+5. Confirm `/lcs.design` now scaffolds `exercise-design.md` and `exercise-design.json`.

@@ -16,6 +16,7 @@ if ($Help) {
 $paths = Get-UnitPathsEnv
 $contractVersion = Get-ContractVersion
 $selectorTool = Resolve-PythonTool -ToolName 'generate_template_selection.py'
+$pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
 
 if (-not (Test-UnitBranch -Branch $paths.CURRENT_BRANCH -HasGit $paths.HAS_GIT)) { exit 1 }
 
@@ -34,6 +35,14 @@ if ($ForceReset -or -not (Test-Path $paths.DESIGN_FILE)) {
 
 foreach ($f in @($paths.CONTENT_MODEL_FILE, $paths.ASSESSMENT_MAP_FILE, $paths.DELIVERY_GUIDE_FILE)) {
     if (-not (Test-Path $f)) { New-Item -ItemType File -Path $f -Force | Out-Null }
+}
+if (-not (Test-Path $paths.EXERCISE_DESIGN_FILE)) {
+    $exerciseTemplate = Join-Path $paths.REPO_ROOT '.lcs/templates/exercise-design-template.md'
+    if (Test-Path $exerciseTemplate -PathType Leaf) {
+        Copy-Item $exerciseTemplate $paths.EXERCISE_DESIGN_FILE -Force
+    } else {
+        New-Item -ItemType File -Path $paths.EXERCISE_DESIGN_FILE -Force | Out-Null
+    }
 }
 if (-not (Test-Path $paths.SEQUENCE_FILE)) { New-Item -ItemType File -Path $paths.SEQUENCE_FILE -Force | Out-Null }
 if (-not (Test-Path $paths.AUDIT_REPORT_FILE)) { New-Item -ItemType File -Path $paths.AUDIT_REPORT_FILE -Force | Out-Null }
@@ -75,6 +84,22 @@ if ($ForceReset -or -not (Test-Path $paths.BRIEF_JSON_FILE)) {
   }
 }
 "@ | Set-Content -Path $paths.BRIEF_JSON_FILE -Encoding utf8
+}
+
+try {
+    $briefObj = Get-Content -Path $paths.BRIEF_JSON_FILE -Raw -Encoding utf8 | ConvertFrom-Json
+    $openQuestions = 0
+    if ($briefObj.open_questions -is [int]) {
+        $openQuestions = [Math]::Max($openQuestions, [int]$briefObj.open_questions)
+    }
+    if ($briefObj.refinement -and $briefObj.refinement.open_questions -is [int]) {
+        $openQuestions = [Math]::Max($openQuestions, [int]$briefObj.refinement.open_questions)
+    }
+    if ($openQuestions -gt 0) {
+        throw "brief.json has $openQuestions unresolved clarification question(s). Run /lcs.refine before /lcs.design."
+    }
+} catch {
+    throw
 }
 
 if ($ForceReset -or -not (Test-Path $paths.DESIGN_JSON_FILE)) {
@@ -162,6 +187,30 @@ if ($ForceReset -or -not (Test-Path $paths.CONTENT_MODEL_JSON_FILE)) {
   }
 }
 "@ | Set-Content -Path $paths.CONTENT_MODEL_JSON_FILE -Encoding utf8
+}
+
+if ($ForceReset -or -not (Test-Path $paths.EXERCISE_DESIGN_JSON_FILE)) {
+    @"
+{
+  "contract_version": "$contractVersion",
+  "unit_id": "$unitId",
+  "generated_at": "$nowUtc",
+  "source_files": {
+    "assessment_blueprint": "assessment-blueprint.json",
+    "template_selection": "template-selection.json"
+  },
+  "exercises": [
+    {
+      "exercise_id": "EX001",
+      "lo_id": "LO1",
+      "template_id": "mcq.v1",
+      "day": 1,
+      "target_path": "outputs/module-01/exercises/ex001.md",
+      "status": "TODO"
+    }
+  ]
+}
+"@ | Set-Content -Path $paths.EXERCISE_DESIGN_JSON_FILE -Encoding utf8
 }
 
 if ($ForceReset -or -not (Test-Path $paths.DESIGN_DECISIONS_FILE)) {
@@ -335,9 +384,8 @@ if (Get-Command uv -ErrorAction SilentlyContinue) {
         $selectorRaw = ''
     }
 } else {
-    $selectorPython = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
     try {
-        $selectorRaw = (& $selectorPython @selectorArgs 2>$null)
+        $selectorRaw = (& $pythonBin @selectorArgs 2>$null)
     } catch {
         $selectorRaw = ''
     }
@@ -384,6 +432,8 @@ if ($ForceReset -or -not (Test-Path $paths.AUDIT_REPORT_JSON_FILE)) {
 
 $assessmentBlueprintChecksum = (Get-FileHash -Path $paths.ASSESSMENT_BLUEPRINT_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
 $templateSelectionChecksum = (Get-FileHash -Path $paths.TEMPLATE_SELECTION_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+$exerciseDesignJsonChecksum = (Get-FileHash -Path $paths.EXERCISE_DESIGN_JSON_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+$exerciseDesignMdChecksum = (Get-FileHash -Path $paths.EXERCISE_DESIGN_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
 
 if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
     @"
@@ -421,6 +471,20 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
       "path": "template-selection.json",
       "media_type": "application/json",
       "checksum": "sha256:$templateSelectionChecksum"
+    },
+    {
+      "id": "exercise-design-json",
+      "type": "exercise-design",
+      "path": "exercise-design.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$exerciseDesignJsonChecksum"
+    },
+    {
+      "id": "exercise-design-md",
+      "type": "exercise-design",
+      "path": "exercise-design.md",
+      "media_type": "text/markdown",
+      "checksum": "sha256:$exerciseDesignMdChecksum"
     }
   ],
   "gate_status": {

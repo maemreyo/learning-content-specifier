@@ -48,7 +48,7 @@ if [[ "$JSON_MODE" == "true" ]]; then
 fi
 
 if command -v uv >/dev/null 2>&1; then
-    uv run python "${args[@]}"
+    uv run --with jsonschema python "${args[@]}"
 else
     PYTHON_BIN="python3"
     if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then

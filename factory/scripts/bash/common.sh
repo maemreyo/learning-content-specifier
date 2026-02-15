@@ -207,9 +207,11 @@ get_unit_paths() {
     fi
 
     local program_file="" program_charter_file=""
+    local program_roadmap_json_file="" program_roadmap_md_file=""
     local brief_file="" brief_json_file="" design_file="" design_json_file=""
     local sequence_file="" sequence_json_file="" research_file=""
     local content_model_file="" content_model_json_file=""
+    local exercise_design_file="" exercise_design_json_file=""
     local assessment_map_file="" delivery_guide_file="" design_decisions_file=""
     local assessment_blueprint_file="" template_selection_file="" trend_topics_file=""
     local audit_report_file="" audit_report_json_file=""
@@ -218,6 +220,8 @@ get_unit_paths() {
     if [[ -n "$program_dir" ]]; then
         program_file="$program_dir/program.json"
         program_charter_file="$program_dir/charter.md"
+        program_roadmap_json_file="$program_dir/roadmap.json"
+        program_roadmap_md_file="$program_dir/roadmap.md"
     fi
 
     if [[ -n "$unit_dir" ]]; then
@@ -230,6 +234,8 @@ get_unit_paths() {
         research_file="$unit_dir/research.md"
         content_model_file="$unit_dir/content-model.md"
         content_model_json_file="$unit_dir/content-model.json"
+        exercise_design_file="$unit_dir/exercise-design.md"
+        exercise_design_json_file="$unit_dir/exercise-design.json"
         assessment_map_file="$unit_dir/assessment-map.md"
         delivery_guide_file="$unit_dir/delivery-guide.md"
         design_decisions_file="$unit_dir/design-decisions.json"
@@ -253,6 +259,8 @@ PROGRAM_ID='$program_id'
 PROGRAM_DIR='$program_dir'
 PROGRAM_FILE='$program_file'
 PROGRAM_CHARTER_FILE='$program_charter_file'
+PROGRAM_ROADMAP_JSON_FILE='$program_roadmap_json_file'
+PROGRAM_ROADMAP_MD_FILE='$program_roadmap_md_file'
 CURRENT_BRANCH='$current_unit'
 CURRENT_UNIT='$current_unit'
 HAS_GIT='$has_git_repo'
@@ -266,6 +274,8 @@ SEQUENCE_JSON_FILE='$sequence_json_file'
 RESEARCH_FILE='$research_file'
 CONTENT_MODEL_FILE='$content_model_file'
 CONTENT_MODEL_JSON_FILE='$content_model_json_file'
+EXERCISE_DESIGN_FILE='$exercise_design_file'
+EXERCISE_DESIGN_JSON_FILE='$exercise_design_json_file'
 ASSESSMENT_MAP_FILE='$assessment_map_file'
 DELIVERY_GUIDE_FILE='$delivery_guide_file'
 DESIGN_DECISIONS_FILE='$design_decisions_file'

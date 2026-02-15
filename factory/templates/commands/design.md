@@ -31,6 +31,7 @@ $ARGUMENTS
 - YOU MUST preserve existing `design.md` content unless an explicit reset is requested.
 - YOU MUST generate and maintain `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
 - YOU MUST generate or update `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, and `outputs/manifest.json`.
+- YOU MUST generate or update `exercise-design.md` and `exercise-design.json` with concrete per-exercise specs (`exercise_id`, `lo_id`, `template_id`, `day`, `target_path`).
 - YOU MUST apply Corporate L&D default pedagogy weights:
   - `outcome_fit=0.30`
   - `evidence_fit=0.25`
@@ -49,13 +50,15 @@ $ARGUMENTS
 2. Load `BRIEF_FILE`, `programs/<program_id>/charter.md`, and `.lcs/templates/design-template.md`.
 3. Produce/update design artifacts under `UNIT_DIR`.
 4. Update decision contracts (`design.json`, `design-decisions.json`) with scored pedagogy rationale.
-5. If confidence `< 0.70` OR domain is time-sensitive OR artifacts conflict, add evidence references to `research.md` and `design-decisions.json`.
-6. Update `content-model.json` with module/lesson LO references and dependency graph cycle check.
-7. Generate/update `assessment-blueprint.json` with template ratio targets and LO mapping.
-8. Generate/update `template-selection.json` with top-K candidates and final selected template set.
-9. Ensure `outputs/manifest.json` remains valid, xAPI interop block exists, and new template artifacts are registered.
-10. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
-11. Report artifacts and unresolved risks.
+5. Confirm `brief.json.refinement.open_questions == 0`; if not, stop and return to `/lcs.refine`.
+6. If confidence `< 0.70` OR domain is time-sensitive OR artifacts conflict, add evidence references to `research.md` and `design-decisions.json`.
+7. Update `content-model.json` with module/lesson LO references and dependency graph cycle check.
+8. Generate/update `assessment-blueprint.json` with template ratio targets and LO mapping.
+9. Generate/update `template-selection.json` with top-K candidates and final selected template set.
+10. Generate/update `exercise-design.md` + `exercise-design.json` from selected templates and LO mapping.
+11. Ensure `outputs/manifest.json` remains valid, xAPI interop block exists, and new template artifacts are registered.
+12. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
+13. Report artifacts and unresolved risks.
 
 ## Hard Gates
 
@@ -65,6 +68,7 @@ $ARGUMENTS
 - Gate G-DS-004: duration estimate is within tolerance (`-10%` to `+15%`) or explicitly blocked.
 - Gate G-DS-005: `design.json`, `content-model.json`, `design-decisions.json`, and `outputs/manifest.json` are present.
 - Gate G-DS-006: `assessment-blueprint.json` and `template-selection.json` are present and machine-parseable.
+- Gate G-DS-007: `exercise-design.json` is present and each exercise references a valid LO + template.
 
 ## Failure Modes
 
@@ -77,7 +81,8 @@ $ARGUMENTS
 
 - Markdown: `design.md`, `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
 - JSON: `design.json`, `content-model.json`, `design-decisions.json`, `outputs/manifest.json`.
-- JSON: `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, `outputs/manifest.json`.
+- JSON: `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`, `outputs/manifest.json`.
+- Markdown: `exercise-design.md`.
 - Execution summary includes `HAS_GIT` state, confidence score, and research trigger decision.
 
 ## Examples

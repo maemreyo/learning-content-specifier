@@ -22,6 +22,10 @@ eval "$(get_unit_paths)"
 check_unit_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
 CONTRACT_VERSION="$(get_contract_version)"
 SELECTOR_TOOL="$(resolve_python_tool generate_template_selection.py)"
+PYTHON_BIN="python3"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+fi
 
 compute_sha256() {
     local target_file="$1"
@@ -63,6 +67,14 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_FILE" ]]; then
 fi
 
 [[ -f "$CONTENT_MODEL_FILE" ]] || touch "$CONTENT_MODEL_FILE"
+EXERCISE_TEMPLATE="$REPO_ROOT/.lcs/templates/exercise-design-template.md"
+if [[ ! -f "$EXERCISE_DESIGN_FILE" ]]; then
+    if [[ -f "$EXERCISE_TEMPLATE" ]]; then
+        cp "$EXERCISE_TEMPLATE" "$EXERCISE_DESIGN_FILE"
+    else
+        touch "$EXERCISE_DESIGN_FILE"
+    fi
+fi
 [[ -f "$ASSESSMENT_MAP_FILE" ]] || touch "$ASSESSMENT_MAP_FILE"
 [[ -f "$DELIVERY_GUIDE_FILE" ]] || touch "$DELIVERY_GUIDE_FILE"
 [[ -f "$SEQUENCE_FILE" ]] || touch "$SEQUENCE_FILE"
@@ -105,6 +117,35 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$BRIEF_JSON_FILE" ]]; then
   }
 }
 EOF
+fi
+
+OPEN_QUESTIONS="$("$PYTHON_BIN" - "$BRIEF_JSON_FILE" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    print(0)
+    raise SystemExit(0)
+
+value = 0
+if isinstance(payload.get("open_questions"), int):
+    value = max(value, payload.get("open_questions", 0))
+
+refinement = payload.get("refinement")
+if isinstance(refinement, dict) and isinstance(refinement.get("open_questions"), int):
+    value = max(value, refinement.get("open_questions", 0))
+
+print(value)
+PY
+)"
+
+if [[ "${OPEN_QUESTIONS:-0}" -gt 0 ]]; then
+    echo "ERROR: brief.json has ${OPEN_QUESTIONS} unresolved clarification question(s). Run /lcs.refine before /lcs.design." >&2
+    exit 1
 fi
 
 if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_JSON_FILE" ]]; then
@@ -190,6 +231,30 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$CONTENT_MODEL_JSON_FILE" ]]; then
     "lower_percent": -10,
     "upper_percent": 15
   }
+}
+EOF
+fi
+
+if [[ "$FORCE_RESET" == "true" || ! -f "$EXERCISE_DESIGN_JSON_FILE" ]]; then
+    cat > "$EXERCISE_DESIGN_JSON_FILE" <<EOF
+{
+  "contract_version": "$CONTRACT_VERSION",
+  "unit_id": "$UNIT_ID",
+  "generated_at": "$NOW_UTC",
+  "source_files": {
+    "assessment_blueprint": "assessment-blueprint.json",
+    "template_selection": "template-selection.json"
+  },
+  "exercises": [
+    {
+      "exercise_id": "EX001",
+      "lo_id": "LO1",
+      "template_id": "mcq.v1",
+      "day": 1,
+      "target_path": "outputs/module-01/exercises/ex001.md",
+      "status": "TODO"
+    }
+  ]
 }
 EOF
 fi
@@ -387,10 +452,6 @@ selector_args=(
 if command -v uv >/dev/null 2>&1; then
     selector_output="$(uv run python "${selector_args[@]}" 2>/dev/null || true)"
 else
-    PYTHON_BIN="python3"
-    if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-        PYTHON_BIN="python"
-    fi
     selector_output="$("$PYTHON_BIN" "${selector_args[@]}" 2>/dev/null || true)"
 fi
 
@@ -419,6 +480,8 @@ fi
 
 ASSESSMENT_BLUEPRINT_CHECKSUM="$(compute_sha256 "$ASSESSMENT_BLUEPRINT_FILE")"
 TEMPLATE_SELECTION_CHECKSUM="$(compute_sha256 "$TEMPLATE_SELECTION_FILE")"
+EXERCISE_DESIGN_JSON_CHECKSUM="$(compute_sha256 "$EXERCISE_DESIGN_JSON_FILE")"
+EXERCISE_DESIGN_MD_CHECKSUM="$(compute_sha256 "$EXERCISE_DESIGN_FILE")"
 
 if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
     cat > "$MANIFEST_FILE" <<EOF
@@ -456,6 +519,20 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
       "path": "template-selection.json",
       "media_type": "application/json",
       "checksum": "sha256:$TEMPLATE_SELECTION_CHECKSUM"
+    },
+    {
+      "id": "exercise-design-json",
+      "type": "exercise-design",
+      "path": "exercise-design.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$EXERCISE_DESIGN_JSON_CHECKSUM"
+    },
+    {
+      "id": "exercise-design-md",
+      "type": "exercise-design",
+      "path": "exercise-design.md",
+      "media_type": "text/markdown",
+      "checksum": "sha256:$EXERCISE_DESIGN_MD_CHECKSUM"
     }
   ],
   "gate_status": {

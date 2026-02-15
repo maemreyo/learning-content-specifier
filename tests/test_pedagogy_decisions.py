@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PROGRAM_ID = "seed-pedagogy-decisions"
 
 
 def _run_setup_design(env: dict[str, str]) -> None:
@@ -24,7 +25,7 @@ def _run_setup_design(env: dict[str, str]) -> None:
 
 
 def _prepare_unit(unit_id: str) -> Path:
-    unit_dir = ROOT / "specs" / unit_id
+    unit_dir = ROOT / "programs" / PROGRAM_ID / "units" / unit_id
     if unit_dir.exists():
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
@@ -39,6 +40,7 @@ def test_design_decisions_defaults_match_corporate_lnd_profile():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -64,6 +66,7 @@ def test_design_json_has_selection_rule_threshold_defaults():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)

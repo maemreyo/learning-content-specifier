@@ -27,13 +27,14 @@ $ARGUMENTS
 - YOU MUST run `{SCRIPT}` exactly once to resolve/create active program context.
 - YOU MUST maintain deterministic charter version lines: `Version`, `Ratified`, `Last Amended`.
 - YOU MUST define hard-gate policy in testable language (objective criteria, not vague intent).
+- YOU MUST generate/maintain `programs/<program_id>/roadmap.json` and `programs/<program_id>/roadmap.md` when program scope is multi-unit (>=8 study sessions, cadence-flexible).
 - YOU MUST propagate governance-impacting changes into templates under `.lcs/templates/`.
 - YOU MUST NOT leave unresolved placeholders.
 - YOU MUST NOT edit `.lcs/memory/charter.md` in this command.
 
 ## Execution Steps
 
-1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `PROGRAM_DIR`, `PROGRAM_CHARTER_FILE`, `SUBJECT_CHARTER_FILE`.
+1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `PROGRAM_DIR`, `PROGRAM_CHARTER_FILE`, `PROGRAM_ROADMAP_JSON_FILE`, `PROGRAM_ROADMAP_MD_FILE`, `TARGET_SESSIONS`, `DURATION_DAYS`, `EXPECTED_UNITS`, `SUBJECT_CHARTER_FILE`.
 2. Load existing program charter or bootstrap from `.lcs/templates/charter-template.md`.
 3. Integrate user intent and enforce command chain: `charter -> define -> refine -> design -> sequence -> rubric -> audit -> author`.
 4. Apply semver bump rationale:
@@ -57,6 +58,7 @@ $ARGUMENTS
 ## Output Contract
 
 - Primary artifact: `programs/<program_id>/charter.md`.
+- Planning artifacts (when target scope >=8 study sessions): `programs/<program_id>/roadmap.json`, `programs/<program_id>/roadmap.md`.
 - Context artifacts: `.lcs/context/current-program` set to active `program_id` and `.lcs/context/current-unit` cleared.
 - Report includes:
   - `program_id`,

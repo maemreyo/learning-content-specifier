@@ -37,6 +37,10 @@ CONTEXT_DIR="$REPO_ROOT/.lcs/context"
 PROGRAMS_ROOT="$REPO_ROOT/programs"
 TEMPLATE_FILE="$REPO_ROOT/.lcs/templates/charter-template.md"
 SUBJECT_CHARTER_FILE="$REPO_ROOT/.lcs/memory/charter.md"
+PYTHON_BIN="python3"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+fi
 
 slugify() {
     echo "$1" \
@@ -85,29 +89,272 @@ choose_program_id() {
     generate_program_id "$PROGRAM_INTENT"
 }
 
+extract_duration_days() {
+    local raw="${1:-}"
+    local normalized
+    normalized="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+
+    if [[ "$normalized" =~ ([0-9]{1,3})[[:space:]]*[-]?[[:space:]]*(day|days|ngay|ngày)\b ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return
+    fi
+
+    if [[ "$normalized" =~ ([0-9]{1,3})[[:space:]]*d\b ]]; then
+        echo "${BASH_REMATCH[1]}"
+    fi
+}
+
+extract_target_sessions() {
+    local raw="${1:-}"
+    local normalized
+    normalized="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+
+    if [[ "$normalized" =~ ([0-9]{1,3})[[:space:]]*[-]?[[:space:]]*(session|sessions|buoi|buổi)\b ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return
+    fi
+}
+
+read_program_duration_days() {
+    local file_path="$1"
+    [[ -f "$file_path" ]] || return 0
+    "$PYTHON_BIN" - "$file_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+
+value = payload.get("duration_days")
+if isinstance(value, int) and value > 0:
+    print(value)
+PY
+}
+
+read_program_target_sessions() {
+    local file_path="$1"
+    [[ -f "$file_path" ]] || return 0
+    "$PYTHON_BIN" - "$file_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+
+value = payload.get("target_sessions")
+if isinstance(value, int) and value > 0:
+    print(value)
+PY
+}
+
+read_program_title() {
+    local file_path="$1"
+    [[ -f "$file_path" ]] || return 0
+    "$PYTHON_BIN" - "$file_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+
+title = payload.get("title")
+if isinstance(title, str) and title.strip():
+    print(title.strip())
+PY
+}
+
+write_program_file() {
+    local file_path="$1"
+    local program_id="$2"
+    local title="$3"
+    local target_sessions="$4"
+    local session_span="$5"
+    local sessions_per_week="$6"
+    local expected_units="$7"
+    local duration_days_estimate="$8"
+
+    "$PYTHON_BIN" - "$file_path" "$program_id" "$title" "$target_sessions" "$session_span" "$sessions_per_week" "$expected_units" "$duration_days_estimate" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+program_id = sys.argv[2]
+title = sys.argv[3]
+target_sessions = int(sys.argv[4]) if sys.argv[4].isdigit() else 0
+session_span = int(sys.argv[5]) if sys.argv[5].isdigit() else 4
+sessions_per_week = int(sys.argv[6]) if sys.argv[6].isdigit() else 3
+expected_units = int(sys.argv[7]) if sys.argv[7].isdigit() else 1
+duration_days_estimate = int(sys.argv[8]) if sys.argv[8].isdigit() else 0
+
+payload = {
+    "program_id": program_id,
+    "title": title,
+    "status": "draft",
+}
+
+if path.exists():
+    try:
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(existing, dict):
+            payload.update(existing)
+    except Exception:
+        pass
+
+payload["program_id"] = program_id
+payload["title"] = title
+payload["status"] = "draft"
+
+from datetime import datetime, timezone
+now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+payload.setdefault("created_at", now_utc)
+payload["updated_at"] = now_utc
+
+if target_sessions > 0:
+    payload["progress_unit"] = "study_session"
+    payload["target_sessions"] = target_sessions
+    payload["session_span"] = session_span
+    payload["sessions_per_week_assumption"] = sessions_per_week
+    payload["expected_units"] = expected_units
+if duration_days_estimate > 0:
+    payload["duration_days_estimate"] = duration_days_estimate
+
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+write_program_roadmap_files() {
+    local roadmap_json="$1"
+    local roadmap_md="$2"
+    local program_id="$3"
+    local target_sessions="$4"
+    local session_span="$5"
+    local sessions_per_week="$6"
+    local expected_units="$7"
+    local duration_days_estimate="$8"
+
+    "$PYTHON_BIN" - "$roadmap_json" "$roadmap_md" "$program_id" "$target_sessions" "$session_span" "$sessions_per_week" "$expected_units" "$duration_days_estimate" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+roadmap_json = Path(sys.argv[1])
+roadmap_md = Path(sys.argv[2])
+program_id = sys.argv[3]
+target_sessions = int(sys.argv[4])
+session_span = int(sys.argv[5])
+sessions_per_week = int(sys.argv[6])
+expected_units = int(sys.argv[7])
+duration_days_estimate = int(sys.argv[8]) if sys.argv[8].isdigit() else 0
+
+units = []
+for index in range(expected_units):
+    start = index * session_span + 1
+    end = min(target_sessions, (index + 1) * session_span)
+    # Keep day estimates optional and clearly marked as derived assumptions.
+    day_start = int(((start - 1) / max(sessions_per_week, 1)) * 7) + 1
+    day_end = int(((end - 1) / max(sessions_per_week, 1)) * 7) + 7
+    units.append(
+        {
+            "slot": index + 1,
+            "session_start": start,
+            "session_end": end,
+            "estimated_day_start": day_start,
+            "estimated_day_end": day_end,
+            "suggested_unit_id": f"{index + 1:03d}-sessions-{start:03d}-to-{end:03d}",
+        }
+    )
+
+payload = {
+    "program_id": program_id,
+    "progress_unit": "study_session",
+    "target_sessions": target_sessions,
+    "session_span": session_span,
+    "sessions_per_week_assumption": sessions_per_week,
+    "expected_units": expected_units,
+    "duration_days_estimate": duration_days_estimate,
+    "units": units,
+}
+roadmap_json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+lines = [
+    f"# Program Roadmap: {program_id}",
+    "",
+    f"- Progress unit: study session",
+    f"- Target sessions: {target_sessions}",
+    f"- Session span per unit: {session_span}",
+    f"- Sessions/week assumption: {sessions_per_week}",
+    f"- Duration estimate (days): {duration_days_estimate}",
+    f"- Expected units: {expected_units}",
+    "",
+    "| Slot | Session Range | Estimated Day Range | Suggested Unit ID |",
+    "|------|---------------|---------------------|-------------------|",
+]
+for unit in units:
+    lines.append(
+        f"| {unit['slot']} | {unit['session_start']}-{unit['session_end']} | {unit['estimated_day_start']}-{unit['estimated_day_end']} | `{unit['suggested_unit_id']}` |"
+    )
+
+roadmap_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+}
+
 PROGRAM_ID="$(choose_program_id)"
 [[ -z "$PROGRAM_ID" ]] && { echo "ERROR: Could not determine program id" >&2; exit 1; }
 
 PROGRAM_DIR="$PROGRAMS_ROOT/$PROGRAM_ID"
 PROGRAM_FILE="$PROGRAM_DIR/program.json"
 PROGRAM_CHARTER_FILE="$PROGRAM_DIR/charter.md"
+PROGRAM_ROADMAP_JSON_FILE="$PROGRAM_DIR/roadmap.json"
+PROGRAM_ROADMAP_MD_FILE="$PROGRAM_DIR/roadmap.md"
 
 mkdir -p "$PROGRAM_DIR/units"
 mkdir -p "$CONTEXT_DIR"
 
+DURATION_DAYS="$(extract_duration_days "$PROGRAM_INTENT" || true)"
+if [[ -z "$DURATION_DAYS" ]]; then
+    DURATION_DAYS="$(read_program_duration_days "$PROGRAM_FILE" || true)"
+fi
+TARGET_SESSIONS="$(extract_target_sessions "$PROGRAM_INTENT" || true)"
+if [[ -z "$TARGET_SESSIONS" ]]; then
+    TARGET_SESSIONS="$(read_program_target_sessions "$PROGRAM_FILE" || true)"
+fi
+
+SESSIONS_PER_WEEK=3
+SESSION_SPAN=4
+EXPECTED_UNITS=1
+
+if [[ -z "$TARGET_SESSIONS" && -n "$DURATION_DAYS" && "$DURATION_DAYS" =~ ^[0-9]+$ && "$DURATION_DAYS" -gt 0 ]]; then
+    TARGET_SESSIONS=$(( (DURATION_DAYS * SESSIONS_PER_WEEK + 6) / 7 ))
+fi
+
+if [[ -n "$TARGET_SESSIONS" && "$TARGET_SESSIONS" =~ ^[0-9]+$ && "$TARGET_SESSIONS" -gt 0 ]]; then
+    EXPECTED_UNITS=$(( (TARGET_SESSIONS + SESSION_SPAN - 1) / SESSION_SPAN ))
+elif [[ -n "$DURATION_DAYS" && "$DURATION_DAYS" =~ ^[0-9]+$ && "$DURATION_DAYS" -gt 0 ]]; then
+    EXPECTED_UNITS=$(( (DURATION_DAYS + 6) / 7 ))
+fi
+
 if [[ ! -f "$PROGRAM_FILE" ]]; then
-    NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     TITLE="$PROGRAM_INTENT"
     [[ -z "$TITLE" ]] && TITLE="$PROGRAM_ID"
-    cat > "$PROGRAM_FILE" <<JSON
-{
-  "program_id": "$PROGRAM_ID",
-  "title": "$TITLE",
-  "status": "draft",
-  "created_at": "$NOW_UTC",
-  "updated_at": "$NOW_UTC"
-}
-JSON
+    write_program_file "$PROGRAM_FILE" "$PROGRAM_ID" "$TITLE" "${TARGET_SESSIONS:-0}" "$SESSION_SPAN" "$SESSIONS_PER_WEEK" "$EXPECTED_UNITS" "${DURATION_DAYS:-0}"
+elif { [[ -n "$TARGET_SESSIONS" && "$TARGET_SESSIONS" =~ ^[0-9]+$ && "$TARGET_SESSIONS" -gt 0 ]]; } || { [[ -n "$DURATION_DAYS" && "$DURATION_DAYS" =~ ^[0-9]+$ && "$DURATION_DAYS" -gt 0 ]]; }; then
+    TITLE="$(read_program_title "$PROGRAM_FILE" || true)"
+    [[ -z "$TITLE" ]] && TITLE="$PROGRAM_INTENT"
+    [[ -z "$TITLE" ]] && TITLE="$PROGRAM_ID"
+    write_program_file "$PROGRAM_FILE" "$PROGRAM_ID" "$TITLE" "${TARGET_SESSIONS:-0}" "$SESSION_SPAN" "$SESSIONS_PER_WEEK" "$EXPECTED_UNITS" "${DURATION_DAYS:-0}"
 fi
 
 if [[ ! -f "$PROGRAM_CHARTER_FILE" ]]; then
@@ -118,18 +365,27 @@ if [[ ! -f "$PROGRAM_CHARTER_FILE" ]]; then
     fi
 fi
 
+if [[ -n "$TARGET_SESSIONS" && "$TARGET_SESSIONS" =~ ^[0-9]+$ && "$TARGET_SESSIONS" -ge 8 ]]; then
+    write_program_roadmap_files "$PROGRAM_ROADMAP_JSON_FILE" "$PROGRAM_ROADMAP_MD_FILE" "$PROGRAM_ID" "$TARGET_SESSIONS" "$SESSION_SPAN" "$SESSIONS_PER_WEEK" "$EXPECTED_UNITS" "${DURATION_DAYS:-0}"
+fi
+
 write_context_value "$CONTEXT_DIR/current-program" "$PROGRAM_ID"
 rm -f "$CONTEXT_DIR/current-unit"
 
 export LCS_PROGRAM="$PROGRAM_ID"
 
 if $JSON_MODE; then
-    printf '{"PROGRAM_ID":"%s","PROGRAM_DIR":"%s","PROGRAM_FILE":"%s","PROGRAM_CHARTER_FILE":"%s","SUBJECT_CHARTER_FILE":"%s"}\n' \
-        "$PROGRAM_ID" "$PROGRAM_DIR" "$PROGRAM_FILE" "$PROGRAM_CHARTER_FILE" "$SUBJECT_CHARTER_FILE"
+    printf '{"PROGRAM_ID":"%s","PROGRAM_DIR":"%s","PROGRAM_FILE":"%s","PROGRAM_CHARTER_FILE":"%s","PROGRAM_ROADMAP_JSON_FILE":"%s","PROGRAM_ROADMAP_MD_FILE":"%s","TARGET_SESSIONS":%d,"DURATION_DAYS":%d,"EXPECTED_UNITS":%d,"SUBJECT_CHARTER_FILE":"%s"}\n' \
+        "$PROGRAM_ID" "$PROGRAM_DIR" "$PROGRAM_FILE" "$PROGRAM_CHARTER_FILE" "$PROGRAM_ROADMAP_JSON_FILE" "$PROGRAM_ROADMAP_MD_FILE" "${TARGET_SESSIONS:-0}" "${DURATION_DAYS:-0}" "$EXPECTED_UNITS" "$SUBJECT_CHARTER_FILE"
 else
     echo "PROGRAM_ID: $PROGRAM_ID"
     echo "PROGRAM_DIR: $PROGRAM_DIR"
     echo "PROGRAM_FILE: $PROGRAM_FILE"
     echo "PROGRAM_CHARTER_FILE: $PROGRAM_CHARTER_FILE"
+    echo "PROGRAM_ROADMAP_JSON_FILE: $PROGRAM_ROADMAP_JSON_FILE"
+    echo "PROGRAM_ROADMAP_MD_FILE: $PROGRAM_ROADMAP_MD_FILE"
+    echo "TARGET_SESSIONS: ${TARGET_SESSIONS:-0}"
+    echo "DURATION_DAYS: ${DURATION_DAYS:-0}"
+    echo "EXPECTED_UNITS: $EXPECTED_UNITS"
     echo "SUBJECT_CHARTER_FILE: $SUBJECT_CHARTER_FILE"
 fi

@@ -8,6 +8,7 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PROGRAM_ID = "seed-template-selector"
 SELECTOR = ROOT / "factory/scripts/python/generate_template_selection.py"
 PACK_DIR = ROOT.parent / "subjects" / "english" / ".lcs" / "template-pack" / "v1"
 
@@ -44,7 +45,7 @@ def _run_selector(unit_dir: Path, env: dict[str, str]) -> dict:
 
 
 def _prepare_unit(unit_id: str) -> Path:
-    unit_dir = ROOT / "specs" / unit_id
+    unit_dir = ROOT / "programs" / PROGRAM_ID / "units" / unit_id
     if unit_dir.exists():
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
@@ -61,6 +62,7 @@ def test_template_selector_is_deterministic_for_same_inputs() -> None:
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -92,6 +94,7 @@ def test_template_selector_prioritizes_sentence_rewrite_for_rewrite_focused_lo()
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -115,6 +118,7 @@ def test_template_selector_prefers_speaking_templates_for_ielts_speaking_target(
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)

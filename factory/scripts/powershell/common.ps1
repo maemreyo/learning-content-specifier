@@ -185,6 +185,8 @@ function Get-UnitPathsEnv {
         PROGRAM_DIR = $programDir
         PROGRAM_FILE = if ($programDir) { Join-Path $programDir 'program.json' } else { '' }
         PROGRAM_CHARTER_FILE = if ($programDir) { Join-Path $programDir 'charter.md' } else { '' }
+        PROGRAM_ROADMAP_JSON_FILE = if ($programDir) { Join-Path $programDir 'roadmap.json' } else { '' }
+        PROGRAM_ROADMAP_MD_FILE = if ($programDir) { Join-Path $programDir 'roadmap.md' } else { '' }
         CURRENT_BRANCH = $currentUnit
         CURRENT_UNIT = $currentUnit
         HAS_GIT = Test-HasGit
@@ -198,6 +200,8 @@ function Get-UnitPathsEnv {
         RESEARCH_FILE = if ($unitDir) { Join-Path $unitDir 'research.md' } else { '' }
         CONTENT_MODEL_FILE = if ($unitDir) { Join-Path $unitDir 'content-model.md' } else { '' }
         CONTENT_MODEL_JSON_FILE = if ($unitDir) { Join-Path $unitDir 'content-model.json' } else { '' }
+        EXERCISE_DESIGN_FILE = if ($unitDir) { Join-Path $unitDir 'exercise-design.md' } else { '' }
+        EXERCISE_DESIGN_JSON_FILE = if ($unitDir) { Join-Path $unitDir 'exercise-design.json' } else { '' }
         ASSESSMENT_MAP_FILE = if ($unitDir) { Join-Path $unitDir 'assessment-map.md' } else { '' }
         DELIVERY_GUIDE_FILE = if ($unitDir) { Join-Path $unitDir 'delivery-guide.md' } else { '' }
         DESIGN_DECISIONS_FILE = if ($unitDir) { Join-Path $unitDir 'design-decisions.json' } else { '' }

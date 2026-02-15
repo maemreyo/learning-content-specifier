@@ -15,7 +15,8 @@ LCS provides a hard-gated command chain for spec-driven learning content:
 
 `charter -> define -> refine -> design -> sequence -> rubric -> audit -> author -> issueize`
 
-Artifacts are generated under `programs/<program-id>/units/<###-slug>/` with markdown + json contracts and local-first outputs in `outputs/manifest.json`.
+Artifacts are generated under `programs/<program-id>/units/<###-slug>/` with markdown + json contracts and local-first outputs in `outputs/manifest.json`.  
+For multi-unit programs (>=8 study sessions), charter scaffolding also generates `programs/<program-id>/roadmap.json` and `programs/<program-id>/roadmap.md` with session ranges and cadence-flexible day estimates.
 
 ## Consumer Contract Sync
 

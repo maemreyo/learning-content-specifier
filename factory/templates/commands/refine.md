@@ -25,6 +25,10 @@ $ARGUMENTS
 - YOU MUST persist accepted clarifications back into `brief.md` immediately.
 - YOU MUST keep `brief.json` consistent with accepted clarifications.
 - YOU MUST append clarification history with date.
+- YOU MUST maintain `brief.json.refinement` with:
+  - `decisions` (accepted clarifications),
+  - `open_questions` (integer),
+  - `last_refined_at` (ISO timestamp).
 - YOU MUST NOT ask redundant or low-impact questions.
 
 ## Execution Steps
@@ -33,12 +37,12 @@ $ARGUMENTS
 2. Inspect ambiguity hotspots: outcome measurability, audience constraints, pedagogy assumptions, assessment evidence, accessibility requirements.
 3. Ask targeted clarifications and integrate accepted answers under `## Clarifications`.
 4. Reconcile contradictory wording in the main brief sections.
-5. Update `brief.json` fields impacted by clarifications.
+5. Update `brief.json` fields impacted by clarifications and set `refinement.open_questions`.
 6. Save and report readiness for `/lcs.design`.
 
 ## Hard Gates
 
-- Gate G-RF-001: no unresolved critical ambiguity affecting LO or assessment coverage.
+- Gate G-RF-001: `refinement.open_questions = 0` for design readiness.
 - Gate G-RF-002: contradictions removed between original brief and clarifications.
 
 ## Failure Modes

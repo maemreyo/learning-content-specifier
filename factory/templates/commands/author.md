@@ -23,6 +23,7 @@ $ARGUMENTS
 - YOU MUST run both `{SCRIPT}` and `{GATE_SCRIPT}` before authoring.
 - YOU MUST stop immediately if gate status is `BLOCK`.
 - YOU MUST write outputs only under `UNIT_DIR/outputs/`.
+- YOU MUST use `exercise-design.json` as the source of truth for per-exercise artifacts.
 - YOU MUST maintain `outputs/manifest.json` as the canonical entrypoint for downstream consumers.
 - YOU MUST mark completed sequence tasks as `[X]` in `sequence.md` and mirror progress in `sequence.json`.
 - YOU MUST use contract validator pipeline trace (`CONTRACT_PIPELINE`, `CONTRACT_BLOCKING_STEPS`, blockers) to report deterministic fix order.

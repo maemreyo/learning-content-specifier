@@ -32,6 +32,8 @@ Expected under `programs/<program-id>/units/<###-slug>/`:
 - `sequence.json`
 - `content-model.md`
 - `content-model.json`
+- `exercise-design.md`
+- `exercise-design.json`
 - `design-decisions.json`
 - `assessment-map.md`
 - `delivery-guide.md`
@@ -40,6 +42,11 @@ Expected under `programs/<program-id>/units/<###-slug>/`:
 - `audit-report.json`
 - `outputs/`
 - `outputs/manifest.json`
+
+Expected under `programs/<program-id>/` (for larger scopes, e.g. 30-day target mapped into study sessions):
+
+- `roadmap.json`
+- `roadmap.md`
 
 ## Hard Gate Rule
 

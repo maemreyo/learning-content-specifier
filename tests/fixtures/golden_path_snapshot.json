@@ -3,6 +3,7 @@
     "assessment-map.md",
     "content-model.md",
     "delivery-guide.md",
+    "exercise-design.md",
     "sequence.md"
   ],
   "contract_status": "PASS",
@@ -20,6 +21,8 @@
     "design-decisions.json",
     "design.json",
     "design.md",
+    "exercise-design.json",
+    "exercise-design.md",
     "outputs/manifest.json",
     "rubrics/default.md",
     "sequence.json",
@@ -32,6 +35,8 @@
     "artifact_ids": [
       "assessment-blueprint-json",
       "brief-md",
+      "exercise-design-json",
+      "exercise-design-md",
       "lesson-01-md",
       "template-selection-json"
     ],

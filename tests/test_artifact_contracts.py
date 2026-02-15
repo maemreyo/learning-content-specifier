@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PROGRAM_ID = "seed-artifact-contracts"
 
 
 def _template_pack_available() -> bool:
@@ -56,7 +57,7 @@ def _run_contract_validator(unit_dir: Path, env: dict[str, str], check: bool = T
 
 
 def _prepare_unit(unit_id: str) -> Path:
-    unit_dir = ROOT / "specs" / unit_id
+    unit_dir = ROOT / "programs" / PROGRAM_ID / "units" / unit_id
     if unit_dir.exists():
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
@@ -80,6 +81,7 @@ def test_artifact_contract_validator_passes_for_generated_contracts():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -103,6 +105,7 @@ def test_artifact_contract_validator_blocks_without_xapi_manifest_block():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -128,6 +131,7 @@ def test_artifact_contract_validator_blocks_with_unsupported_xapi_version():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -150,6 +154,7 @@ def test_artifact_contract_validator_blocks_when_template_blueprint_schema_is_in
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
     if not (ROOT.parent / "subjects" / "english" / ".lcs" / "template-pack" / "v1" / "catalog.json").is_file():
         return
 
@@ -174,6 +179,7 @@ def test_artifact_contract_validator_accepts_xapi_v1_and_v2_versions():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -200,6 +206,7 @@ def test_artifact_contract_validator_blocks_when_brief_has_no_p1_outcome():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -228,6 +235,7 @@ def test_artifact_contract_validator_blocks_when_proficiency_framework_is_unknow
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -259,6 +267,7 @@ def test_artifact_contract_validator_blocks_when_proficiency_targets_cannot_be_n
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -290,6 +299,7 @@ def test_artifact_contract_validator_blocks_when_sequence_has_unknown_dependency
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -321,6 +331,7 @@ def test_artifact_contract_validator_blocks_when_sequence_has_dependency_cycle()
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -360,6 +371,7 @@ def test_artifact_contract_validator_blocks_when_manifest_lo_mismatch_brief():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -388,6 +400,7 @@ def test_artifact_contract_validator_blocks_when_manifest_priority_mismatch_brie
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -410,6 +423,7 @@ def test_artifact_contract_validator_blocks_when_manifest_checksum_mismatch():
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)
@@ -434,6 +448,7 @@ def test_artifact_contract_validator_blocks_when_audit_open_counts_mismatch_find
     unit_dir = _prepare_unit(unit_id)
     env = os.environ.copy()
     env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
 
     try:
         _run_setup_design(env)

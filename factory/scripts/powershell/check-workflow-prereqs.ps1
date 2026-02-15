@@ -36,11 +36,15 @@ if ($PathsOnly) {
             PROGRAM_ID = $paths.PROGRAM_ID
             PROGRAM_DIR = $paths.PROGRAM_DIR
             PROGRAM_CHARTER_FILE = $paths.PROGRAM_CHARTER_FILE
+            PROGRAM_ROADMAP_JSON_FILE = $paths.PROGRAM_ROADMAP_JSON_FILE
+            PROGRAM_ROADMAP_MD_FILE = $paths.PROGRAM_ROADMAP_MD_FILE
             UNIT_DIR = $paths.UNIT_DIR
             UNIT_BRIEF_FILE = $paths.BRIEF_FILE
             UNIT_BRIEF_JSON_FILE = $paths.BRIEF_JSON_FILE
             UNIT_DESIGN_FILE = $paths.DESIGN_FILE
             UNIT_DESIGN_JSON_FILE = $paths.DESIGN_JSON_FILE
+            UNIT_EXERCISE_DESIGN_FILE = $paths.EXERCISE_DESIGN_FILE
+            UNIT_EXERCISE_DESIGN_JSON_FILE = $paths.EXERCISE_DESIGN_JSON_FILE
             UNIT_SEQUENCE_FILE = $paths.SEQUENCE_FILE
             UNIT_SEQUENCE_JSON_FILE = $paths.SEQUENCE_JSON_FILE
             UNIT_AUDIT_REPORT_FILE = $paths.AUDIT_REPORT_FILE
@@ -57,11 +61,15 @@ if ($PathsOnly) {
         Write-Output "PROGRAM_ID: $($paths.PROGRAM_ID)"
         Write-Output "PROGRAM_DIR: $($paths.PROGRAM_DIR)"
         Write-Output "PROGRAM_CHARTER_FILE: $($paths.PROGRAM_CHARTER_FILE)"
+        Write-Output "PROGRAM_ROADMAP_JSON_FILE: $($paths.PROGRAM_ROADMAP_JSON_FILE)"
+        Write-Output "PROGRAM_ROADMAP_MD_FILE: $($paths.PROGRAM_ROADMAP_MD_FILE)"
         Write-Output "UNIT_DIR: $($paths.UNIT_DIR)"
         Write-Output "UNIT_BRIEF_FILE: $($paths.BRIEF_FILE)"
         Write-Output "UNIT_BRIEF_JSON_FILE: $($paths.BRIEF_JSON_FILE)"
         Write-Output "UNIT_DESIGN_FILE: $($paths.DESIGN_FILE)"
         Write-Output "UNIT_DESIGN_JSON_FILE: $($paths.DESIGN_JSON_FILE)"
+        Write-Output "UNIT_EXERCISE_DESIGN_FILE: $($paths.EXERCISE_DESIGN_FILE)"
+        Write-Output "UNIT_EXERCISE_DESIGN_JSON_FILE: $($paths.EXERCISE_DESIGN_JSON_FILE)"
         Write-Output "UNIT_SEQUENCE_FILE: $($paths.SEQUENCE_FILE)"
         Write-Output "UNIT_SEQUENCE_JSON_FILE: $($paths.SEQUENCE_JSON_FILE)"
         Write-Output "UNIT_AUDIT_REPORT_FILE: $($paths.AUDIT_REPORT_FILE)"
@@ -93,6 +101,7 @@ if ($RequireSequence -and -not (Test-Path $paths.SEQUENCE_FILE -PathType Leaf)) 
 $docs = @()
 if (Test-Path $paths.RESEARCH_FILE) { $docs += 'research.md' }
 if (Test-Path $paths.CONTENT_MODEL_FILE) { $docs += 'content-model.md' }
+if (Test-Path $paths.EXERCISE_DESIGN_FILE) { $docs += 'exercise-design.md' }
 if (Test-Path $paths.ASSESSMENT_MAP_FILE) { $docs += 'assessment-map.md' }
 if (Test-Path $paths.DELIVERY_GUIDE_FILE) { $docs += 'delivery-guide.md' }
 if ($IncludeSequence -and (Test-Path $paths.SEQUENCE_FILE)) { $docs += 'sequence.md' }

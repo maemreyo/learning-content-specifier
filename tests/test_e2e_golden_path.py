@@ -233,6 +233,8 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
                 "brief.json",
                 "design.md",
                 "design.json",
+                "exercise-design.md",
+                "exercise-design.json",
                 "content-model.md",
                 "content-model.json",
                 "design-decisions.json",

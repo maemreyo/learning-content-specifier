@@ -38,6 +38,8 @@ programs/[program-id]/units/[###-unit]/
 |-- research.md              # Optional background decisions
 |-- content-model.md         # Content entities and mapping
 |-- content-model.json       # Machine-readable content model
+|-- exercise-design.md       # Concrete per-exercise blueprint
+|-- exercise-design.json     # Machine-readable exercise plan
 |-- design-decisions.json    # Pedagogy scoring + research triggers
 |-- assessment-map.md        # LO to assessment coverage matrix
 |-- delivery-guide.md        # Facilitation + learner runbook

@@ -29,7 +29,7 @@ if ($Json) {
 }
 
 if (Get-Command uv -ErrorAction SilentlyContinue) {
-    & uv run python @arguments
+    & uv run --with jsonschema python @arguments
 }
 else {
     $pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }

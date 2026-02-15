@@ -33,6 +33,7 @@ $ARGUMENTS
    - LO coverage alignment,
    - pedagogy consistency,
    - template distribution compliance (`assessment-blueprint.json` vs `template-selection.json`),
+   - exercise plan coverage (`exercise-design.json` vs `sequence.json`),
    - accessibility/readability coverage,
    - metadata completeness,
    - manifest-first readiness.

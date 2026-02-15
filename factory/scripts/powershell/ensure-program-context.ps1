@@ -56,6 +56,93 @@ function Resolve-ProgramId {
     return (New-ProgramId -Intent $intent)
 }
 
+function Get-DurationDays([string]$Text) {
+    if (-not $Text) { return 0 }
+    $lower = $Text.ToLower()
+
+    $matches = [regex]::Matches($lower, '([0-9]{1,3})\s*-?\s*(day|days|ngay|ngày)\b')
+    if ($matches.Count -gt 0) {
+        return [int]$matches[0].Groups[1].Value
+    }
+
+    $matches = [regex]::Matches($lower, '([0-9]{1,3})\s*d\b')
+    if ($matches.Count -gt 0) {
+        return [int]$matches[0].Groups[1].Value
+    }
+
+    return 0
+}
+
+function Get-TargetSessions([string]$Text) {
+    if (-not $Text) { return 0 }
+    $lower = $Text.ToLower()
+
+    $matches = [regex]::Matches($lower, '([0-9]{1,3})\s*-?\s*(session|sessions|buoi|buổi)\b')
+    if ($matches.Count -gt 0) {
+        return [int]$matches[0].Groups[1].Value
+    }
+
+    return 0
+}
+
+function Write-RoadmapFiles {
+    param(
+        [string]$RoadmapJsonFile,
+        [string]$RoadmapMdFile,
+        [string]$ProgramId,
+        [int]$TargetSessions,
+        [int]$SessionSpan,
+        [int]$SessionsPerWeek,
+        [int]$ExpectedUnits,
+        [int]$DurationDaysEstimate
+    )
+
+    $units = @()
+    for ($i = 1; $i -le $ExpectedUnits; $i++) {
+        $start = (($i - 1) * $SessionSpan) + 1
+        $end = [Math]::Min($TargetSessions, $i * $SessionSpan)
+        $dayStart = [int]([Math]::Floor((($start - 1) / [Math]::Max($SessionsPerWeek, 1)) * 7) + 1)
+        $dayEnd = [int]([Math]::Floor((($end - 1) / [Math]::Max($SessionsPerWeek, 1)) * 7) + 7)
+        $units += [PSCustomObject]@{
+            slot = $i
+            session_start = $start
+            session_end = $end
+            estimated_day_start = $dayStart
+            estimated_day_end = $dayEnd
+            suggested_unit_id = ('{0:000}-sessions-{1:000}-to-{2:000}' -f $i, $start, $end)
+        }
+    }
+
+    $roadmapPayload = [ordered]@{
+        program_id = $ProgramId
+        progress_unit = 'study_session'
+        target_sessions = $TargetSessions
+        session_span = $SessionSpan
+        sessions_per_week_assumption = $SessionsPerWeek
+        expected_units = $ExpectedUnits
+        duration_days_estimate = $DurationDaysEstimate
+        units = $units
+    }
+    $roadmapPayload | ConvertTo-Json -Depth 6 | Set-Content -Path $RoadmapJsonFile -Encoding utf8
+
+    $md = @()
+    $md += "# Program Roadmap: $ProgramId"
+    $md += ''
+    $md += '- Progress unit: study session'
+    $md += "- Target sessions: $TargetSessions"
+    $md += "- Session span per unit: $SessionSpan"
+    $md += "- Sessions/week assumption: $SessionsPerWeek"
+    $md += "- Duration estimate (days): $DurationDaysEstimate"
+    $md += "- Expected units: $ExpectedUnits"
+    $md += ''
+    $md += '| Slot | Session Range | Estimated Day Range | Suggested Unit ID |'
+    $md += '|------|---------------|---------------------|-------------------|'
+    foreach ($unit in $units) {
+        $md += "| $($unit.slot) | $($unit.session_start)-$($unit.session_end) | $($unit.estimated_day_start)-$($unit.estimated_day_end) | ``$($unit.suggested_unit_id)`` |"
+    }
+    $md -join "`n" | Set-Content -Path $RoadmapMdFile -Encoding utf8
+}
+
 $programId = Resolve-ProgramId
 if (-not $programId) {
     throw 'Could not determine program id'
@@ -64,6 +151,39 @@ if (-not $programId) {
 $programDir = Join-Path $programsRoot $programId
 $programFile = Join-Path $programDir 'program.json'
 $programCharterFile = Join-Path $programDir 'charter.md'
+$programRoadmapJsonFile = Join-Path $programDir 'roadmap.json'
+$programRoadmapMdFile = Join-Path $programDir 'roadmap.md'
+$sessionSpan = 4
+$sessionsPerWeek = 3
+
+$durationDays = Get-DurationDays -Text $intent
+if ($durationDays -le 0 -and (Test-Path $programFile -PathType Leaf)) {
+    try {
+        $existingProgram = Get-Content -Path $programFile -Raw -Encoding utf8 | ConvertFrom-Json
+        if ($existingProgram.duration_days -is [int] -and $existingProgram.duration_days -gt 0) {
+            $durationDays = [int]$existingProgram.duration_days
+        }
+    } catch {}
+}
+$targetSessions = Get-TargetSessions -Text $intent
+if ($targetSessions -le 0 -and (Test-Path $programFile -PathType Leaf)) {
+    try {
+        $existingProgram = Get-Content -Path $programFile -Raw -Encoding utf8 | ConvertFrom-Json
+        if ($existingProgram.target_sessions -is [int] -and $existingProgram.target_sessions -gt 0) {
+            $targetSessions = [int]$existingProgram.target_sessions
+        }
+    } catch {}
+}
+
+$expectedUnits = 1
+if ($targetSessions -le 0 -and $durationDays -gt 0) {
+    $targetSessions = [int][Math]::Ceiling(($durationDays * $sessionsPerWeek) / 7.0)
+}
+if ($targetSessions -gt 0) {
+    $expectedUnits = [int][Math]::Ceiling($targetSessions / [double]$sessionSpan)
+} elseif ($durationDays -gt 0) {
+    $expectedUnits = [int][Math]::Ceiling($durationDays / 7.0)
+}
 
 New-Item -ItemType Directory -Path (Join-Path $programDir 'units') -Force | Out-Null
 
@@ -76,8 +196,38 @@ if (-not (Test-Path $programFile -PathType Leaf)) {
         status = 'draft'
         created_at = $nowUtc
         updated_at = $nowUtc
-    } | ConvertTo-Json -Depth 5
-    Set-Content -Path $programFile -Value $payload -Encoding utf8
+    }
+    if ($targetSessions -gt 0) {
+        $payload.progress_unit = 'study_session'
+        $payload.target_sessions = $targetSessions
+        $payload.session_span = $sessionSpan
+        $payload.sessions_per_week_assumption = $sessionsPerWeek
+        $payload.expected_units = $expectedUnits
+    }
+    if ($durationDays -gt 0) {
+        $payload.duration_days_estimate = $durationDays
+    }
+    $payload | ConvertTo-Json -Depth 5 | Set-Content -Path $programFile -Encoding utf8
+} elseif ($durationDays -gt 0 -or $targetSessions -gt 0) {
+    try {
+        $payload = Get-Content -Path $programFile -Raw -Encoding utf8 | ConvertFrom-Json
+        if ($targetSessions -gt 0) {
+            $payload.progress_unit = 'study_session'
+            $payload.target_sessions = $targetSessions
+            $payload.session_span = $sessionSpan
+            $payload.sessions_per_week_assumption = $sessionsPerWeek
+        }
+        if ($durationDays -gt 0) {
+            $payload.duration_days_estimate = $durationDays
+        }
+        $payload.expected_units = $expectedUnits
+        if (-not $payload.updated_at) {
+            $payload | Add-Member -NotePropertyName updated_at -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')) -Force
+        } else {
+            $payload.updated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        }
+        $payload | ConvertTo-Json -Depth 8 | Set-Content -Path $programFile -Encoding utf8
+    } catch {}
 }
 
 if (-not (Test-Path $programCharterFile -PathType Leaf)) {
@@ -86,6 +236,10 @@ if (-not (Test-Path $programCharterFile -PathType Leaf)) {
     } else {
         New-Item -ItemType File -Path $programCharterFile -Force | Out-Null
     }
+}
+
+if ($targetSessions -ge 8) {
+    Write-RoadmapFiles -RoadmapJsonFile $programRoadmapJsonFile -RoadmapMdFile $programRoadmapMdFile -ProgramId $programId -TargetSessions $targetSessions -SessionSpan $sessionSpan -SessionsPerWeek $sessionsPerWeek -ExpectedUnits $expectedUnits -DurationDaysEstimate $durationDays
 }
 
 Set-ContextValue -FilePath (Join-Path $contextDir 'current-program') -Value $programId
@@ -98,6 +252,11 @@ if ($Json) {
         PROGRAM_DIR = $programDir
         PROGRAM_FILE = $programFile
         PROGRAM_CHARTER_FILE = $programCharterFile
+        PROGRAM_ROADMAP_JSON_FILE = $programRoadmapJsonFile
+        PROGRAM_ROADMAP_MD_FILE = $programRoadmapMdFile
+        TARGET_SESSIONS = $targetSessions
+        DURATION_DAYS = $durationDays
+        EXPECTED_UNITS = $expectedUnits
         SUBJECT_CHARTER_FILE = $subjectCharterFile
     } | ConvertTo-Json -Compress
 } else {
@@ -105,5 +264,10 @@ if ($Json) {
     Write-Output "PROGRAM_DIR: $programDir"
     Write-Output "PROGRAM_FILE: $programFile"
     Write-Output "PROGRAM_CHARTER_FILE: $programCharterFile"
+    Write-Output "PROGRAM_ROADMAP_JSON_FILE: $programRoadmapJsonFile"
+    Write-Output "PROGRAM_ROADMAP_MD_FILE: $programRoadmapMdFile"
+    Write-Output "TARGET_SESSIONS: $targetSessions"
+    Write-Output "DURATION_DAYS: $durationDays"
+    Write-Output "EXPECTED_UNITS: $expectedUnits"
     Write-Output "SUBJECT_CHARTER_FILE: $subjectCharterFile"
 }
