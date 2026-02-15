@@ -59,6 +59,10 @@ $ARGUMENTS
 - Artifact: `programs/<program_id>/units/<unit_id>/brief.md`.
 - Artifact: `programs/<program_id>/units/<unit_id>/brief.json`.
 - Completion report: `PROGRAM_ID`, `UNIT_NAME`, `BRIEF_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
+- Completion report MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.refine Refine unit <unit_id> ...`
+  - `/lcs.design Design unit <unit_id> ...`
+  - `/lcs.programs workflow-status --program <program_id>` to see remaining units.
 
 ## Examples
 

@@ -12,12 +12,21 @@ uvx --from git+https://github.com/maemreyo/learning-content-specifier.git lcs in
 /lcs.charter
 /lcs.subject.charter (optional, subject governance only)
 /lcs.define Build a learning unit for ...
+/lcs.programs list-units (recommended for multi-unit programs)
 /lcs.refine
 /lcs.design
+/lcs.redesign (optional, force-reset design for current unit)
 /lcs.sequence
 /lcs.rubric
 /lcs.audit
 /lcs.author
+```
+
+For multi-unit programs, activate the intended unit before refine/design:
+
+```text
+/lcs.programs activate --program <program-id> --unit <unit-id>
+/lcs.programs workflow-status --program <program-id>
 ```
 
 ## 3. Confirm artifacts

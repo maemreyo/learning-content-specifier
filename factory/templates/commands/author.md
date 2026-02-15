@@ -58,6 +58,9 @@ $ARGUMENTS
 - Updated `programs/<program_id>/units/<unit_id>/outputs/manifest.json`.
 - Updated `programs/<program_id>/units/<unit_id>/sequence.md` and `programs/<program_id>/units/<unit_id>/sequence.json` completion state.
 - Final summary includes produced files + remaining tasks.
+- Final summary MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.audit ...` if validation regressions appear after authoring,
+  - `/lcs.programs workflow-status --program <program_id>` to continue remaining units.
 
 ## Examples
 

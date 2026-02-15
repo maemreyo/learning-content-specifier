@@ -71,6 +71,10 @@ Required markdown headers:
 Required json keys:
 
 - `contract_version`, `unit_id`, `gate_decision`, `open_critical`, `open_high`, `findings`, `role_readiness`
+- Response MUST include a `Follow-up Tasks` section with exact prompts:
+  - if `gate_decision=BLOCK`: `/lcs.refine ...` or `/lcs.redesign ...` for blocking artifacts,
+  - if `gate_decision=PASS`: `/lcs.author ...`,
+  - `/lcs.programs workflow-status --program <program_id>` for remaining units.
 
 ## Examples
 

@@ -7,6 +7,9 @@ handoffs:
 scripts:
   sh: factory/scripts/bash/check-workflow-prereqs.sh --json --paths-only
   ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly
+gate_scripts:
+  sh: factory/scripts/bash/manage-program-context.sh --json workflow-status
+  ps: factory/scripts/powershell/manage-program-context.ps1 --json workflow-status
 ---
 
 ## Intent
@@ -29,6 +32,9 @@ $ARGUMENTS
   - `decisions` (accepted clarifications),
   - `open_questions` (integer),
   - `last_refined_at` (ISO timestamp).
+- YOU MUST run `{GATE_SCRIPT}` after refinement and use it to summarize remaining units needing refinement/design.
+- YOU MUST include a `Follow-up Tasks` section with exact next prompts.
+- YOU MUST suggest `/lcs.programs activate --program <program_id> --unit <unit_id>` before refining another unit.
 - YOU MUST NOT ask redundant or low-impact questions.
 
 ## Execution Steps
@@ -38,7 +44,8 @@ $ARGUMENTS
 3. Ask targeted clarifications and integrate accepted answers under `## Clarifications`.
 4. Reconcile contradictory wording in the main brief sections.
 5. Update `brief.json` fields impacted by clarifications and set `refinement.open_questions`.
-6. Save and report readiness for `/lcs.design`.
+6. Run `{GATE_SCRIPT}` to capture pending workflow status for all units.
+7. Save and report readiness for `/lcs.design` with prioritized follow-up tasks.
 
 ## Hard Gates
 
@@ -55,6 +62,10 @@ $ARGUMENTS
 - Updated `programs/<program_id>/units/<unit_id>/brief.md`.
 - Updated `programs/<program_id>/units/<unit_id>/brief.json`.
 - Report includes: clarification count, sections touched, unresolved blockers.
+- Report MUST include `Follow-up Tasks`:
+  - next command for current unit,
+  - units still needing refinement,
+  - units ready for design with exact prompts (`/lcs.programs activate ...`, `/lcs.refine ...`, `/lcs.design ...`).
 
 ## Examples
 

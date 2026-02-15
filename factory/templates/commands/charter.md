@@ -65,6 +65,10 @@ $ARGUMENTS
   - old/new version,
   - amendment scope,
   - affected `.lcs/templates/*` files.
+- Report MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.programs workflow-status --program <program_id>`
+  - `/lcs.define ...` for the first unit
+  - `/lcs.programs activate --program <program_id> --unit <unit_id>` when continuing with existing units.
 
 ## Examples
 

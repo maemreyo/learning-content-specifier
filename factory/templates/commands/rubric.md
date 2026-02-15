@@ -49,6 +49,9 @@ $ARGUMENTS
 
 - Artifact: `programs/<program_id>/units/<unit_id>/rubrics/<name>.md`.
 - Initial status should default to non-pass unless evidence exists.
+- Report MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.audit ...`
+  - `/lcs.programs workflow-status --program <program_id>`.
 
 ## Examples
 

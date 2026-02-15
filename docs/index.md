@@ -8,6 +8,7 @@ Learning Content Specifier documentation.
 - [Quick Start Guide](quickstart.md)
 - [Upgrade Guide](upgrade.md)
 - [Local Development](local-development.md)
+- [Follow-up UX Standards](follow-up-ux.md)
 
 ## Workflow Summary
 
@@ -17,6 +18,8 @@ LCS provides a hard-gated command chain for spec-driven learning content:
 
 Artifacts are generated under `programs/<program-id>/units/<###-slug>/` with markdown + json contracts and local-first outputs in `outputs/manifest.json`.  
 For multi-unit programs (>=8 study sessions), charter scaffolding also generates `programs/<program-id>/roadmap.json` and `programs/<program-id>/roadmap.md` with session ranges and cadence-flexible day estimates.
+Use `/lcs.programs` to inspect/switch active program and unit context before running refine/design on a specific unit.
+Use `/lcs.programs workflow-status` to get per-unit pending stages and ready-to-run follow-up prompts.
 
 ## Consumer Contract Sync
 

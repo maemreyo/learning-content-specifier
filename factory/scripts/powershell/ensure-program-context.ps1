@@ -30,6 +30,27 @@ function Convert-ToSlug([string]$Value) {
     return ($Value.ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+', '' -replace '-+$', '' -replace '-{2,}', '-')
 }
 
+function Get-ProgramBaseSlug([string]$ProgramId) {
+    if (-not $ProgramId) { return '' }
+    return ($ProgramId -replace '-\d{8}-\d{4}(-\d{2})?$', '')
+}
+
+function Get-ProgramMatchesForSlug([string]$IntentSlug) {
+    $matches = @()
+    if (-not (Test-Path $programsRoot -PathType Container)) {
+        return $matches
+    }
+
+    Get-ChildItem -Path $programsRoot -Directory | ForEach-Object {
+        $base = Get-ProgramBaseSlug -ProgramId $_.Name
+        if ($base -eq $IntentSlug) {
+            $matches += $_.Name
+        }
+    }
+
+    return $matches | Sort-Object
+}
+
 function New-ProgramId([string]$Intent) {
     $slug = Convert-ToSlug $Intent
     if (-not $slug) { $slug = 'program' }
@@ -49,8 +70,38 @@ function Resolve-ProgramId {
     if ($env:LCS_PROGRAM) { return (Convert-ToSlug $env:LCS_PROGRAM) }
 
     $fromContext = Get-ContextValue -FilePath (Join-Path $contextDir 'current-program')
-    if ($fromContext -and (Test-Path (Join-Path $programsRoot $fromContext))) {
-        return $fromContext
+    $hasContextProgram = $fromContext -and (Test-Path (Join-Path $programsRoot $fromContext))
+
+    if (-not $intent) {
+        if ($hasContextProgram) {
+            return $fromContext
+        }
+        return (New-ProgramId -Intent $intent)
+    }
+
+    $intentSlug = Convert-ToSlug $intent
+    if (-not $intentSlug) {
+        if ($hasContextProgram) {
+            return $fromContext
+        }
+        return (New-ProgramId -Intent $intent)
+    }
+
+    if ($hasContextProgram) {
+        $contextBase = Get-ProgramBaseSlug -ProgramId $fromContext
+        if ($contextBase -eq $intentSlug) {
+            return $fromContext
+        }
+    }
+
+    $matches = Get-ProgramMatchesForSlug -IntentSlug $intentSlug
+    if ($matches.Count -eq 1) {
+        return $matches[0]
+    }
+    if ($matches.Count -gt 1) {
+        $selected = $matches[-1]
+        Write-Warning "[lcs] Multiple program matches for intent '$intent'. Auto-selecting latest: $selected"
+        return $selected
     }
 
     return (New-ProgramId -Intent $intent)
@@ -162,6 +213,8 @@ if ($durationDays -le 0 -and (Test-Path $programFile -PathType Leaf)) {
         $existingProgram = Get-Content -Path $programFile -Raw -Encoding utf8 | ConvertFrom-Json
         if ($existingProgram.duration_days -is [int] -and $existingProgram.duration_days -gt 0) {
             $durationDays = [int]$existingProgram.duration_days
+        } elseif ($existingProgram.duration_days_estimate -is [int] -and $existingProgram.duration_days_estimate -gt 0) {
+            $durationDays = [int]$existingProgram.duration_days_estimate
         }
     } catch {}
 }

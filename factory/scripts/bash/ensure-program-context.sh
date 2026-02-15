@@ -49,6 +49,26 @@ slugify() {
         | cut -c1-40
 }
 
+program_base_slug() {
+    local value="$1"
+    printf '%s\n' "$value" | sed -E 's/-[0-9]{8}-[0-9]{4}(-[0-9]{2})?$//'
+}
+
+find_program_matches_for_slug() {
+    local intent_slug="$1"
+    local dir name base
+    [[ -d "$PROGRAMS_ROOT" ]] || return 0
+
+    for dir in "$PROGRAMS_ROOT"/*; do
+        [[ -d "$dir" ]] || continue
+        name="$(basename "$dir")"
+        base="$(program_base_slug "$name")"
+        if [[ "$base" == "$intent_slug" ]]; then
+            printf '%s\n' "$name"
+        fi
+    done | sort
+}
+
 generate_program_id() {
     local intent="$1"
     local slug base candidate counter
@@ -68,7 +88,8 @@ generate_program_id() {
 }
 
 choose_program_id() {
-    local current_program
+    local current_program intent_slug current_base
+    local matched latest="" match_count=0
     current_program="$(read_context_value "$CONTEXT_DIR/current-program" || true)"
 
     if [[ -n "$PROGRAM_OVERRIDE" ]]; then
@@ -81,8 +102,47 @@ choose_program_id() {
         return
     fi
 
+    if [[ -z "$PROGRAM_INTENT" ]]; then
+        if [[ -n "$current_program" && -d "$PROGRAMS_ROOT/$current_program" ]]; then
+            echo "$current_program"
+            return
+        fi
+        generate_program_id "$PROGRAM_INTENT"
+        return
+    fi
+
+    intent_slug="$(slugify "$PROGRAM_INTENT")"
+    if [[ -z "$intent_slug" ]]; then
+        if [[ -n "$current_program" && -d "$PROGRAMS_ROOT/$current_program" ]]; then
+            echo "$current_program"
+            return
+        fi
+        generate_program_id "$PROGRAM_INTENT"
+        return
+    fi
+
     if [[ -n "$current_program" && -d "$PROGRAMS_ROOT/$current_program" ]]; then
-        echo "$current_program"
+        current_base="$(program_base_slug "$current_program")"
+        if [[ "$current_base" == "$intent_slug" ]]; then
+            echo "$current_program"
+            return
+        fi
+    fi
+
+    while IFS= read -r matched; do
+        [[ -n "$matched" ]] || continue
+        latest="$matched"
+        match_count=$((match_count + 1))
+    done < <(find_program_matches_for_slug "$intent_slug")
+
+    if [[ "$match_count" -eq 1 && -n "$latest" ]]; then
+        echo "$latest"
+        return
+    fi
+
+    if [[ "$match_count" -gt 1 && -n "$latest" ]]; then
+        echo "[lcs] Info: Multiple program matches for intent '$PROGRAM_INTENT'. Auto-selecting latest: $latest" >&2
+        echo "$latest"
         return
     fi
 
@@ -132,6 +192,11 @@ except Exception:
 value = payload.get("duration_days")
 if isinstance(value, int) and value > 0:
     print(value)
+    raise SystemExit(0)
+
+estimate = payload.get("duration_days_estimate")
+if isinstance(estimate, int) and estimate > 0:
+    print(estimate)
 PY
 }
 

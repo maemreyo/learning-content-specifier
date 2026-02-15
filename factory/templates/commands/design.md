@@ -14,6 +14,9 @@ scripts:
 agent_scripts:
   sh: factory/scripts/bash/update-agent-context.sh __AGENT__
   ps: factory/scripts/powershell/update-agent-context.ps1 -AgentType __AGENT__
+gate_scripts:
+  sh: factory/scripts/bash/manage-program-context.sh --json workflow-status
+  ps: factory/scripts/powershell/manage-program-context.ps1 --json workflow-status
 ---
 
 ## Intent
@@ -42,6 +45,10 @@ $ARGUMENTS
 - YOU MUST mark research required when confidence `< 0.70`.
 - YOU MUST load subject template catalog (English-first) and produce weighted top-K template candidates.
 - YOU MUST include score breakdown (`lo_fit`, `level_fit`, `duration_fit`, `diversity_fit`) in `template-selection.json`.
+- YOU MUST run `{GATE_SCRIPT}` after design generation and use it to detect pending units.
+- YOU MUST include a `Follow-up Tasks` section with ready-to-run prompts.
+- YOU MUST suggest `/lcs.programs activate --program <program_id> --unit <unit_id>` before any unit-specific follow-up command.
+- YOU MUST suggest `/lcs.design ...` for pending design units and `/lcs.redesign ...` for rework requests.
 - YOU MUST NOT bypass charter constraints.
 
 ## Execution Steps
@@ -58,7 +65,8 @@ $ARGUMENTS
 10. Generate/update `exercise-design.md` + `exercise-design.json` from selected templates and LO mapping.
 11. Ensure `outputs/manifest.json` remains valid, xAPI interop block exists, and new template artifacts are registered.
 12. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
-13. Report artifacts and unresolved risks.
+13. Run `{GATE_SCRIPT}` and parse `summary`, `units`, `follow_up_tasks`.
+14. Report artifacts, unresolved risks, and prioritized follow-up prompts.
 
 ## Hard Gates
 
@@ -84,6 +92,10 @@ $ARGUMENTS
 - JSON: `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`, `outputs/manifest.json`.
 - Markdown: `exercise-design.md`.
 - Execution summary includes `HAS_GIT` state, confidence score, and research trigger decision.
+- Execution summary MUST include a `Follow-up Tasks` section with:
+  - immediate next command for current unit,
+  - pending units list,
+  - exact command prompts to continue (`/lcs.programs activate ...`, `/lcs.design ...`, `/lcs.redesign ...`, `/lcs.sequence ...` as applicable).
 
 ## Examples
 

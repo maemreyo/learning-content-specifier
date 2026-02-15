@@ -45,6 +45,9 @@ $ARGUMENTS
 
 - External output: GitHub issues.
 - Local report in response: created links, skipped reasons.
+- Local report MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.programs workflow-status --program <program_id>`
+  - `/lcs.author ...` for tasks that remain local-only.
 
 ## Examples
 

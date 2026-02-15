@@ -66,6 +66,11 @@ $ARGUMENTS
 
 - Artifacts: `programs/<program_id>/units/<unit_id>/sequence.md`, `programs/<program_id>/units/<unit_id>/sequence.json`.
 - Summary: task total, LO coverage summary, gating tasks.
+- Summary MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.rubric ...`
+  - `/lcs.audit ...`
+  - `/lcs.author ...`
+  - `/lcs.programs workflow-status --program <program_id>`.
 
 ## Examples
 

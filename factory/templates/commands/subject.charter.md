@@ -48,3 +48,6 @@ $ARGUMENTS
 
 - Primary artifact: `.lcs/memory/charter.md`.
 - Report includes old/new version, amendment scope, and affected templates.
+- Report MUST include a `Follow-up Tasks` section with exact prompts:
+  - `/lcs.charter ...` for active program alignment,
+  - `/lcs.programs list` to confirm target program context.
