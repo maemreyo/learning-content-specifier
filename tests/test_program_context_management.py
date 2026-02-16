@@ -14,17 +14,25 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_ensure_program_context_does_not_reuse_unrelated_current_program(tmp_path: Path):
     repo = tmp_path / "repo"
     scripts_dir = repo / ".lcs" / "scripts" / "bash"
+    generic_scripts_dir = repo / ".lcs" / "scripts"
+    config_dir = repo / ".lcs" / "config"
     templates_dir = repo / ".lcs" / "templates"
     context_dir = repo / ".lcs" / "context"
     programs_dir = repo / "programs"
 
     scripts_dir.mkdir(parents=True)
+    generic_scripts_dir.mkdir(parents=True, exist_ok=True)
+    config_dir.mkdir(parents=True, exist_ok=True)
     templates_dir.mkdir(parents=True)
     context_dir.mkdir(parents=True)
     programs_dir.mkdir(parents=True)
 
     shutil.copy(ROOT / "factory/scripts/bash/common.sh", scripts_dir / "common.sh")
     shutil.copy(ROOT / "factory/scripts/bash/ensure-program-context.sh", scripts_dir / "ensure-program-context.sh")
+    shutil.copy(ROOT / "factory/scripts/bash/load-stage-context.sh", scripts_dir / "load-stage-context.sh")
+    shutil.copy(ROOT / "factory/scripts/python/load_stage_context.py", generic_scripts_dir / "load_stage_context.py")
+    shutil.copy(ROOT / "factory/scripts/python/manage_program_context.py", generic_scripts_dir / "manage_program_context.py")
+    shutil.copy(ROOT / "factory/config/stage-context-map.v1.json", config_dir / "stage-context-map.v1.json")
     shutil.copy(ROOT / "factory/templates/charter-template.md", templates_dir / "charter-template.md")
 
     current_program = "ielts-speaking-5-0-to-6-5-in-30-days-20260215-1834"

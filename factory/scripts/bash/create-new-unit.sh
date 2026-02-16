@@ -54,8 +54,72 @@ source "$SCRIPT_DIR/common.sh"
 REPO_ROOT="$(get_repo_root)"
 CONTEXT_DIR="$REPO_ROOT/.lcs/context"
 PROGRAMS_ROOT="$REPO_ROOT/programs"
+PYTHON_BIN="python3"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+fi
+RENDER_MD_SIDECAR="${LCS_RENDER_MD_SIDECAR:-0}"
+
+should_render_md_sidecar() {
+    case "${1:-0}" in
+        1|true|TRUE|yes|YES|on|ON)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
 
 mkdir -p "$CONTEXT_DIR" "$PROGRAMS_ROOT"
+
+if [[ "$UNIT_DESCRIPTION" == \{* ]]; then
+    parsed_json_args="$("$PYTHON_BIN" - "$UNIT_DESCRIPTION" <<'PY'
+import json
+import sys
+
+raw = sys.argv[1].strip()
+if not raw.startswith("{"):
+    raise SystemExit(0)
+try:
+    payload = json.loads(raw)
+except Exception:
+    raise SystemExit(0)
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+program = payload.get("program")
+short_name = payload.get("short_name") or payload.get("slug")
+number = payload.get("number")
+desc = payload.get("description") or payload.get("title") or payload.get("intent")
+
+number_text = ""
+if isinstance(number, int):
+    number_text = str(number)
+elif isinstance(number, str):
+    digits = "".join(ch for ch in number if ch.isdigit())
+    number_text = digits
+
+print(
+    "\t".join(
+        [
+            str(program).strip() if isinstance(program, str) else "",
+            str(short_name).strip() if isinstance(short_name, str) else "",
+            number_text,
+            str(desc).strip() if isinstance(desc, str) else "",
+        ]
+    )
+)
+PY
+)"
+    if [[ -n "$parsed_json_args" ]]; then
+        IFS=$'\t' read -r JSON_PROGRAM JSON_SHORT_NAME JSON_NUMBER JSON_DESCRIPTION <<< "$parsed_json_args"
+        [[ -z "$PROGRAM_OVERRIDE" && -n "${JSON_PROGRAM:-}" ]] && PROGRAM_OVERRIDE="$JSON_PROGRAM"
+        [[ -z "$SHORT_NAME" && -n "${JSON_SHORT_NAME:-}" ]] && SHORT_NAME="$JSON_SHORT_NAME"
+        [[ -z "$UNIT_NUMBER" && -n "${JSON_NUMBER:-}" ]] && UNIT_NUMBER="$JSON_NUMBER"
+        [[ -n "${JSON_DESCRIPTION:-}" ]] && UNIT_DESCRIPTION="$JSON_DESCRIPTION"
+    fi
+fi
 
 slugify() {
     echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
@@ -162,6 +226,49 @@ if [[ -z "$PROGRAM_ID" ]]; then
     exit 1
 fi
 
+preflight_args=("$SCRIPT_DIR/load-stage-context.sh" --json --stage define --program "$PROGRAM_ID")
+if [[ -n "$UNIT_DESCRIPTION" ]]; then
+    preflight_args+=(--intent "$UNIT_DESCRIPTION")
+fi
+preflight_out="$("${preflight_args[@]}" 2>/dev/null || true)"
+if [[ -z "$preflight_out" ]]; then
+    echo "ERROR: define preflight failed to execute" >&2
+    exit 1
+fi
+preflight_status="$("$PYTHON_BIN" - "$preflight_out" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("BLOCK")
+    raise SystemExit(0)
+print(str(payload.get("STATUS", "BLOCK")).upper())
+PY
+)"
+if [[ "$preflight_status" != "PASS" ]]; then
+    preflight_summary="$("$PYTHON_BIN" - "$preflight_out" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("invalid-preflight-output")
+    raise SystemExit(0)
+parts = []
+missing = payload.get("MISSING_INPUTS", [])
+blockers = payload.get("BLOCKERS", [])
+if missing:
+    parts.append("missing=" + ",".join(str(item) for item in missing))
+if blockers:
+    parts.append("blockers=" + "; ".join(str(item) for item in blockers))
+print(" | ".join(parts) if parts else "unknown-preflight-blocker")
+PY
+)"
+    echo "ERROR: define preflight BLOCK ($preflight_summary)" >&2
+    exit 1
+fi
+
 PROGRAM_DIR="$PROGRAMS_ROOT/$PROGRAM_ID"
 if [[ ! -d "$PROGRAM_DIR" ]]; then
     echo "ERROR: Program directory does not exist: $PROGRAM_DIR" >&2
@@ -209,10 +316,12 @@ CONTRACT_VERSION="$(get_contract_version)"
 TEMPLATE="$REPO_ROOT/.lcs/templates/brief-template.md"
 BRIEF_FILE="$UNIT_DIR/brief.md"
 BRIEF_JSON_FILE="$UNIT_DIR/brief.json"
-if [[ -f "$TEMPLATE" ]]; then
-    cp "$TEMPLATE" "$BRIEF_FILE"
-else
-    touch "$BRIEF_FILE"
+if should_render_md_sidecar "$RENDER_MD_SIDECAR"; then
+    if [[ -f "$TEMPLATE" ]]; then
+        cp "$TEMPLATE" "$BRIEF_FILE"
+    else
+        touch "$BRIEF_FILE"
+    fi
 fi
 
 if [[ ! -f "$BRIEF_JSON_FILE" ]]; then
@@ -269,13 +378,14 @@ export LCS_PROGRAM="$PROGRAM_ID"
 export LCS_UNIT="$UNIT_NAME"
 
 if $JSON_MODE; then
-    printf '{"PROGRAM_ID":"%s","PROGRAM_DIR":"%s","UNIT_NAME":"%s","UNIT_DIR":"%s","BRIEF_FILE":"%s","UNIT_NUM":"%s","SESSION_START":%d,"SESSION_END":%d,"ESTIMATED_DAY_START":%d,"ESTIMATED_DAY_END":%d,"EXPECTED_UNITS":%d}\n' \
-        "$PROGRAM_ID" "$PROGRAM_DIR" "$UNIT_NAME" "$UNIT_DIR" "$BRIEF_FILE" "$UNIT_NUM" "${ROADMAP_SESSION_START:-0}" "${ROADMAP_SESSION_END:-0}" "${ROADMAP_DAY_ESTIMATE_START:-0}" "${ROADMAP_DAY_ESTIMATE_END:-0}" "${PROGRAM_EXPECTED_UNITS:-0}"
+    printf '{"PROGRAM_ID":"%s","PROGRAM_DIR":"%s","UNIT_NAME":"%s","UNIT_DIR":"%s","BRIEF_JSON_FILE":"%s","BRIEF_FILE":"%s","UNIT_NUM":"%s","SESSION_START":%d,"SESSION_END":%d,"ESTIMATED_DAY_START":%d,"ESTIMATED_DAY_END":%d,"EXPECTED_UNITS":%d}\n' \
+        "$PROGRAM_ID" "$PROGRAM_DIR" "$UNIT_NAME" "$UNIT_DIR" "$BRIEF_JSON_FILE" "$BRIEF_FILE" "$UNIT_NUM" "${ROADMAP_SESSION_START:-0}" "${ROADMAP_SESSION_END:-0}" "${ROADMAP_DAY_ESTIMATE_START:-0}" "${ROADMAP_DAY_ESTIMATE_END:-0}" "${PROGRAM_EXPECTED_UNITS:-0}"
 else
     echo "PROGRAM_ID: $PROGRAM_ID"
     echo "PROGRAM_DIR: $PROGRAM_DIR"
     echo "UNIT_NAME: $UNIT_NAME"
     echo "UNIT_DIR: $UNIT_DIR"
+    echo "BRIEF_JSON_FILE: $BRIEF_JSON_FILE"
     echo "BRIEF_FILE: $BRIEF_FILE"
     echo "UNIT_NUM: $UNIT_NUM"
     echo "SESSION_START: ${ROADMAP_SESSION_START:-0}"

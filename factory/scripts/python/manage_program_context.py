@@ -20,14 +20,9 @@ from typing import Any
 TIMESTAMP_SUFFIX = re.compile(r"-\d{8}-\d{4}(?:-\d{2})?$")
 UNIT_SLOT_PATTERN = re.compile(r"^(\d{3})-")
 DESIGN_REQUIRED_FILES = (
-    "design.md",
     "design.json",
-    "content-model.md",
     "content-model.json",
-    "exercise-design.md",
     "exercise-design.json",
-    "assessment-map.md",
-    "delivery-guide.md",
     "design-decisions.json",
     "assessment-blueprint.json",
     "template-selection.json",
@@ -149,9 +144,9 @@ def unit_entries(program_dir: Path, active_unit: str) -> list[dict[str, Any]]:
                 "unit_id": path.name,
                 "slot": slot,
                 "is_active": path.name == active_unit,
-                "has_brief": (path / "brief.md").is_file(),
-                "has_design": (path / "design.md").is_file(),
-                "has_sequence": (path / "sequence.md").is_file(),
+                "has_brief": (path / "brief.json").is_file(),
+                "has_design": (path / "design.json").is_file(),
+                "has_sequence": (path / "sequence.json").is_file(),
                 "has_manifest": (path / "outputs" / "manifest.json").is_file(),
             }
         )
@@ -174,12 +169,9 @@ def count_open_questions(brief_payload: dict[str, Any]) -> int:
 
 def unit_workflow_status(program_id: str, unit_dir: Path, active_unit: str) -> dict[str, Any]:
     unit_id = unit_dir.name
-    brief_md = unit_dir / "brief.md"
     brief_json_file = unit_dir / "brief.json"
-    sequence_md = unit_dir / "sequence.md"
     sequence_json = unit_dir / "sequence.json"
-    rubric_dir = unit_dir / "rubrics"
-    audit_md = unit_dir / "audit-report.md"
+    rubric_gates_json = unit_dir / "rubric-gates.json"
     audit_json = unit_dir / "audit-report.json"
     manifest_file = unit_dir / "outputs" / "manifest.json"
 
@@ -190,9 +182,9 @@ def unit_workflow_status(program_id: str, unit_dir: Path, active_unit: str) -> d
     missing_design_files = [name for name in DESIGN_REQUIRED_FILES if not (unit_dir / name).is_file()]
     design_complete = len(missing_design_files) == 0
 
-    sequence_complete = sequence_md.is_file() and sequence_json.is_file()
-    rubric_complete = rubric_dir.is_dir() and any(path.is_file() for path in rubric_dir.rglob("*"))
-    audit_complete = audit_md.is_file() and audit_json.is_file()
+    sequence_complete = sequence_json.is_file()
+    rubric_complete = rubric_gates_json.is_file()
+    audit_complete = audit_json.is_file()
 
     manifest_payload = read_json(manifest_file) if manifest_file.is_file() else {}
     gate_status = manifest_payload.get("gate_status", {}) if isinstance(manifest_payload, dict) else {}
@@ -202,7 +194,7 @@ def unit_workflow_status(program_id: str, unit_dir: Path, active_unit: str) -> d
         if isinstance(raw_decision, str):
             gate_decision = raw_decision.upper()
 
-    if not brief_md.is_file() and not brief_json_file.is_file():
+    if not brief_json_file.is_file():
         stage = "define"
         prompt = f"/lcs.define Define unit {unit_id}"
         reason = "Unit brief is missing."
@@ -239,7 +231,7 @@ def unit_workflow_status(program_id: str, unit_dir: Path, active_unit: str) -> d
         "slot": int(UNIT_SLOT_PATTERN.match(unit_id).group(1)) if UNIT_SLOT_PATTERN.match(unit_id) else 0,
         "is_active": unit_id == active_unit,
         "status": {
-            "has_brief": brief_md.is_file() and brief_json_file.is_file(),
+            "has_brief": brief_json_file.is_file(),
             "open_questions": open_questions,
             "refine_complete": refine_complete,
             "design_complete": design_complete,

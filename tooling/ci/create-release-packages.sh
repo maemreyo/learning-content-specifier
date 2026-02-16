@@ -135,19 +135,33 @@ generate_commands() {
       body=$(printf '%s\n' "$body" | sed "s|{GATE_SCRIPT}|${gate_script_command}|g")
     fi
     
-    # Remove script sections from frontmatter while preserving YAML structure
-    body=$(printf '%s\n' "$body" | awk '
-      /^---$/ { print; if (++dash_count == 1) in_frontmatter=1; else in_frontmatter=0; next }
-      in_frontmatter && /^scripts:$/ { skip_scripts=1; next }
-      in_frontmatter && /^agent_scripts:$/ { skip_scripts=1; next }
-      in_frontmatter && /^gate_scripts:$/ { skip_scripts=1; next }
-      in_frontmatter && /^[a-zA-Z].*:/ && skip_scripts { skip_scripts=0 }
-      in_frontmatter && skip_scripts && /^[[:space:]]/ { next }
-      { print }
-    ')
-    
     # Apply other substitutions
     body=$(printf '%s\n' "$body" | sed "s/{ARGS}/$arg_format/g" | sed "s/__AGENT__/$agent/g" | rewrite_paths)
+
+    template_has_scripts=false
+    template_has_gate_scripts=false
+    template_has_argument_hint=false
+    if printf '%s\n' "$file_content" | grep -q '^scripts:$'; then
+      template_has_scripts=true
+    fi
+    if printf '%s\n' "$file_content" | grep -q '^gate_scripts:$'; then
+      template_has_gate_scripts=true
+    fi
+    if printf '%s\n' "$file_content" | grep -q '^argument-hint:'; then
+      template_has_argument_hint=true
+    fi
+    if [[ "$template_has_scripts" == "true" ]] && ! printf '%s\n' "$body" | grep -q '^scripts:$'; then
+      echo "ERROR: Generated command missing scripts frontmatter: $template -> lcs.$name.$ext" >&2
+      exit 1
+    fi
+    if [[ "$template_has_gate_scripts" == "true" ]] && ! printf '%s\n' "$body" | grep -q '^gate_scripts:$'; then
+      echo "ERROR: Generated command missing gate_scripts frontmatter: $template -> lcs.$name.$ext" >&2
+      exit 1
+    fi
+    if [[ "$template_has_argument_hint" == "true" ]] && ! printf '%s\n' "$body" | grep -q '^argument-hint:'; then
+      echo "ERROR: Generated command missing argument-hint frontmatter: $template -> lcs.$name.$ext" >&2
+      exit 1
+    fi
     
     case $ext in
       toml)
@@ -206,6 +220,12 @@ build_variant() {
     esac
     # Always copy shared python tooling consumed by shell wrappers.
     [[ -d factory/scripts/python ]] && find factory/scripts/python -maxdepth 1 -type f -exec cp {} "$SPEC_DIR/scripts/" \; 2>/dev/null || true
+  fi
+
+  if [[ -d factory/config ]]; then
+    mkdir -p "$SPEC_DIR/config"
+    cp -r factory/config/* "$SPEC_DIR/config/"
+    echo "Copied factory/config -> .lcs/config"
   fi
   
   if [[ -d factory/templates ]]; then

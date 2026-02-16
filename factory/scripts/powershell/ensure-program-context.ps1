@@ -17,14 +17,63 @@ if ($Help) {
 . "$PSScriptRoot/common.ps1"
 
 $intent = ($ProgramIntent -join ' ').Trim()
+$script:JsonIntentDuration = ''
+$script:JsonIntentSessions = ''
 $repoRoot = Get-RepoRoot
 $contextDir = Join-Path $repoRoot '.lcs/context'
 $programsRoot = Join-Path $repoRoot 'programs'
 $templateFile = Join-Path $repoRoot '.lcs/templates/charter-template.md'
 $subjectCharterFile = Join-Path $repoRoot '.lcs/memory/charter.md'
+$renderMdSidecar = @('1', 'true', 'yes', 'on') -contains (($env:LCS_RENDER_MD_SIDECAR ?? '0').ToLowerInvariant())
 
 New-Item -ItemType Directory -Path $contextDir -Force | Out-Null
 New-Item -ItemType Directory -Path $programsRoot -Force | Out-Null
+
+if ($intent -and $intent.TrimStart().StartsWith('{')) {
+    try {
+        $intentPayload = $intent | ConvertFrom-Json
+        if ($intentPayload) {
+            if (-not $Program -and $intentPayload.program -is [string] -and $intentPayload.program.Trim()) {
+                $Program = [string]$intentPayload.program
+            }
+
+            if ($intentPayload.intent -is [string] -and $intentPayload.intent.Trim()) {
+                $intent = [string]$intentPayload.intent
+            } elseif ($intentPayload.title -is [string] -and $intentPayload.title.Trim()) {
+                $intent = [string]$intentPayload.title
+            }
+
+            if ($intentPayload.duration) {
+                $script:JsonIntentDuration = (($intentPayload.duration | Out-String) -replace '[^0-9]', '').Trim()
+            }
+            if ($intentPayload.sessions) {
+                $script:JsonIntentSessions = (($intentPayload.sessions | Out-String) -replace '[^0-9]', '').Trim()
+            }
+        }
+    }
+    catch {
+        # Fall back to raw intent text.
+    }
+}
+
+$loaderArgs = @("$PSScriptRoot/load-stage-context.ps1", '-Stage', 'charter', '-Json')
+if ($intent) {
+    $loaderArgs += @('-Intent', $intent)
+}
+$loaderRaw = & $loaderArgs[0] $loaderArgs[1..($loaderArgs.Count - 1)]
+if (-not $loaderRaw) {
+    throw 'charter preflight failed to execute'
+}
+try {
+    $loaderObj = $loaderRaw | ConvertFrom-Json
+} catch {
+    throw 'Invalid charter preflight payload'
+}
+if ([string]$loaderObj.STATUS -ne 'PASS') {
+    $summary = @($loaderObj.BLOCKERS) -join '; '
+    if (-not $summary) { $summary = 'unknown preflight blocker' }
+    throw "charter preflight BLOCK ($summary)"
+}
 
 function Convert-ToSlug([string]$Value) {
     return ($Value.ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+', '' -replace '-+$', '' -replace '-{2,}', '-')
@@ -145,7 +194,8 @@ function Write-RoadmapFiles {
         [int]$SessionSpan,
         [int]$SessionsPerWeek,
         [int]$ExpectedUnits,
-        [int]$DurationDaysEstimate
+        [int]$DurationDaysEstimate,
+        [bool]$RenderMarkdown = $false
     )
 
     $units = @()
@@ -176,22 +226,24 @@ function Write-RoadmapFiles {
     }
     $roadmapPayload | ConvertTo-Json -Depth 6 | Set-Content -Path $RoadmapJsonFile -Encoding utf8
 
-    $md = @()
-    $md += "# Program Roadmap: $ProgramId"
-    $md += ''
-    $md += '- Progress unit: study session'
-    $md += "- Target sessions: $TargetSessions"
-    $md += "- Session span per unit: $SessionSpan"
-    $md += "- Sessions/week assumption: $SessionsPerWeek"
-    $md += "- Duration estimate (days): $DurationDaysEstimate"
-    $md += "- Expected units: $ExpectedUnits"
-    $md += ''
-    $md += '| Slot | Session Range | Estimated Day Range | Suggested Unit ID |'
-    $md += '|------|---------------|---------------------|-------------------|'
-    foreach ($unit in $units) {
-        $md += "| $($unit.slot) | $($unit.session_start)-$($unit.session_end) | $($unit.estimated_day_start)-$($unit.estimated_day_end) | ``$($unit.suggested_unit_id)`` |"
+    if ($RenderMarkdown) {
+        $md = @()
+        $md += "# Program Roadmap: $ProgramId"
+        $md += ''
+        $md += '- Progress unit: study session'
+        $md += "- Target sessions: $TargetSessions"
+        $md += "- Session span per unit: $SessionSpan"
+        $md += "- Sessions/week assumption: $SessionsPerWeek"
+        $md += "- Duration estimate (days): $DurationDaysEstimate"
+        $md += "- Expected units: $ExpectedUnits"
+        $md += ''
+        $md += '| Slot | Session Range | Estimated Day Range | Suggested Unit ID |'
+        $md += '|------|---------------|---------------------|-------------------|'
+        foreach ($unit in $units) {
+            $md += "| $($unit.slot) | $($unit.session_start)-$($unit.session_end) | $($unit.estimated_day_start)-$($unit.estimated_day_end) | ``$($unit.suggested_unit_id)`` |"
+        }
+        $md -join "`n" | Set-Content -Path $RoadmapMdFile -Encoding utf8
     }
-    $md -join "`n" | Set-Content -Path $RoadmapMdFile -Encoding utf8
 }
 
 $programId = Resolve-ProgramId
@@ -207,7 +259,10 @@ $programRoadmapMdFile = Join-Path $programDir 'roadmap.md'
 $sessionSpan = 4
 $sessionsPerWeek = 3
 
-$durationDays = Get-DurationDays -Text $intent
+$durationDays = if ($script:JsonIntentDuration -match '^\d+$') { [int]$script:JsonIntentDuration } else { 0 }
+if ($durationDays -le 0) {
+    $durationDays = Get-DurationDays -Text $intent
+}
 if ($durationDays -le 0 -and (Test-Path $programFile -PathType Leaf)) {
     try {
         $existingProgram = Get-Content -Path $programFile -Raw -Encoding utf8 | ConvertFrom-Json
@@ -218,7 +273,10 @@ if ($durationDays -le 0 -and (Test-Path $programFile -PathType Leaf)) {
         }
     } catch {}
 }
-$targetSessions = Get-TargetSessions -Text $intent
+$targetSessions = if ($script:JsonIntentSessions -match '^\d+$') { [int]$script:JsonIntentSessions } else { 0 }
+if ($targetSessions -le 0) {
+    $targetSessions = Get-TargetSessions -Text $intent
+}
 if ($targetSessions -le 0 -and (Test-Path $programFile -PathType Leaf)) {
     try {
         $existingProgram = Get-Content -Path $programFile -Raw -Encoding utf8 | ConvertFrom-Json
@@ -283,7 +341,7 @@ if (-not (Test-Path $programFile -PathType Leaf)) {
     } catch {}
 }
 
-if (-not (Test-Path $programCharterFile -PathType Leaf)) {
+if ($renderMdSidecar -and -not (Test-Path $programCharterFile -PathType Leaf)) {
     if (Test-Path $templateFile -PathType Leaf) {
         Copy-Item -Path $templateFile -Destination $programCharterFile -Force
     } else {
@@ -292,7 +350,7 @@ if (-not (Test-Path $programCharterFile -PathType Leaf)) {
 }
 
 if ($targetSessions -ge 8) {
-    Write-RoadmapFiles -RoadmapJsonFile $programRoadmapJsonFile -RoadmapMdFile $programRoadmapMdFile -ProgramId $programId -TargetSessions $targetSessions -SessionSpan $sessionSpan -SessionsPerWeek $sessionsPerWeek -ExpectedUnits $expectedUnits -DurationDaysEstimate $durationDays
+    Write-RoadmapFiles -RoadmapJsonFile $programRoadmapJsonFile -RoadmapMdFile $programRoadmapMdFile -ProgramId $programId -TargetSessions $targetSessions -SessionSpan $sessionSpan -SessionsPerWeek $sessionsPerWeek -ExpectedUnits $expectedUnits -DurationDaysEstimate $durationDays -RenderMarkdown:$renderMdSidecar
 }
 
 Set-ContextValue -FilePath (Join-Path $contextDir 'current-program') -Value $programId

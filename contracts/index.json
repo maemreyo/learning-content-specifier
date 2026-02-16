@@ -54,8 +54,8 @@
     "fixtures": [
       {
         "path": "contracts/fixtures/golden_path_snapshot.json",
-        "sha256": "7fffe4f2b3ccbd0808afb2f90b5606fced6fd70fa16245dfe3a7aac6b7d25a93",
-        "size_bytes": 1187
+        "sha256": "52032692814fdd35073e0c7e8aabcdbfced8a381768be0256c90b6a71157c060",
+        "size_bytes": 1452
       },
       {
         "path": "contracts/fixtures/proficiency.crosswalks.v1.json",
@@ -101,8 +101,8 @@
       {
         "id": "lcs.artifact.exercise-design.v1",
         "path": "contracts/schemas/exercise-design.schema.json",
-        "sha256": "ffd1a9c30edc979e144a3be8f98d1b4b6df25d2197be083bcc6ce7f8e7bbe91d",
-        "size_bytes": 2816
+        "sha256": "f30db64c8d878175cf05006bf00c5aba28cc2746af7b0b75638bf947528df2ef",
+        "size_bytes": 2823
       },
       {
         "id": "lcs.artifact.manifest.v1",
@@ -125,8 +125,8 @@
       {
         "id": "lcs.artifact.rubric-gates.v1",
         "path": "contracts/schemas/rubric-gates.schema.json",
-        "sha256": "796b84c34418a1656fa85e9259a69e72dfe9af316cbfdc5830188644ff006419",
-        "size_bytes": 1652
+        "sha256": "3df16de74ae08e902fc22505c2a82ea36a2c32fd2bf9b8706fa0a1a52ad4ccba",
+        "size_bytes": 1633
       },
       {
         "id": "lcs.artifact.sequence.v1",

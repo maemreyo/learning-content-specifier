@@ -21,17 +21,65 @@ SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 REPO_ROOT="$(get_repo_root)"
 
-MANAGE_CONTEXT_TOOL="$(resolve_python_tool manage_program_context.py)"
 PYTHON_BIN="python3"
 if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
     PYTHON_BIN="python"
 fi
+RENDER_MD_SIDECAR="${LCS_RENDER_MD_SIDECAR:-0}"
 
+should_render_md_sidecar() {
+    case "${1:-0}" in
+        1|true|TRUE|yes|YES|on|ON)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+LOADER_ARGS=("$SCRIPT_DIR/load-stage-context.sh" --json --stage design)
 if [[ ${#RAW_ARGS[@]} -gt 0 ]]; then
     USER_INTENT="${RAW_ARGS[*]}"
-    if "$PYTHON_BIN" "$MANAGE_CONTEXT_TOOL" --repo-root "$REPO_ROOT" --json resolve-unit --for-stage design --intent "$USER_INTENT" --activate-resolved >/dev/null 2>&1; then
-        :
-    fi
+    LOADER_ARGS+=(--intent "$USER_INTENT")
+fi
+loader_output="$("${LOADER_ARGS[@]}" 2>/dev/null || true)"
+if [[ -z "$loader_output" ]]; then
+    echo "ERROR: design preflight failed to execute" >&2
+    exit 1
+fi
+loader_status="$("$PYTHON_BIN" - "$loader_output" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("BLOCK")
+    raise SystemExit(0)
+print(str(payload.get("STATUS", "BLOCK")).upper())
+PY
+)"
+if [[ "$loader_status" != "PASS" ]]; then
+    summary="$("$PYTHON_BIN" - "$loader_output" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("invalid preflight output")
+    raise SystemExit(0)
+missing = payload.get("MISSING_INPUTS", [])
+blockers = payload.get("BLOCKERS", [])
+parts = []
+if missing:
+    parts.append("missing=" + ",".join(str(item) for item in missing))
+if blockers:
+    parts.append("blockers=" + "; ".join(str(item) for item in blockers))
+print(" | ".join(parts) if parts else "unknown preflight blockers")
+PY
+)"
+    echo "ERROR: design preflight BLOCK ($summary)" >&2
+    exit 1
 fi
 
 eval "$(get_unit_paths)"
@@ -70,36 +118,41 @@ PY
 
 mkdir -p "$UNIT_DIR" "$RUBRICS_DIR" "$OUTPUTS_DIR"
 
-TEMPLATE="$REPO_ROOT/.lcs/templates/design-template.md"
-if [[ "$FORCE_RESET" == "true" || ! -f "$DESIGN_FILE" ]]; then
-    if [[ -f "$TEMPLATE" ]]; then
-        cp "$TEMPLATE" "$DESIGN_FILE"
-    else
-        touch "$DESIGN_FILE"
-    fi
-fi
+if should_render_md_sidecar "$RENDER_MD_SIDECAR"; then
+    DESIGN_TEMPLATE="$REPO_ROOT/.lcs/templates/design-template.md"
+    EXERCISE_TEMPLATE="$REPO_ROOT/.lcs/templates/exercise-design-template.md"
+    BRIEF_TEMPLATE="$REPO_ROOT/.lcs/templates/brief-template.md"
 
-[[ -f "$CONTENT_MODEL_FILE" ]] || touch "$CONTENT_MODEL_FILE"
-EXERCISE_TEMPLATE="$REPO_ROOT/.lcs/templates/exercise-design-template.md"
-if [[ ! -f "$EXERCISE_DESIGN_FILE" ]]; then
-    if [[ -f "$EXERCISE_TEMPLATE" ]]; then
-        cp "$EXERCISE_TEMPLATE" "$EXERCISE_DESIGN_FILE"
-    else
-        touch "$EXERCISE_DESIGN_FILE"
+    if [[ ! -f "$DESIGN_FILE" ]]; then
+        if [[ -f "$DESIGN_TEMPLATE" ]]; then
+            cp "$DESIGN_TEMPLATE" "$DESIGN_FILE"
+        else
+            touch "$DESIGN_FILE"
+        fi
+    fi
+    [[ -f "$CONTENT_MODEL_FILE" ]] || touch "$CONTENT_MODEL_FILE"
+    if [[ ! -f "$EXERCISE_DESIGN_FILE" ]]; then
+        if [[ -f "$EXERCISE_TEMPLATE" ]]; then
+            cp "$EXERCISE_TEMPLATE" "$EXERCISE_DESIGN_FILE"
+        else
+            touch "$EXERCISE_DESIGN_FILE"
+        fi
+    fi
+    [[ -f "$ASSESSMENT_MAP_FILE" ]] || touch "$ASSESSMENT_MAP_FILE"
+    [[ -f "$DELIVERY_GUIDE_FILE" ]] || touch "$DELIVERY_GUIDE_FILE"
+    [[ -f "$SEQUENCE_FILE" ]] || touch "$SEQUENCE_FILE"
+    [[ -f "$AUDIT_REPORT_FILE" ]] || touch "$AUDIT_REPORT_FILE"
+    if [[ ! -f "$BRIEF_FILE" ]]; then
+        if [[ -f "$BRIEF_TEMPLATE" ]]; then
+            cp "$BRIEF_TEMPLATE" "$BRIEF_FILE"
+        else
+            touch "$BRIEF_FILE"
+        fi
     fi
 fi
-[[ -f "$ASSESSMENT_MAP_FILE" ]] || touch "$ASSESSMENT_MAP_FILE"
-[[ -f "$DELIVERY_GUIDE_FILE" ]] || touch "$DELIVERY_GUIDE_FILE"
-[[ -f "$SEQUENCE_FILE" ]] || touch "$SEQUENCE_FILE"
-[[ -f "$AUDIT_REPORT_FILE" ]] || touch "$AUDIT_REPORT_FILE"
 
 UNIT_ID="$(basename "$UNIT_DIR")"
 NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
-if [[ ! -f "$BRIEF_FILE" ]]; then
-    touch "$BRIEF_FILE"
-fi
-BRIEF_CHECKSUM="$(compute_sha256 "$BRIEF_FILE")"
 
 if [[ "$FORCE_RESET" == "true" || ! -f "$BRIEF_JSON_FILE" ]]; then
     cat > "$BRIEF_JSON_FILE" <<EOF
@@ -219,16 +272,16 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$CONTENT_MODEL_JSON_FILE" ]]; then
   "unit_id": "$UNIT_ID",
   "course": {
     "id": "course-01",
-    "title": "Populate from design.md"
+    "title": "Populate from design.json"
   },
   "modules": [
     {
       "id": "module-01",
-      "title": "Populate from design.md",
+      "title": "Populate from design.json",
       "lessons": [
         {
           "id": "lesson-01",
-          "title": "Populate from design.md",
+          "title": "Populate from design.json",
           "lo_refs": ["LO1"],
           "estimated_minutes": 30
         }
@@ -264,7 +317,7 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$EXERCISE_DESIGN_JSON_FILE" ]]; then
       "lo_id": "LO1",
       "template_id": "mcq.v1",
       "day": 1,
-      "target_path": "outputs/module-01/exercises/ex001.md",
+      "target_path": "outputs/module-01/exercises/ex001.json",
       "status": "TODO",
       "template_schema_ref": "schemas/mcq.v1.schema.json",
       "template_rules_ref": "rules/mcq.v1.rules.md",
@@ -458,6 +511,26 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$AUDIT_REPORT_JSON_FILE" ]]; then
 EOF
 fi
 
+if [[ "$FORCE_RESET" == "true" || ! -f "$RUBRIC_GATES_FILE" ]]; then
+    cat > "$RUBRIC_GATES_FILE" <<EOF
+{
+  "contract_version": "$CONTRACT_VERSION",
+  "unit_id": "$UNIT_ID",
+  "generated_at": "$NOW_UTC",
+  "gates": [
+    {
+      "gate_id": "RB001",
+      "group": "alignment",
+      "status": "TODO",
+      "severity": "HIGH",
+      "evidence": "pending",
+      "checked": false
+    }
+  ]
+}
+EOF
+fi
+
 # Attempt deterministic template auto-select (English-first).
 # Template pack is mandatory for fail-closed design setup.
 selector_args=(
@@ -501,7 +574,8 @@ fi
 ASSESSMENT_BLUEPRINT_CHECKSUM="$(compute_sha256 "$ASSESSMENT_BLUEPRINT_FILE")"
 TEMPLATE_SELECTION_CHECKSUM="$(compute_sha256 "$TEMPLATE_SELECTION_FILE")"
 EXERCISE_DESIGN_JSON_CHECKSUM="$(compute_sha256 "$EXERCISE_DESIGN_JSON_FILE")"
-EXERCISE_DESIGN_MD_CHECKSUM="$(compute_sha256 "$EXERCISE_DESIGN_FILE")"
+BRIEF_JSON_CHECKSUM="$(compute_sha256 "$BRIEF_JSON_FILE")"
+RUBRIC_GATES_CHECKSUM="$(compute_sha256 "$RUBRIC_GATES_FILE")"
 
 if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
     cat > "$MANIFEST_FILE" <<EOF
@@ -520,11 +594,11 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
   ],
   "artifacts": [
     {
-      "id": "brief-md",
+      "id": "brief-json",
       "type": "brief",
-      "path": "brief.md",
-      "media_type": "text/markdown",
-      "checksum": "sha256:$BRIEF_CHECKSUM"
+      "path": "brief.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$BRIEF_JSON_CHECKSUM"
     },
     {
       "id": "assessment-blueprint-json",
@@ -548,11 +622,11 @@ if [[ "$FORCE_RESET" == "true" || ! -f "$MANIFEST_FILE" ]]; then
       "checksum": "sha256:$EXERCISE_DESIGN_JSON_CHECKSUM"
     },
     {
-      "id": "exercise-design-md",
-      "type": "exercise-design",
-      "path": "exercise-design.md",
-      "media_type": "text/markdown",
-      "checksum": "sha256:$EXERCISE_DESIGN_MD_CHECKSUM"
+      "id": "rubric-gates-json",
+      "type": "rubric-gates",
+      "path": "rubric-gates.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$RUBRIC_GATES_CHECKSUM"
     }
   ],
   "gate_status": {
@@ -607,11 +681,13 @@ if [[ "$validator_status" != "PASS" ]]; then
 fi
 
 if $JSON_MODE; then
-    printf '{"PROGRAM_ID":"%s","UNIT_ID":"%s","BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":%s}\n' \
-        "$PROGRAM_ID" "$CURRENT_UNIT" "$BRIEF_FILE" "$DESIGN_FILE" "$UNIT_DIR" "$CURRENT_BRANCH" "$HAS_GIT"
+    printf '{"PROGRAM_ID":"%s","UNIT_ID":"%s","BRIEF_JSON_FILE":"%s","DESIGN_JSON_FILE":"%s","BRIEF_FILE":"%s","DESIGN_FILE":"%s","UNIT_DIR":"%s","BRANCH":"%s","HAS_GIT":%s}\n' \
+        "$PROGRAM_ID" "$CURRENT_UNIT" "$BRIEF_JSON_FILE" "$DESIGN_JSON_FILE" "$BRIEF_FILE" "$DESIGN_FILE" "$UNIT_DIR" "$CURRENT_BRANCH" "$HAS_GIT"
 else
     echo "PROGRAM_ID: $PROGRAM_ID"
     echo "UNIT_ID: $CURRENT_UNIT"
+    echo "BRIEF_JSON_FILE: $BRIEF_JSON_FILE"
+    echo "DESIGN_JSON_FILE: $DESIGN_JSON_FILE"
     echo "BRIEF_FILE: $BRIEF_FILE"
     echo "DESIGN_FILE: $DESIGN_FILE"
     echo "UNIT_DIR: $UNIT_DIR"

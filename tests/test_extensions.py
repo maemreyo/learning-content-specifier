@@ -477,6 +477,19 @@ $ARGUMENTS
         assert output.endswith("---\n")
         assert "description: Test command" in output
 
+    def test_adjust_script_paths_updates_all_script_sections(self):
+        """Path rewrite must preserve scripts, agent_scripts, and gate_scripts."""
+        registrar = CommandRegistrar()
+        frontmatter = {
+            "scripts": {"sh": "../../factory/scripts/bash/check.sh"},
+            "agent_scripts": {"sh": "../../factory/scripts/bash/update-agent.sh"},
+            "gate_scripts": {"sh": "../../factory/scripts/bash/gate.sh"},
+        }
+        adjusted = registrar._adjust_script_paths(frontmatter)
+        assert adjusted["scripts"]["sh"] == ".lcs/scripts/bash/check.sh"
+        assert adjusted["agent_scripts"]["sh"] == ".lcs/scripts/bash/update-agent.sh"
+        assert adjusted["gate_scripts"]["sh"] == ".lcs/scripts/bash/gate.sh"
+
     def test_register_commands_for_claude(self, extension_dir, project_dir):
         """Test registering commands for Claude agent."""
         # Create .claude directory

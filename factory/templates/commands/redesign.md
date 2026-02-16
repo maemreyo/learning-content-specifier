@@ -1,5 +1,6 @@
 ---
 description: Rebuild learning design artifacts for the active unit with a forced reset.
+argument-hint: "[redesign intent, reset reason, or unit selector]"
 handoffs:
   - label: Build Production Sequence
     agent: lcs.sequence

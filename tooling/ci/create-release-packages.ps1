@@ -136,47 +136,23 @@ function Generate-Commands {
             $body = $body -replace '\{GATE_SCRIPT\}', $gateScriptCommand
         }
         
-        # Remove the scripts: and agent_scripts: sections from frontmatter
-        $lines = $body -split "`n"
-        $outputLines = @()
-        $inFrontmatter = $false
-        $skipScripts = $false
-        $dashCount = 0
-        
-        foreach ($line in $lines) {
-            if ($line -match '^---$') {
-                $outputLines += $line
-                $dashCount++
-                if ($dashCount -eq 1) {
-                    $inFrontmatter = $true
-                } else {
-                    $inFrontmatter = $false
-                }
-                continue
-            }
-            
-            if ($inFrontmatter) {
-                if ($line -match '^(scripts|agent_scripts|gate_scripts):$') {
-                    $skipScripts = $true
-                    continue
-                }
-                if ($line -match '^[a-zA-Z].*:' -and $skipScripts) {
-                    $skipScripts = $false
-                }
-                if ($skipScripts -and $line -match '^\s+') {
-                    continue
-                }
-            }
-            
-            $outputLines += $line
-        }
-        
-        $body = $outputLines -join "`n"
-        
         # Apply other substitutions
         $body = $body -replace '\{ARGS\}', $ArgFormat
         $body = $body -replace '__AGENT__', $Agent
         $body = Rewrite-Paths -Content $body
+
+        $templateHasScripts = $fileContent -match '(?m)^scripts:$'
+        $templateHasGateScripts = $fileContent -match '(?m)^gate_scripts:$'
+        $templateHasArgumentHint = $fileContent -match '(?m)^argument-hint:'
+        if ($templateHasScripts -and -not ($body -match '(?m)^scripts:$')) {
+            throw "Generated command missing scripts frontmatter: $($template.Name) -> lcs.$name.$Extension"
+        }
+        if ($templateHasGateScripts -and -not ($body -match '(?m)^gate_scripts:$')) {
+            throw "Generated command missing gate_scripts frontmatter: $($template.Name) -> lcs.$name.$Extension"
+        }
+        if ($templateHasArgumentHint -and -not ($body -match '(?m)^argument-hint:')) {
+            throw "Generated command missing argument-hint frontmatter: $($template.Name) -> lcs.$name.$Extension"
+        }
         
         # Generate output file based on extension
         $outputFile = Join-Path $OutputDir "lcs.$name.$Extension"
@@ -271,6 +247,13 @@ function Build-Variant {
         Get-ChildItem -Path "factory/scripts/python" -File -ErrorAction SilentlyContinue | ForEach-Object {
             Copy-Item -Path $_.FullName -Destination $scriptsDestDir -Force
         }
+    }
+
+    if (Test-Path "factory/config") {
+        $configDestDir = Join-Path $specDir "config"
+        New-Item -ItemType Directory -Path $configDestDir -Force | Out-Null
+        Copy-Item -Path "factory/config/*" -Destination $configDestDir -Recurse -Force
+        Write-Host "Copied factory/config -> .lcs/config"
     }
     
     # Copy templates (excluding commands directory and vscode-settings.json)

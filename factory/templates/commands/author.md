@@ -1,8 +1,9 @@
 ---
 description: Execute approved production sequence and author local output assets.
+argument-hint: "[authoring scope, output constraints, or unit selector]"
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --require-sequence --include-sequence
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -RequireSequence -IncludeSequence
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --require-sequence --include-sequence --stage author
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -RequireSequence -IncludeSequence -Stage author
 gate_scripts:
   sh: factory/scripts/bash/validate-author-gates.sh --json
   ps: factory/scripts/powershell/validate-author-gates.ps1 -Json
@@ -25,7 +26,8 @@ $ARGUMENTS
 - YOU MUST write outputs only under `UNIT_DIR/outputs/`.
 - YOU MUST use `exercise-design.json` as the source of truth for per-exercise artifacts.
 - YOU MUST maintain `outputs/manifest.json` as the canonical entrypoint for downstream consumers.
-- YOU MUST mark completed sequence tasks as `[X]` in `sequence.md` and mirror progress in `sequence.json`.
+- YOU MUST mark progress in `sequence.json` as canonical.
+- YOU MUST keep `sequence.md` updates optional sidecar only.
 - YOU MUST use contract validator pipeline trace (`CONTRACT_PIPELINE`, `CONTRACT_BLOCKING_STEPS`, blockers) to report deterministic fix order.
 - YOU MUST NOT bypass rubric/audit blockers.
 - YOU MUST rerun contract validation after writing outputs and stop if post-author validation is `BLOCK`.
@@ -35,7 +37,7 @@ $ARGUMENTS
 1. Run `{SCRIPT}` and parse `UNIT_DIR`, `AVAILABLE_DOCS`.
 2. Run `{GATE_SCRIPT}` and parse `STATUS`, contract status, blocker counters, and blocker reasons.
 3. If `STATUS=BLOCK`, stop and return blockers.
-4. Load `sequence.md` and `sequence.json`; execute tasks in dependency order.
+4. Load `sequence.json`; execute tasks in dependency order.
 5. Persist generated assets to `outputs/` and register them in `outputs/manifest.json`.
 6. Update sequence completion state and report results.
 
@@ -57,7 +59,8 @@ $ARGUMENTS
 
 - Updated `programs/<program_id>/units/<unit_id>/outputs/*` assets.
 - Updated `programs/<program_id>/units/<unit_id>/outputs/manifest.json`.
-- Updated `programs/<program_id>/units/<unit_id>/sequence.md` and `programs/<program_id>/units/<unit_id>/sequence.json` completion state.
+- Updated canonical `programs/<program_id>/units/<unit_id>/sequence.json` completion state.
+- Optional sidecar update: `programs/<program_id>/units/<unit_id>/sequence.md`.
 - Final summary includes produced files + remaining tasks.
 - Final summary MUST include a `Follow-up Tasks` section with exact prompts:
   - `/lcs.audit ...` if validation regressions appear after authoring,

@@ -1,5 +1,6 @@
 ---
 description: Create or update the active learning-program charter and keep program context deterministic.
+argument-hint: "[program intent, learner scope, timeline constraints]"
 handoffs:
   - label: Update Subject Governance Charter
     agent: lcs.subject.charter

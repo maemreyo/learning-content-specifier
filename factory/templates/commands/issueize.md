@@ -1,9 +1,10 @@
 ---
 description: Convert sequence tasks into dependency-ordered GitHub issues.
+argument-hint: "[issueization scope, labels, or batch constraints]"
 tools: ['github/github-mcp-server/issue_write']
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-sequence --include-sequence
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireSequence -IncludeSequence
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-sequence --include-sequence --stage issueize
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireSequence -IncludeSequence -Stage issueize
 ---
 
 ## Intent
@@ -26,7 +27,7 @@ $ARGUMENTS
 ## Execution Steps
 
 1. Run `{SCRIPT}` and parse `UNIT_DIR`.
-2. Load `UNIT_DIR/sequence.md`.
+2. Load canonical `UNIT_DIR/sequence.json`.
 3. Resolve repository from `git remote origin`.
 4. Create issues with task ID, LO mapping, dependency notes, and artifact paths.
 5. Return created issue URLs and skipped items.

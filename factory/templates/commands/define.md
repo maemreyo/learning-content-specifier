@@ -1,5 +1,6 @@
 ---
 description: Create or update a learning unit brief from a natural language learning-content request.
+argument-hint: "[unit request or learning goal context]"
 handoffs:
   - label: Refine Unit Brief
     agent: lcs.refine
@@ -27,7 +28,8 @@ $ARGUMENTS
 
 - YOU MUST run `{SCRIPT}` exactly once.
 - YOU MUST populate all mandatory sections from `.lcs/templates/brief-template.md`.
-- YOU MUST create or update `brief.json` alongside `brief.md`.
+- YOU MUST create or update `brief.json` as canonical.
+- YOU MUST keep `brief.md` optional sidecar only.
 - YOU MUST include program session-range metadata in `brief.json` when roadmap exists (`program_scope.session_start/session_end`).
 - YOU MUST express learning outcomes as observable, measurable outcomes.
 - YOU MUST keep content implementation-agnostic and learner-centric.
@@ -35,11 +37,11 @@ $ARGUMENTS
 
 ## Execution Steps
 
-1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `UNIT_NAME`, `UNIT_DIR`, `BRIEF_FILE`, `UNIT_NUM`, `SESSION_START`, `SESSION_END`, `ESTIMATED_DAY_START`, `ESTIMATED_DAY_END`, `EXPECTED_UNITS`.
+1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `UNIT_NAME`, `UNIT_DIR`, `BRIEF_JSON_FILE`, `UNIT_NUM`, `SESSION_START`, `SESSION_END`, `ESTIMATED_DAY_START`, `ESTIMATED_DAY_END`, `EXPECTED_UNITS`.
 2. Load `.lcs/templates/brief-template.md`.
 3. Write brief sections: audience/context, outcomes, scope boundaries, requirements, accessibility/readability, metrics, risks.
 4. Create/update `programs/<program_id>/units/<unit_id>/brief.json` with matching LO IDs and metadata.
-5. Save to `BRIEF_FILE`.
+5. Save canonical output to `BRIEF_JSON_FILE`; optionally render sidecar markdown.
 6. Return completion summary and next command options.
 
 ## Hard Gates
@@ -56,9 +58,9 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Artifact: `programs/<program_id>/units/<unit_id>/brief.md`.
-- Artifact: `programs/<program_id>/units/<unit_id>/brief.json`.
-- Completion report: `PROGRAM_ID`, `UNIT_NAME`, `BRIEF_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
+- Canonical artifact: `programs/<program_id>/units/<unit_id>/brief.json`.
+- Optional sidecar artifact: `programs/<program_id>/units/<unit_id>/brief.md`.
+- Completion report: `PROGRAM_ID`, `UNIT_NAME`, `BRIEF_JSON_FILE`, readiness for `/lcs.refine` or `/lcs.design`.
 - Completion report MUST include a `Follow-up Tasks` section with exact prompts:
   - `/lcs.refine Refine unit <unit_id> ...`
   - `/lcs.design Design unit <unit_id> ...`

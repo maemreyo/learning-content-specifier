@@ -1,8 +1,9 @@
 ---
 description: Perform deterministic cross-artifact audit across brief, design, sequence, and rubric artifacts.
+argument-hint: "[audit scope, risk emphasis, or unit selector]"
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --require-sequence --include-sequence
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -RequireSequence -IncludeSequence
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --require-sequence --include-sequence --stage audit
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -RequireSequence -IncludeSequence -Stage audit
 ---
 
 ## Intent
@@ -19,7 +20,7 @@ $ARGUMENTS
 
 - YOU MUST run read-only analysis on existing artifacts; only audit report artifacts may be written.
 - YOU MUST classify findings by `CRITICAL|HIGH|MEDIUM|LOW`.
-- YOU MUST write explicit `Gate Decision: PASS|BLOCK` in markdown and `gate_decision` in json.
+- YOU MUST write canonical `gate_decision` in `audit-report.json`.
 - YOU MUST include `Open Critical` and `Open High` counters.
 - YOU MUST include role readiness booleans: `teacher_ready`, `creator_ready`, `ops_ready`.
 - YOU MUST apply web-research triggers when confidence is low, domain is time-sensitive, or artifact signals conflict.
@@ -29,7 +30,7 @@ $ARGUMENTS
 ## Execution Steps
 
 1. Run `{SCRIPT}` and parse `UNIT_DIR`, `AVAILABLE_DOCS`.
-2. Load `brief.md`, `design.md`, `sequence.md`, rubric files, and available json contracts.
+2. Load canonical artifacts `brief.json`, `design.json`, `sequence.json`, `rubric-gates.json`, and other available JSON contracts.
 3. Validate cross-artifact consistency:
    - LO coverage alignment,
    - pedagogy consistency,
@@ -39,12 +40,13 @@ $ARGUMENTS
    - metadata completeness,
    - manifest-first readiness.
 4. If required by trigger policy, update `research.md` references used in audit rationale.
-5. Write `UNIT_DIR/audit-report.md` and `UNIT_DIR/audit-report.json` with deterministic schema.
-6. Return decision summary.
+5. Write canonical `UNIT_DIR/audit-report.json` with deterministic schema.
+6. If sidecar mode is enabled, optionally render `UNIT_DIR/audit-report.md`.
+7. Return decision summary.
 
 ## Hard Gates
 
-- Gate G-AD-001: report includes decision and severity counters in markdown and json.
+- Gate G-AD-001: canonical report includes decision and severity counters in JSON.
 - Gate G-AD-002: any unresolved CRITICAL/HIGH yields `BLOCK`.
 - Gate G-AD-003: json report contains role readiness fields.
 
@@ -52,22 +54,17 @@ $ARGUMENTS
 
 - Missing required artifact: stop and report missing prerequisite.
 - Incomplete report schema: stop and rewrite both report artifacts.
-- Markdown/json mismatch in decision counters: stop and resolve mismatch.
+- Canonical audit JSON missing/inconsistent: stop and resolve.
 
 ## Output Contract
 
-Write these artifacts:
+Write canonical artifact:
 
-- `programs/<program_id>/units/<unit_id>/audit-report.md`
 - `programs/<program_id>/units/<unit_id>/audit-report.json`
 
-Required markdown headers:
+Optional sidecar artifact:
 
-- `# Audit Report: <unit>`
-- `Gate Decision: PASS|BLOCK`
-- `Open Critical: <number>`
-- `Open High: <number>`
-- `## Findings` (numbered list with severity, artifact, issue, remediation)
+- `programs/<program_id>/units/<unit_id>/audit-report.md`
 
 Required json keys:
 

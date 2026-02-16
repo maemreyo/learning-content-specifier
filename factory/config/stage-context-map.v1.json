@@ -1,0 +1,85 @@
+{
+  "version": "1.0.0",
+  "stages": {
+    "charter": {
+      "previous_stage": null,
+      "required_inputs": []
+    },
+    "define": {
+      "previous_stage": "charter",
+      "required_inputs": [
+        "program:program.json"
+      ]
+    },
+    "refine": {
+      "previous_stage": "define",
+      "required_inputs": [
+        "unit:brief.json"
+      ]
+    },
+    "design": {
+      "previous_stage": "refine",
+      "required_inputs": [
+        "unit:brief.json"
+      ],
+      "checks": [
+        {
+          "name": "brief_open_questions_resolved",
+          "type": "max_open_questions",
+          "max": 0
+        }
+      ]
+    },
+    "sequence": {
+      "previous_stage": "design",
+      "required_inputs": [
+        "unit:design.json",
+        "unit:assessment-blueprint.json",
+        "unit:template-selection.json",
+        "unit:exercise-design.json"
+      ]
+    },
+    "rubric": {
+      "previous_stage": "sequence",
+      "required_inputs": [
+        "unit:sequence.json",
+        "unit:exercise-design.json"
+      ]
+    },
+    "audit": {
+      "previous_stage": "rubric",
+      "required_inputs": [
+        "unit:brief.json",
+        "unit:design.json",
+        "unit:sequence.json",
+        "unit:rubric-gates.json"
+      ]
+    },
+    "author": {
+      "previous_stage": "audit",
+      "required_inputs": [
+        "unit:exercise-design.json",
+        "unit:sequence.json",
+        "unit:audit-report.json",
+        "unit:outputs/manifest.json"
+      ],
+      "checks": [
+        {
+          "name": "manifest_gate_pass",
+          "type": "manifest_gate_pass"
+        },
+        {
+          "name": "audit_gate_pass",
+          "type": "audit_gate_pass"
+        }
+      ]
+    },
+    "issueize": {
+      "previous_stage": "author",
+      "required_inputs": [
+        "unit:audit-report.json",
+        "unit:outputs/manifest.json"
+      ]
+    }
+  }
+}

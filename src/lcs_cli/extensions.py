@@ -760,13 +760,17 @@ class CommandRegistrar:
         Returns:
             Modified frontmatter with adjusted paths
         """
-        if "scripts" in frontmatter:
-            for key in frontmatter["scripts"]:
-                script_path = frontmatter["scripts"][key]
+        for section in ("scripts", "agent_scripts", "gate_scripts"):
+            section_payload = frontmatter.get(section)
+            if not isinstance(section_payload, dict):
+                continue
+            for key, script_path in section_payload.items():
+                if not isinstance(script_path, str):
+                    continue
                 if script_path.startswith("../../factory/scripts/"):
-                    frontmatter["scripts"][key] = f".lcs/scripts/{script_path[20:]}"
+                    section_payload[key] = f".lcs/scripts/{script_path.removeprefix('../../factory/scripts/')}"
                 elif script_path.startswith("../../scripts/"):
-                    frontmatter["scripts"][key] = f".lcs/scripts/{script_path[14:]}"
+                    section_payload[key] = f".lcs/scripts/{script_path.removeprefix('../../scripts/')}"
         return frontmatter
 
     def _render_markdown_command(

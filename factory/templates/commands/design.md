@@ -1,5 +1,6 @@
 ---
 description: Generate learning design artifacts from the unit brief and active program charter.
+argument-hint: "[unit intent, next/current unit, or design constraints]"
 handoffs:
   - label: Build Production Sequence
     agent: lcs.sequence
@@ -31,10 +32,12 @@ $ARGUMENTS
 
 ## Mandatory Rules (YOU MUST / MUST NOT)
 
-- YOU MUST preserve existing `design.md` content unless an explicit reset is requested.
-- YOU MUST generate and maintain `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
+- YOU MUST treat JSON artifacts as canonical source-of-truth for this stage.
+- YOU MUST keep markdown sidecars optional; only render them when explicit sidecar mode is enabled.
 - YOU MUST generate or update `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, and `outputs/manifest.json`.
-- YOU MUST generate or update `exercise-design.md` and `exercise-design.json` with concrete per-exercise specs (`exercise_id`, `lo_id`, `template_id`, `day`, `target_path`).
+- YOU MUST generate or update `exercise-design.json` with concrete per-exercise specs (`exercise_id`, `lo_id`, `template_id`, `day`, `target_path`).
+- YOU MUST enforce `exercise-design.json.exercises[].target_path` to `.json` output paths.
+- YOU MUST generate or maintain `rubric-gates.json` as canonical rubric gate artifact seed.
 - YOU MUST treat template-pack schema `item.scoring_rubric` as the source of truth for exercise scoring rubric requirements.
 - YOU MUST stamp each exercise in `exercise-design.json` with `template_schema_ref`, `template_rules_ref`, `scoring_rubric_required_keys`, and `scoring_rubric_source=template-pack`.
 - YOU MUST apply Corporate L&D default pedagogy weights:
@@ -56,8 +59,8 @@ $ARGUMENTS
 
 ## Execution Steps
 
-1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `UNIT_ID`, `BRIEF_FILE`, `DESIGN_FILE`, `UNIT_DIR`, `BRANCH`, `HAS_GIT`.
-2. Load `BRIEF_FILE`, `programs/<program_id>/charter.md`, and `.lcs/templates/design-template.md`.
+1. Run `{SCRIPT}` and parse `PROGRAM_ID`, `UNIT_ID`, `BRIEF_JSON_FILE`, `DESIGN_JSON_FILE`, `UNIT_DIR`, `BRANCH`, `HAS_GIT`.
+2. Load `brief.json`, `programs/<program_id>/charter.md`, and `.lcs/templates/design-template.md`.
 3. Produce/update design artifacts under `UNIT_DIR`.
 4. Update decision contracts (`design.json`, `design-decisions.json`) with scored pedagogy rationale.
 5. Confirm `brief.json.refinement.open_questions == 0`; if not, stop and return to `/lcs.refine`.
@@ -65,7 +68,7 @@ $ARGUMENTS
 7. Update `content-model.json` with module/lesson LO references and dependency graph cycle check.
 8. Generate/update `assessment-blueprint.json` with template ratio targets and LO mapping.
 9. Generate/update `template-selection.json` with top-K candidates and final selected template set.
-10. Generate/update `exercise-design.md` + `exercise-design.json` from selected templates and LO mapping.
+10. Generate/update `exercise-design.json` from selected templates and LO mapping.
 11. Ensure `outputs/manifest.json` remains valid, xAPI interop block exists, and new template artifacts are registered.
 12. Run `{AGENT_SCRIPT}` to refresh agent context from learning profile.
 13. Run `{GATE_SCRIPT}` and parse `summary`, `units`, `follow_up_tasks`.
@@ -91,10 +94,8 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Markdown: `design.md`, `content-model.md`, `assessment-map.md`, `delivery-guide.md`.
-- JSON: `design.json`, `content-model.json`, `design-decisions.json`, `outputs/manifest.json`.
-- JSON: `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`, `outputs/manifest.json`.
-- Markdown: `exercise-design.md`.
+- JSON canonical: `design.json`, `content-model.json`, `design-decisions.json`, `assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`, `rubric-gates.json`, `outputs/manifest.json`.
+- Optional markdown sidecars may be emitted only in explicit sidecar mode.
 - Execution summary includes `HAS_GIT` state, confidence score, and research trigger decision.
 - Execution summary MUST include a `Follow-up Tasks` section with:
   - immediate next command for current unit,

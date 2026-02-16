@@ -28,6 +28,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 PROGRAM_INTENT="${ARGS[*]:-}"
+JSON_INTENT_PROGRAM=""
+JSON_INTENT_TITLE=""
+JSON_INTENT_TEXT=""
+JSON_INTENT_DURATION_DAYS=""
+JSON_INTENT_TARGET_SESSIONS=""
 
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
@@ -40,6 +45,108 @@ SUBJECT_CHARTER_FILE="$REPO_ROOT/.lcs/memory/charter.md"
 PYTHON_BIN="python3"
 if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
     PYTHON_BIN="python"
+fi
+RENDER_MD_SIDECAR="${LCS_RENDER_MD_SIDECAR:-0}"
+
+should_render_md_sidecar() {
+    case "${1:-0}" in
+        1|true|TRUE|yes|YES|on|ON)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+preflight_args=("$SCRIPT_DIR/load-stage-context.sh" --json --stage charter)
+if [[ -n "$PROGRAM_INTENT" ]]; then
+    preflight_args+=(--intent "$PROGRAM_INTENT")
+fi
+preflight_out="$("${preflight_args[@]}" 2>/dev/null || true)"
+if [[ -z "$preflight_out" ]]; then
+    echo "ERROR: charter preflight failed to execute" >&2
+    exit 1
+fi
+preflight_status="$("$PYTHON_BIN" - "$preflight_out" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("BLOCK")
+    raise SystemExit(0)
+print(str(payload.get("STATUS", "BLOCK")).upper())
+PY
+)"
+if [[ "$preflight_status" != "PASS" ]]; then
+    preflight_summary="$("$PYTHON_BIN" - "$preflight_out" <<'PY'
+import json
+import sys
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    print("invalid-preflight-output")
+    raise SystemExit(0)
+blockers = payload.get("BLOCKERS", [])
+print("; ".join(str(item) for item in blockers) if blockers else "unknown-preflight-blocker")
+PY
+)"
+    echo "ERROR: charter preflight BLOCK ($preflight_summary)" >&2
+    exit 1
+fi
+
+if [[ -n "$PROGRAM_INTENT" ]]; then
+    parsed_json_intent="$("$PYTHON_BIN" - "$PROGRAM_INTENT" <<'PY'
+import json
+import sys
+
+raw = sys.argv[1].strip()
+if not raw.startswith("{"):
+    raise SystemExit(0)
+try:
+    payload = json.loads(raw)
+except Exception:
+    raise SystemExit(0)
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+program = payload.get("program")
+title = payload.get("title")
+intent = payload.get("intent")
+duration = payload.get("duration")
+sessions = payload.get("sessions")
+
+if isinstance(duration, str):
+    duration = "".join(ch for ch in duration if ch.isdigit())
+if isinstance(sessions, str):
+    sessions = "".join(ch for ch in sessions if ch.isdigit())
+
+duration_text = str(duration) if isinstance(duration, int) or (isinstance(duration, str) and duration) else ""
+sessions_text = str(sessions) if isinstance(sessions, int) or (isinstance(sessions, str) and sessions) else ""
+
+print(
+    "\t".join(
+        [
+            str(program).strip() if isinstance(program, str) else "",
+            str(title).strip() if isinstance(title, str) else "",
+            str(intent).strip() if isinstance(intent, str) else "",
+            duration_text,
+            sessions_text,
+        ]
+    )
+)
+PY
+)"
+    if [[ -n "$parsed_json_intent" ]]; then
+        IFS=$'\t' read -r JSON_INTENT_PROGRAM JSON_INTENT_TITLE JSON_INTENT_TEXT JSON_INTENT_DURATION_DAYS JSON_INTENT_TARGET_SESSIONS <<< "$parsed_json_intent"
+        [[ -z "$PROGRAM_OVERRIDE" && -n "$JSON_INTENT_PROGRAM" ]] && PROGRAM_OVERRIDE="$JSON_INTENT_PROGRAM"
+        if [[ -n "$JSON_INTENT_TEXT" ]]; then
+            PROGRAM_INTENT="$JSON_INTENT_TEXT"
+        elif [[ -n "$JSON_INTENT_TITLE" ]]; then
+            PROGRAM_INTENT="$JSON_INTENT_TITLE"
+        fi
+    fi
 fi
 
 slugify() {
@@ -309,8 +416,9 @@ write_program_roadmap_files() {
     local sessions_per_week="$6"
     local expected_units="$7"
     local duration_days_estimate="$8"
+    local render_md="$9"
 
-    "$PYTHON_BIN" - "$roadmap_json" "$roadmap_md" "$program_id" "$target_sessions" "$session_span" "$sessions_per_week" "$expected_units" "$duration_days_estimate" <<'PY'
+    "$PYTHON_BIN" - "$roadmap_json" "$roadmap_md" "$program_id" "$target_sessions" "$session_span" "$sessions_per_week" "$expected_units" "$duration_days_estimate" "$render_md" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -323,6 +431,7 @@ session_span = int(sys.argv[5])
 sessions_per_week = int(sys.argv[6])
 expected_units = int(sys.argv[7])
 duration_days_estimate = int(sys.argv[8]) if sys.argv[8].isdigit() else 0
+render_md = str(sys.argv[9]).lower() in {"1", "true", "yes", "on"}
 
 units = []
 for index in range(expected_units):
@@ -354,25 +463,26 @@ payload = {
 }
 roadmap_json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
-lines = [
-    f"# Program Roadmap: {program_id}",
-    "",
-    f"- Progress unit: study session",
-    f"- Target sessions: {target_sessions}",
-    f"- Session span per unit: {session_span}",
-    f"- Sessions/week assumption: {sessions_per_week}",
-    f"- Duration estimate (days): {duration_days_estimate}",
-    f"- Expected units: {expected_units}",
-    "",
-    "| Slot | Session Range | Estimated Day Range | Suggested Unit ID |",
-    "|------|---------------|---------------------|-------------------|",
-]
-for unit in units:
-    lines.append(
-        f"| {unit['slot']} | {unit['session_start']}-{unit['session_end']} | {unit['estimated_day_start']}-{unit['estimated_day_end']} | `{unit['suggested_unit_id']}` |"
-    )
+if render_md:
+    lines = [
+        f"# Program Roadmap: {program_id}",
+        "",
+        f"- Progress unit: study session",
+        f"- Target sessions: {target_sessions}",
+        f"- Session span per unit: {session_span}",
+        f"- Sessions/week assumption: {sessions_per_week}",
+        f"- Duration estimate (days): {duration_days_estimate}",
+        f"- Expected units: {expected_units}",
+        "",
+        "| Slot | Session Range | Estimated Day Range | Suggested Unit ID |",
+        "|------|---------------|---------------------|-------------------|",
+    ]
+    for unit in units:
+        lines.append(
+            f"| {unit['slot']} | {unit['session_start']}-{unit['session_end']} | {unit['estimated_day_start']}-{unit['estimated_day_end']} | `{unit['suggested_unit_id']}` |"
+        )
 
-roadmap_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    roadmap_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY
 }
 
@@ -388,11 +498,17 @@ PROGRAM_ROADMAP_MD_FILE="$PROGRAM_DIR/roadmap.md"
 mkdir -p "$PROGRAM_DIR/units"
 mkdir -p "$CONTEXT_DIR"
 
-DURATION_DAYS="$(extract_duration_days "$PROGRAM_INTENT" || true)"
+DURATION_DAYS="${JSON_INTENT_DURATION_DAYS:-}"
+if [[ -z "$DURATION_DAYS" ]]; then
+    DURATION_DAYS="$(extract_duration_days "$PROGRAM_INTENT" || true)"
+fi
 if [[ -z "$DURATION_DAYS" ]]; then
     DURATION_DAYS="$(read_program_duration_days "$PROGRAM_FILE" || true)"
 fi
-TARGET_SESSIONS="$(extract_target_sessions "$PROGRAM_INTENT" || true)"
+TARGET_SESSIONS="${JSON_INTENT_TARGET_SESSIONS:-}"
+if [[ -z "$TARGET_SESSIONS" ]]; then
+    TARGET_SESSIONS="$(extract_target_sessions "$PROGRAM_INTENT" || true)"
+fi
 if [[ -z "$TARGET_SESSIONS" ]]; then
     TARGET_SESSIONS="$(read_program_target_sessions "$PROGRAM_FILE" || true)"
 fi
@@ -422,7 +538,7 @@ elif { [[ -n "$TARGET_SESSIONS" && "$TARGET_SESSIONS" =~ ^[0-9]+$ && "$TARGET_SE
     write_program_file "$PROGRAM_FILE" "$PROGRAM_ID" "$TITLE" "${TARGET_SESSIONS:-0}" "$SESSION_SPAN" "$SESSIONS_PER_WEEK" "$EXPECTED_UNITS" "${DURATION_DAYS:-0}"
 fi
 
-if [[ ! -f "$PROGRAM_CHARTER_FILE" ]]; then
+if should_render_md_sidecar "$RENDER_MD_SIDECAR" && [[ ! -f "$PROGRAM_CHARTER_FILE" ]]; then
     if [[ -f "$TEMPLATE_FILE" ]]; then
         cp "$TEMPLATE_FILE" "$PROGRAM_CHARTER_FILE"
     else
@@ -431,7 +547,7 @@ if [[ ! -f "$PROGRAM_CHARTER_FILE" ]]; then
 fi
 
 if [[ -n "$TARGET_SESSIONS" && "$TARGET_SESSIONS" =~ ^[0-9]+$ && "$TARGET_SESSIONS" -ge 8 ]]; then
-    write_program_roadmap_files "$PROGRAM_ROADMAP_JSON_FILE" "$PROGRAM_ROADMAP_MD_FILE" "$PROGRAM_ID" "$TARGET_SESSIONS" "$SESSION_SPAN" "$SESSIONS_PER_WEEK" "$EXPECTED_UNITS" "${DURATION_DAYS:-0}"
+    write_program_roadmap_files "$PROGRAM_ROADMAP_JSON_FILE" "$PROGRAM_ROADMAP_MD_FILE" "$PROGRAM_ID" "$TARGET_SESSIONS" "$SESSION_SPAN" "$SESSIONS_PER_WEEK" "$EXPECTED_UNITS" "${DURATION_DAYS:-0}" "$RENDER_MD_SIDECAR"
 fi
 
 write_context_value "$CONTEXT_DIR/current-program" "$PROGRAM_ID"

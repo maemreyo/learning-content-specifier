@@ -30,7 +30,6 @@ else {
     throw 'python or python3 is required for validate-author-gates.ps1'
 }
 
-$auditFile = $paths.AUDIT_REPORT_FILE
 $auditJsonFile = $paths.AUDIT_REPORT_JSON_FILE
 $rubricUnchecked = 0
 $rubricBlockers = 0
@@ -77,28 +76,23 @@ catch {
     $blockers += 'Artifact contract validation failed to execute'
 }
 
-if (-not (Test-Path $paths.RUBRICS_DIR -PathType Container)) {
-    $blockers += "Missing rubrics directory: $($paths.RUBRICS_DIR)"
-}
-else {
-    try {
-        $rubricRaw = & $pythonBin $rubricValidatorTool --rubrics-dir $paths.RUBRICS_DIR --json
-        $rubricObj = $rubricRaw | ConvertFrom-Json
-        $rubricUnchecked = [int]$rubricObj.UNCHECKED_COUNT
-        $rubricBlockers = [int]$rubricObj.NON_PASS_COUNT
-        $rubricParseErrors = [int]$rubricObj.PARSE_ERROR_COUNT
+try {
+    $rubricRaw = & $pythonBin $rubricValidatorTool --rubric-gates-file $paths.RUBRIC_GATES_FILE --rubrics-dir $paths.RUBRICS_DIR --json
+    $rubricObj = $rubricRaw | ConvertFrom-Json
+    $rubricUnchecked = [int]$rubricObj.UNCHECKED_COUNT
+    $rubricBlockers = [int]$rubricObj.NON_PASS_COUNT
+    $rubricParseErrors = [int]$rubricObj.PARSE_ERROR_COUNT
 
-        if ([string]$rubricObj.STATUS -ne 'PASS') {
-            $details = @($rubricObj.BLOCKERS + $rubricObj.PARSE_ERRORS) -join '; '
-            if ([string]::IsNullOrWhiteSpace($details)) {
-                $details = 'unknown-parse-error'
-            }
-            $blockers += "Rubric format validation is BLOCK ($details)"
+    if ([string]$rubricObj.STATUS -ne 'PASS') {
+        $details = @($rubricObj.BLOCKERS + $rubricObj.PARSE_ERRORS) -join '; '
+        if ([string]::IsNullOrWhiteSpace($details)) {
+            $details = 'unknown-parse-error'
         }
+        $blockers += "Rubric format validation is BLOCK ($details)"
     }
-    catch {
-        $blockers += 'Rubric parser failed to execute'
-    }
+}
+catch {
+    $blockers += 'Rubric parser failed to execute'
 }
 
 if ($rubricUnchecked -gt 0) {
@@ -134,35 +128,8 @@ if (Test-Path $auditJsonFile -PathType Leaf) {
         $blockers += "Audit JSON invalid: $($_.Exception.Message)"
     }
 }
-elseif (Test-Path $auditFile -PathType Leaf) {
-    $auditLines = Get-Content -Path $auditFile -Encoding utf8
-
-    $decisionLine = $auditLines | Where-Object { $_ -match '^Gate Decision:\s*(PASS|BLOCK)$' } | Select-Object -First 1
-    if ($decisionLine) {
-        $auditDecision = ($decisionLine -replace '^Gate Decision:\s*', '').Trim().ToUpper()
-    }
-    else {
-        $blockers += "Audit report missing 'Gate Decision: PASS|BLOCK'"
-    }
-
-    $criticalLine = $auditLines | Where-Object { $_ -match '^Open Critical:\s*\d+' } | Select-Object -First 1
-    if ($criticalLine) {
-        $auditOpenCritical = [int](($criticalLine -replace '^Open Critical:\s*', '').Trim())
-    }
-    else {
-        $blockers += "Audit report missing 'Open Critical: <number>'"
-    }
-
-    $highLine = $auditLines | Where-Object { $_ -match '^Open High:\s*\d+' } | Select-Object -First 1
-    if ($highLine) {
-        $auditOpenHigh = [int](($highLine -replace '^Open High:\s*', '').Trim())
-    }
-    else {
-        $blockers += "Audit report missing 'Open High: <number>'"
-    }
-}
 else {
-    $blockers += "Missing audit report: $auditFile"
+    $blockers += "Missing audit report JSON: $auditJsonFile"
 }
 
 if ($auditDecision -ne 'PASS') {

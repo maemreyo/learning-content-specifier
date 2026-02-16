@@ -20,9 +20,10 @@ def _run_setup_design(env: dict[str, str]) -> None:
             "-File",
             str(ROOT / "factory/scripts/powershell/setup-design.ps1"),
             "-Json",
+            "-ForceReset",
         ]
     else:
-        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json", "--force-reset"]
     subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 
 
@@ -97,9 +98,39 @@ def _prepare_unit(unit_id: str) -> Path:
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
     (unit_dir / "outputs").mkdir(parents=True, exist_ok=True)
-    (unit_dir / "brief.md").write_text("# brief\n", encoding="utf-8")
-    (unit_dir / "design.md").write_text("# design\n", encoding="utf-8")
-    (unit_dir / "sequence.md").write_text("# sequence\n", encoding="utf-8")
+    (unit_dir / "brief.json").write_text(
+        json.dumps(
+            {
+                "contract_version": "1.0.0",
+                "unit_id": unit_id,
+                "title": unit_id,
+                "audience": {
+                    "primary": "general learners",
+                    "entry_level": "beginner",
+                    "delivery_context": "self-paced",
+                },
+                "duration_minutes": 60,
+                "learning_outcomes": [
+                    {
+                        "lo_id": "LO1",
+                        "priority": "P1",
+                        "statement": "Learner will be able to demonstrate LO1 with measurable evidence.",
+                        "evidence": "Assessment evidence mapped to LO1 is available in artifacts.",
+                        "acceptance_criteria": [
+                            "Given the learning context, When the learner attempts LO1 practice, Then observable evidence meets the completion criteria."
+                        ],
+                    }
+                ],
+                "scope": {"in_scope": [], "out_of_scope": []},
+                "proficiency_targets": [],
+                "assumptions": [],
+                "risks": [],
+                "refinement": {"open_questions": 0, "decisions": []},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     return unit_dir
 
 
@@ -117,12 +148,6 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         exercise = exercise_design["exercises"][0]
 
         # sequence
-        (unit_dir / "sequence.md").write_text(
-            "# Sequence\n"
-            f"- [ ] S001 [LO1] Author exercise {exercise['exercise_id']} in programs/{PROGRAM_ID}/units/993-e2e-golden-path/{exercise['target_path']}\n"
-            "- [ ] S013 Run rubric and resolve blocking items\n",
-            encoding="utf-8",
-        )
         (unit_dir / "sequence.json").write_text(
             json.dumps(
                 {
@@ -142,7 +167,7 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
                         {
                             "task_id": "S013",
                             "title": "Run rubric checks",
-                            "target_path": "rubrics/default.md",
+                            "target_path": "rubric-gates.json",
                             "status": "TODO",
                             "lo_refs": ["LO1"],
                             "depends_on": ["S001"],
@@ -155,22 +180,37 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         )
 
         # rubric
-        (unit_dir / "rubrics" / "default.md").write_text(
-            "- [x] Gate ID: RB001 | Group: alignment | Status: PASS | Severity: LOW | Evidence: design.md\n"
-            "- [x] Gate ID: RB004 | Group: pedagogy | Status: PASS | Severity: LOW | Evidence: design.json\n",
+        (unit_dir / "rubric-gates.json").write_text(
+            json.dumps(
+                {
+                    "contract_version": "1.0.0",
+                    "unit_id": unit_id,
+                    "generated_at": "2026-01-01T00:00:00Z",
+                    "gates": [
+                        {
+                            "gate_id": "RB001",
+                            "group": "alignment",
+                            "status": "PASS",
+                            "severity": "LOW",
+                            "evidence": "design.json#LO1",
+                            "checked": True,
+                        },
+                        {
+                            "gate_id": "RB004",
+                            "group": "pedagogy",
+                            "status": "PASS",
+                            "severity": "LOW",
+                            "evidence": "design.json#pedagogy",
+                            "checked": True,
+                        },
+                    ],
+                },
+                indent=2,
+            ),
             encoding="utf-8",
         )
 
         # audit
-        (unit_dir / "audit-report.md").write_text(
-            "# Audit Report: 993-e2e-golden-path\n"
-            "Gate Decision: PASS\n"
-            "Open Critical: 0\n"
-            "Open High: 0\n"
-            "## Findings\n"
-            "1. LOW | artifact: design.md | issue: none | remediation: n/a\n",
-            encoding="utf-8",
-        )
         (unit_dir / "audit-report.json").write_text(
             json.dumps(
                 {
@@ -182,7 +222,7 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
                     "findings": [
                         {
                             "severity": "LOW",
-                            "artifact": "design.md",
+                            "artifact": "design.json",
                             "issue": "none",
                             "remediation": "n/a",
                             "status": "RESOLVED",
@@ -202,18 +242,37 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
         # author outputs + manifest update
         exercise_file = unit_dir / exercise["target_path"]
         exercise_file.parent.mkdir(parents=True, exist_ok=True)
-        exercise_file.write_text("# Exercise EX001\n", encoding="utf-8")
+        exercise_file.write_text(
+            json.dumps(
+                {
+                    "exercise_id": exercise["exercise_id"],
+                    "template_id": exercise["template_id"],
+                    "lo_id": exercise["lo_id"],
+                    "status": "DONE",
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         exercise_checksum = hashlib.sha256(exercise_file.read_bytes()).hexdigest()
 
         manifest_file = unit_dir / "outputs" / "manifest.json"
         manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
         manifest["gate_status"] = {"decision": "PASS", "open_critical": 0, "open_high": 0}
+        rubric_checksum = hashlib.sha256((unit_dir / "rubric-gates.json").read_bytes()).hexdigest()
+        manifest["artifacts"] = [
+            {
+                **item,
+                "checksum": f"sha256:{rubric_checksum}" if item.get("id") == "rubric-gates-json" else item.get("checksum"),
+            }
+            for item in manifest["artifacts"]
+        ]
         manifest["artifacts"].append(
             {
-                "id": "exercise-001-md",
+                "id": "exercise-001-json",
                 "type": "exercise",
                 "path": exercise["target_path"],
-                "media_type": "text/markdown",
+                "media_type": "application/json",
                 "checksum": f"sha256:{exercise_checksum}",
             }
         )
@@ -233,21 +292,15 @@ def test_e2e_golden_path_snapshot_contracts_and_gates():
 
         required_files = sorted(
             [
-                "brief.md",
                 "brief.json",
-                "design.md",
                 "design.json",
-                "exercise-design.md",
                 "exercise-design.json",
-                "content-model.md",
                 "content-model.json",
                 "design-decisions.json",
-                "assessment-map.md",
-                "delivery-guide.md",
-                "sequence.md",
+                "assessment-blueprint.json",
+                "template-selection.json",
                 "sequence.json",
-                "rubrics/default.md",
-                "audit-report.md",
+                "rubric-gates.json",
                 "audit-report.json",
                 "outputs/manifest.json",
             ]

@@ -209,6 +209,7 @@ function Get-UnitPathsEnv {
         TEMPLATE_SELECTION_FILE = if ($unitDir) { Join-Path $unitDir 'template-selection.json' } else { '' }
         AUDIT_REPORT_FILE = if ($unitDir) { Join-Path $unitDir 'audit-report.md' } else { '' }
         AUDIT_REPORT_JSON_FILE = if ($unitDir) { Join-Path $unitDir 'audit-report.json' } else { '' }
+        RUBRIC_GATES_FILE = if ($unitDir) { Join-Path $unitDir 'rubric-gates.json' } else { '' }
         RUBRICS_DIR = if ($unitDir) { Join-Path $unitDir 'rubrics' } else { '' }
         OUTPUTS_DIR = if ($unitDir) { Join-Path $unitDir 'outputs' } else { '' }
         MANIFEST_FILE = if ($unitDir) { Join-Path (Join-Path $unitDir 'outputs') 'manifest.json' } else { '' }

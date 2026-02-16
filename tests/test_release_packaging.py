@@ -21,6 +21,21 @@ def _assert_template_pack_in_zip(zip_path: Path) -> None:
     with zipfile.ZipFile(zip_path, "r") as archive:
         names = set(archive.namelist())
     assert ".lcs/template-pack/v1/catalog.json" in names
+    assert ".lcs/config/stage-context-map.v1.json" in names
+
+
+def _assert_command_frontmatter_in_zip(zip_path: Path, command_path: str) -> None:
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        payload = archive.read(command_path).decode("utf-8")
+    assert "\nargument-hint:" in payload
+    assert "\nscripts:\n" in payload
+    assert "\ngate_scripts:\n" in payload
+
+
+def _assert_command_uses_explicit_stage(zip_path: Path, command_path: str, stage: str) -> None:
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        payload = archive.read(command_path).decode("utf-8")
+    assert f"--stage {stage}" in payload or f"-Stage {stage}" in payload
 
 
 @pytest.mark.skipif(os.name == "nt", reason="bash packaging test runs on non-Windows")
@@ -43,6 +58,10 @@ def test_create_release_packages_sh_includes_template_pack_catalog() -> None:
 
         zip_path = RELEASE_DIR / f"learning-content-specifier-template-codex-sh-{VERSION}.zip"
         _assert_template_pack_in_zip(zip_path)
+        _assert_command_frontmatter_in_zip(zip_path, ".codex/commands/lcs.design.md")
+        _assert_command_uses_explicit_stage(zip_path, ".codex/commands/lcs.rubric.md", "rubric")
+        _assert_command_uses_explicit_stage(zip_path, ".codex/commands/lcs.audit.md", "audit")
+        _assert_command_uses_explicit_stage(zip_path, ".codex/commands/lcs.author.md", "author")
     finally:
         _cleanup_release_dir()
 
@@ -77,5 +96,9 @@ def test_create_release_packages_ps1_includes_template_pack_catalog() -> None:
 
         zip_path = RELEASE_DIR / f"learning-content-specifier-template-codex-ps-{VERSION}.zip"
         _assert_template_pack_in_zip(zip_path)
+        _assert_command_frontmatter_in_zip(zip_path, ".codex/commands/lcs.design.md")
+        _assert_command_uses_explicit_stage(zip_path, ".codex/commands/lcs.rubric.md", "rubric")
+        _assert_command_uses_explicit_stage(zip_path, ".codex/commands/lcs.audit.md", "audit")
+        _assert_command_uses_explicit_stage(zip_path, ".codex/commands/lcs.author.md", "author")
     finally:
         _cleanup_release_dir()

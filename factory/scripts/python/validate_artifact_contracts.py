@@ -30,6 +30,7 @@ REQUIRED_CONTRACTS = (
     ContractPair("template-selection.json", "template-selection.schema.json"),
     ContractPair("exercise-design.json", "exercise-design.schema.json"),
     ContractPair("sequence.json", "sequence.schema.json"),
+    ContractPair("rubric-gates.json", "rubric-gates.schema.json"),
     ContractPair("audit-report.json", "audit-report.schema.json"),
     ContractPair("outputs/manifest.json", "manifest.schema.json"),
 )

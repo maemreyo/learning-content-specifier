@@ -1,5 +1,6 @@
 ---
 description: Create dependency-ordered production sequence for learning content authoring.
+argument-hint: "[sequence focus, pacing constraints, or unit selector]"
 handoffs:
   - label: Generate Rubric
     agent: lcs.rubric
@@ -14,8 +15,8 @@ handoffs:
     prompt: Author outputs from approved sequence.
     send: true
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --require-design-contracts --stage sequence
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -RequireDesignContracts -Stage sequence
 ---
 
 ## Intent
@@ -34,7 +35,8 @@ $ARGUMENTS
 - YOU MUST include explicit output file paths under `outputs/`.
 - YOU MUST include gate tasks before `/lcs.author` execution.
 - YOU MUST treat missing design contracts (`assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`) as blocking.
-- YOU MUST update both `sequence.md` and `sequence.json`.
+- YOU MUST treat `sequence.json` as canonical output.
+- YOU MUST keep `sequence.md` optional sidecar only (explicit mode).
 - YOU MUST propagate `template_id` metadata from `template-selection.json` into task metadata when task maps to an exercise type.
 - YOU MUST map exercise authoring tasks from `exercise-design.json` (one task per `exercise_id` unless explicitly merged).
 - YOU MUST NOT emit ambiguous task descriptions.
@@ -42,9 +44,9 @@ $ARGUMENTS
 ## Execution Steps
 
 1. Run `{SCRIPT}` and parse `UNIT_DIR`, `AVAILABLE_DOCS`.
-2. Load `design.md`, `brief.md`, `assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`, and optional docs.
-3. Generate `sequence.md` using `.lcs/templates/sequence-template.md`.
-4. Generate/update `sequence.json` with deterministic task objects (`task_id`, dependencies, LO refs, target paths).
+2. Load canonical JSON inputs (`brief.json`, `design.json`, `assessment-blueprint.json`, `template-selection.json`, `exercise-design.json`).
+3. Generate/update `sequence.json` with deterministic task objects (`task_id`, dependencies, LO refs, target paths).
+4. If sidecar mode is enabled, optionally render `sequence.md`.
 5. Ensure dependencies and parallel flags are explicit.
 6. Report task count, LO coverage, and gate checkpoints.
 
@@ -53,7 +55,7 @@ $ARGUMENTS
 - Gate G-SQ-001: every required LO has at least one authoring task.
 - Gate G-SQ-002: rubric/audit tasks are present and blocking.
 - Gate G-SQ-003: each task has deterministic file target.
-- Gate G-SQ-004: `sequence.json` is consistent with `sequence.md` task IDs.
+- Gate G-SQ-004: `sequence.json` is internally consistent and deterministic.
 - Gate G-SQ-005: LO-to-template coverage in sequence is consistent with `assessment-blueprint.json`.
 - Gate G-SQ-006: every exercise in `exercise-design.json` has at least one sequence task targeting its `target_path`.
 
@@ -65,7 +67,8 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Artifacts: `programs/<program_id>/units/<unit_id>/sequence.md`, `programs/<program_id>/units/<unit_id>/sequence.json`.
+- Canonical artifact: `programs/<program_id>/units/<unit_id>/sequence.json`.
+- Optional sidecar: `programs/<program_id>/units/<unit_id>/sequence.md`.
 - Summary: task total, LO coverage summary, gating tasks.
 - Summary MUST include a `Follow-up Tasks` section with exact prompts:
   - `/lcs.rubric ...`

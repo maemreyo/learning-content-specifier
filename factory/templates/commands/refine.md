@@ -1,12 +1,13 @@
 ---
 description: Reduce ambiguity in the active learning unit brief and write clarifications back to the brief.
+argument-hint: "[clarification focus or unresolved assumptions]"
 handoffs:
   - label: Build Learning Design
     agent: lcs.design
     prompt: Build design artifacts from the refined brief.
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --paths-only
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --paths-only --stage refine
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly -Stage refine
 gate_scripts:
   sh: factory/scripts/bash/manage-program-context.sh --json workflow-status
   ps: factory/scripts/powershell/manage-program-context.ps1 --json workflow-status
@@ -25,8 +26,8 @@ $ARGUMENTS
 ## Mandatory Rules (YOU MUST / MUST NOT)
 
 - YOU MUST ask only questions that materially affect design or gate outcomes.
-- YOU MUST persist accepted clarifications back into `brief.md` immediately.
-- YOU MUST keep `brief.json` consistent with accepted clarifications.
+- YOU MUST persist accepted clarifications into canonical `brief.json`.
+- YOU MUST keep `brief.md` optional sidecar only and never canonical.
 - YOU MUST append clarification history with date.
 - YOU MUST maintain `brief.json.refinement` with:
   - `decisions` (accepted clarifications),
@@ -59,8 +60,8 @@ $ARGUMENTS
 
 ## Output Contract
 
-- Updated `programs/<program_id>/units/<unit_id>/brief.md`.
-- Updated `programs/<program_id>/units/<unit_id>/brief.json`.
+- Updated canonical `programs/<program_id>/units/<unit_id>/brief.json`.
+- Optional sidecar update: `programs/<program_id>/units/<unit_id>/brief.md`.
 - Report includes: clarification count, sections touched, unresolved blockers.
 - Report MUST include `Follow-up Tasks`:
   - next command for current unit,

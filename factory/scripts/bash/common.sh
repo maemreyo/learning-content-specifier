@@ -214,7 +214,7 @@ get_unit_paths() {
     local exercise_design_file="" exercise_design_json_file=""
     local assessment_map_file="" delivery_guide_file="" design_decisions_file=""
     local assessment_blueprint_file="" template_selection_file="" trend_topics_file=""
-    local audit_report_file="" audit_report_json_file=""
+    local audit_report_file="" audit_report_json_file="" rubric_gates_file=""
     local rubrics_dir="" outputs_dir="" manifest_file=""
 
     if [[ -n "$program_dir" ]]; then
@@ -244,6 +244,7 @@ get_unit_paths() {
         trend_topics_file="$unit_dir/trend-topics.json"
         audit_report_file="$unit_dir/audit-report.md"
         audit_report_json_file="$unit_dir/audit-report.json"
+        rubric_gates_file="$unit_dir/rubric-gates.json"
         rubrics_dir="$unit_dir/rubrics"
         outputs_dir="$unit_dir/outputs"
         manifest_file="$unit_dir/outputs/manifest.json"
@@ -284,6 +285,7 @@ TEMPLATE_SELECTION_FILE='$template_selection_file'
 TREND_TOPICS_FILE='$trend_topics_file'
 AUDIT_REPORT_FILE='$audit_report_file'
 AUDIT_REPORT_JSON_FILE='$audit_report_json_file'
+RUBRIC_GATES_FILE='$rubric_gates_file'
 RUBRICS_DIR='$rubrics_dir'
 OUTPUTS_DIR='$outputs_dir'
 MANIFEST_FILE='$manifest_file'

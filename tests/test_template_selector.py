@@ -22,9 +22,10 @@ def _run_setup_design(env: dict[str, str]) -> None:
             "-File",
             str(ROOT / "factory/scripts/powershell/setup-design.ps1"),
             "-Json",
+            "-ForceReset",
         ]
     else:
-        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json", "--force-reset"]
     subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 
 
@@ -65,9 +66,39 @@ def _prepare_unit(unit_id: str) -> Path:
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
     (unit_dir / "outputs").mkdir(parents=True, exist_ok=True)
-    (unit_dir / "brief.md").write_text("# brief\n", encoding="utf-8")
-    (unit_dir / "design.md").write_text("# design\n", encoding="utf-8")
-    (unit_dir / "sequence.md").write_text("# sequence\n", encoding="utf-8")
+    (unit_dir / "brief.json").write_text(
+        json.dumps(
+            {
+                "contract_version": "1.0.0",
+                "unit_id": unit_id,
+                "title": unit_id,
+                "audience": {
+                    "primary": "general learners",
+                    "entry_level": "beginner",
+                    "delivery_context": "self-paced",
+                },
+                "duration_minutes": 60,
+                "learning_outcomes": [
+                    {
+                        "lo_id": "LO1",
+                        "priority": "P1",
+                        "statement": "Learner will be able to demonstrate LO1 with measurable evidence.",
+                        "evidence": "Assessment evidence mapped to LO1 is available in artifacts.",
+                        "acceptance_criteria": [
+                            "Given the learning context, When the learner attempts LO1 practice, Then observable evidence meets the completion criteria."
+                        ],
+                    }
+                ],
+                "scope": {"in_scope": [], "out_of_scope": []},
+                "proficiency_targets": [],
+                "assumptions": [],
+                "risks": [],
+                "refinement": {"open_questions": 0, "decisions": []},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     return unit_dir
 
 

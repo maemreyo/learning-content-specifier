@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -27,9 +28,10 @@ def _run_setup_design(env: dict[str, str]) -> None:
             "-File",
             str(ROOT / "factory/scripts/powershell/setup-design.ps1"),
             "-Json",
+            "-ForceReset",
         ]
     else:
-        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json"]
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/setup-design.sh"), "--json", "--force-reset"]
     subprocess.run(cmd, cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 
 
@@ -56,21 +58,71 @@ def _run_contract_validator(unit_dir: Path, env: dict[str, str], check: bool = T
     return subprocess.run(cmd, cwd=ROOT, env=env, check=check, capture_output=True, text=True)
 
 
+def _run_stage_loader(stage: str, env: dict[str, str], check: bool = True) -> subprocess.CompletedProcess:
+    cmd = [
+        sys.executable,
+        str(ROOT / "factory/scripts/python/load_stage_context.py"),
+        "--repo-root",
+        str(ROOT),
+        "--stage",
+        stage,
+        "--json",
+    ]
+    return subprocess.run(cmd, cwd=ROOT, env=env, check=check, capture_output=True, text=True)
+
+
+def _run_workflow_prereqs(args: list[str], env: dict[str, str], check: bool = True) -> subprocess.CompletedProcess:
+    if os.name == "nt":
+        cmd = [
+            "pwsh",
+            "-NoLogo",
+            "-NoProfile",
+            "-File",
+            str(ROOT / "factory/scripts/powershell/check-workflow-prereqs.ps1"),
+            *args,
+        ]
+    else:
+        cmd = ["bash", str(ROOT / "factory/scripts/bash/check-workflow-prereqs.sh"), *args]
+    return subprocess.run(cmd, cwd=ROOT, env=env, check=check, capture_output=True, text=True)
+
+
 def _prepare_unit(unit_id: str) -> Path:
     unit_dir = ROOT / "programs" / PROGRAM_ID / "units" / unit_id
     if unit_dir.exists():
         shutil.rmtree(unit_dir)
     (unit_dir / "rubrics").mkdir(parents=True, exist_ok=True)
     (unit_dir / "outputs").mkdir(parents=True, exist_ok=True)
-    (unit_dir / "brief.md").write_text("# brief\n", encoding="utf-8")
-    (unit_dir / "design.md").write_text("# design\n", encoding="utf-8")
-    (unit_dir / "sequence.md").write_text("# sequence\n", encoding="utf-8")
-    (unit_dir / "audit-report.md").write_text(
-        "# Audit Report\nGate Decision: PASS\nOpen Critical: 0\nOpen High: 0\n## Findings\n",
-        encoding="utf-8",
-    )
-    (unit_dir / "rubrics" / "default.md").write_text(
-        "- [x] Gate ID: RB001 | Group: alignment | Status: PASS | Severity: LOW | Evidence: design.md\n",
+    (unit_dir / "brief.json").write_text(
+        json.dumps(
+            {
+                "contract_version": "1.0.0",
+                "unit_id": unit_id,
+                "title": unit_id,
+                "audience": {
+                    "primary": "general learners",
+                    "entry_level": "beginner",
+                    "delivery_context": "self-paced",
+                },
+                "duration_minutes": 60,
+                "learning_outcomes": [
+                    {
+                        "lo_id": "LO1",
+                        "priority": "P1",
+                        "statement": "Learner will be able to demonstrate LO1 with measurable evidence.",
+                        "evidence": "Assessment evidence mapped to LO1 is available in artifacts.",
+                        "acceptance_criteria": [
+                            "Given the learning context, When the learner attempts LO1 practice, Then observable evidence meets the completion criteria."
+                        ],
+                    }
+                ],
+                "scope": {"in_scope": [], "out_of_scope": []},
+                "proficiency_targets": [],
+                "assumptions": [],
+                "risks": [],
+                "refinement": {"open_questions": 0, "decisions": []},
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
     return unit_dir
@@ -88,7 +140,7 @@ def test_artifact_contract_validator_passes_for_generated_contracts():
         proc = _run_contract_validator(unit_dir, env)
         payload = json.loads(proc.stdout.strip())
         assert payload["STATUS"] == "PASS"
-        assert len(payload["VALIDATED"]) >= 8
+        assert len(payload["VALIDATED"]) >= 9
         assert payload["RESPONSE_VERSION"] == "1.0.0"
         assert payload["PIPELINE"]["mode"] == "collect-all-per-phase"
         assert isinstance(payload["STEPS"], list) and len(payload["STEPS"]) >= 1
@@ -96,6 +148,81 @@ def test_artifact_contract_validator_passes_for_generated_contracts():
         if _template_pack_available():
             template_rule_step = next(step for step in payload["STEPS"] if step["step_id"] == "TMP_RULE_001")
             assert any(str(output).endswith("validate_template_pack.py") for output in template_rule_step["outputs"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_stage_loader_blocks_when_previous_step_json_is_missing():
+    unit_id = "996-stage-loader-block-missing-brief"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        (unit_dir / "brief.json").unlink(missing_ok=True)
+        proc = _run_stage_loader("design", env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert "unit:brief.json" in payload["MISSING_INPUTS"]
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_check_workflow_prereqs_paths_only_respects_explicit_stage_preflight():
+    unit_id = "996-stage-prereq-paths-only-block"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        (unit_dir / "brief.json").unlink(missing_ok=True)
+        proc = _run_workflow_prereqs(
+            ["--json", "--paths-only", "--stage", "refine"],
+            env,
+            check=False,
+        )
+        assert proc.returncode != 0
+        combined = f"{proc.stdout}\n{proc.stderr}"
+        assert "stage preflight BLOCK" in combined
+        assert "unit:brief.json" in combined
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_setup_design_generates_json_target_paths_for_exercises():
+    unit_id = "996-target-path-json"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        payload = json.loads((unit_dir / "exercise-design.json").read_text(encoding="utf-8"))
+        assert payload["exercises"]
+        assert all(item["target_path"].endswith(".json") for item in payload["exercises"])
+    finally:
+        shutil.rmtree(unit_dir, ignore_errors=True)
+
+
+def test_artifact_contract_validator_blocks_when_rubric_gates_json_missing():
+    unit_id = "996-artifact-contract-missing-rubric-gates"
+    unit_dir = _prepare_unit(unit_id)
+    env = os.environ.copy()
+    env["LCS_UNIT"] = unit_id
+    env["LCS_PROGRAM"] = PROGRAM_ID
+
+    try:
+        _run_setup_design(env)
+        (unit_dir / "rubric-gates.json").unlink(missing_ok=True)
+        proc = _run_contract_validator(unit_dir, env, check=False)
+        assert proc.returncode != 0
+        payload = json.loads(proc.stdout.strip())
+        assert payload["STATUS"] == "BLOCK"
+        assert any(str(item).endswith("rubric-gates.json") for item in payload["MISSING_FILES"])
     finally:
         shutil.rmtree(unit_dir, ignore_errors=True)
 

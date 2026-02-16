@@ -1,12 +1,13 @@
 ---
 description: Create or update the subject-level governance charter at .lcs/memory/charter.md.
+argument-hint: "[subject governance updates or policy deltas]"
 handoffs:
   - label: Update Active Program Charter
     agent: lcs.charter
     prompt: Update the currently active program charter using this governance context.
 scripts:
-  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check
-  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly -SkipBranchCheck
+  sh: factory/scripts/bash/check-workflow-prereqs.sh --json --paths-only --skip-branch-check --stage charter
+  ps: factory/scripts/powershell/check-workflow-prereqs.ps1 -Json -PathsOnly -SkipBranchCheck -Stage charter
 ---
 
 ## Intent

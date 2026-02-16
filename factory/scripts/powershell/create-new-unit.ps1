@@ -25,11 +25,41 @@ if (-not $UnitDescription -or $UnitDescription.Count -eq 0) {
 . "$PSScriptRoot/common.ps1"
 
 $unitDesc = ($UnitDescription -join ' ').Trim()
+$renderMdSidecar = @('1', 'true', 'yes', 'on') -contains (($env:LCS_RENDER_MD_SIDECAR ?? '0').ToLowerInvariant())
 $repoRoot = Get-RepoRoot
 $contextDir = Join-Path $repoRoot '.lcs/context'
 $programsRoot = Join-Path $repoRoot 'programs'
 New-Item -ItemType Directory -Path $contextDir -Force | Out-Null
 New-Item -ItemType Directory -Path $programsRoot -Force | Out-Null
+
+if ($unitDesc -and $unitDesc.TrimStart().StartsWith('{')) {
+    try {
+        $intentPayload = $unitDesc | ConvertFrom-Json
+        if ($intentPayload) {
+            if (-not $Program -and $intentPayload.program -is [string] -and $intentPayload.program.Trim()) {
+                $Program = [string]$intentPayload.program
+            }
+            if (-not $ShortName -and $intentPayload.short_name -is [string] -and $intentPayload.short_name.Trim()) {
+                $ShortName = [string]$intentPayload.short_name
+            }
+            if ($Number -eq 0 -and $intentPayload.number) {
+                $digits = (($intentPayload.number | Out-String) -replace '[^0-9]', '').Trim()
+                if ($digits -match '^\d+$') {
+                    $Number = [int]$digits
+                }
+            }
+            if ($intentPayload.description -is [string] -and $intentPayload.description.Trim()) {
+                $unitDesc = [string]$intentPayload.description
+            } elseif ($intentPayload.title -is [string] -and $intentPayload.title.Trim()) {
+                $unitDesc = [string]$intentPayload.title
+            } elseif ($intentPayload.intent -is [string] -and $intentPayload.intent.Trim()) {
+                $unitDesc = [string]$intentPayload.intent
+            }
+        }
+    } catch {
+        # Fall back to raw unit description text.
+    }
+}
 
 function Convert-ToSlug([string]$Name) {
     return ($Name.ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+', '' -replace '-+$', '' -replace '-{2,}', '-')
@@ -114,6 +144,29 @@ if (-not $programId) {
     exit 1
 }
 
+$loaderArgs = @("$PSScriptRoot/load-stage-context.ps1", '-Stage', 'define', '-Program', $programId, '-Json')
+if ($unitDesc) {
+    $loaderArgs += @('-Intent', $unitDesc)
+}
+$loaderRaw = & $loaderArgs[0] $loaderArgs[1..($loaderArgs.Count - 1)]
+if (-not $loaderRaw) {
+    throw 'define preflight failed to execute'
+}
+try {
+    $loaderObj = $loaderRaw | ConvertFrom-Json
+} catch {
+    throw 'Invalid define preflight payload'
+}
+if ([string]$loaderObj.STATUS -ne 'PASS') {
+    $missing = @($loaderObj.MISSING_INPUTS)
+    $blockers = @($loaderObj.BLOCKERS)
+    $parts = @()
+    if ($missing.Count -gt 0) { $parts += ('missing=' + ($missing -join ',')) }
+    if ($blockers.Count -gt 0) { $parts += ('blockers=' + ($blockers -join '; ')) }
+    $summary = if ($parts.Count -gt 0) { $parts -join ' | ' } else { 'unknown preflight blocker' }
+    throw "define preflight BLOCK ($summary)"
+}
+
 $programDir = Join-Path $programsRoot $programId
 if (-not (Test-Path $programDir -PathType Container)) {
     Write-Error "Program directory does not exist: $programDir`nRun /lcs.charter first to scaffold the program."
@@ -153,10 +206,12 @@ $contractVersion = Get-ContractVersion
 $template = Join-Path $repoRoot '.lcs/templates/brief-template.md'
 $briefFile = Join-Path $unitDir 'brief.md'
 $briefJsonFile = Join-Path $unitDir 'brief.json'
-if (Test-Path $template -PathType Leaf) {
-    Copy-Item -Path $template -Destination $briefFile -Force
-} else {
-    New-Item -ItemType File -Path $briefFile -Force | Out-Null
+if ($renderMdSidecar) {
+    if (Test-Path $template -PathType Leaf) {
+        Copy-Item -Path $template -Destination $briefFile -Force
+    } else {
+        New-Item -ItemType File -Path $briefFile -Force | Out-Null
+    }
 }
 
 if (-not (Test-Path $briefJsonFile -PathType Leaf)) {
@@ -213,6 +268,7 @@ if ($Json) {
         PROGRAM_DIR = $programDir
         UNIT_NAME = $unitName
         UNIT_DIR = $unitDir
+        BRIEF_JSON_FILE = $briefJsonFile
         BRIEF_FILE = $briefFile
         UNIT_NUM = $unitNum
         SESSION_START = $sessionStart
@@ -226,6 +282,7 @@ if ($Json) {
     Write-Output "PROGRAM_DIR: $programDir"
     Write-Output "UNIT_NAME: $unitName"
     Write-Output "UNIT_DIR: $unitDir"
+    Write-Output "BRIEF_JSON_FILE: $briefJsonFile"
     Write-Output "BRIEF_FILE: $briefFile"
     Write-Output "UNIT_NUM: $unitNum"
     Write-Output "SESSION_START: $sessionStart"

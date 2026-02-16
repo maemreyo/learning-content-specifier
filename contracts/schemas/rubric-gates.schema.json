@@ -7,7 +7,6 @@
     "contract_version",
     "unit_id",
     "generated_at",
-    "rubric_file",
     "gates"
   ],
   "properties": {

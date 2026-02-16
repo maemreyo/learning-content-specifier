@@ -1,5 +1,6 @@
 ---
 description: Manage active learning program and unit context before running workflow commands.
+argument-hint: "[action plus options, e.g. list/current/recommend/activate/workflow-status]"
 scripts:
   sh: factory/scripts/bash/manage-program-context.sh --json {ARGS}
   ps: factory/scripts/powershell/manage-program-context.ps1 --json {ARGS}

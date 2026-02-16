@@ -16,18 +16,33 @@ if ($Help) {
 
 . "$PSScriptRoot/common.ps1"
 $repoRoot = Get-RepoRoot
-$manageTool = Resolve-PythonTool -ToolName 'manage_program_context.py'
 $pythonBin = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } else { 'python3' }
+$renderMdSidecar = @('1', 'true', 'yes', 'on') -contains (($env:LCS_RENDER_MD_SIDECAR ?? '0').ToLowerInvariant())
 
+$loaderArgs = @("$PSScriptRoot/load-stage-context.ps1", '-Stage', 'design', '-Json')
 if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
     $intent = ($RemainingArgs -join ' ').Trim()
     if ($intent) {
-        try {
-            & $pythonBin $manageTool --repo-root $repoRoot --json resolve-unit --for-stage design --intent $intent --activate-resolved | Out-Null
-        } catch {
-            # Non-blocking preflight: fallback to current context if intent routing fails.
-        }
+        $loaderArgs += @('-Intent', $intent)
     }
+}
+$loaderRaw = & $loaderArgs[0] $loaderArgs[1..($loaderArgs.Count - 1)]
+if (-not $loaderRaw) {
+    throw 'design preflight failed to execute'
+}
+try {
+    $loaderObj = $loaderRaw | ConvertFrom-Json
+} catch {
+    throw 'Invalid design preflight payload'
+}
+if ([string]$loaderObj.STATUS -ne 'PASS') {
+    $missing = @($loaderObj.MISSING_INPUTS)
+    $blockers = @($loaderObj.BLOCKERS)
+    $parts = @()
+    if ($missing.Count -gt 0) { $parts += ('missing=' + ($missing -join ',')) }
+    if ($blockers.Count -gt 0) { $parts += ('blockers=' + ($blockers -join '; ')) }
+    $summary = if ($parts.Count -gt 0) { $parts -join ' | ' } else { 'unknown preflight blockers' }
+    throw "design preflight BLOCK ($summary)"
 }
 
 $paths = Get-UnitPathsEnv
@@ -41,36 +56,39 @@ New-Item -ItemType Directory -Path $paths.UNIT_DIR -Force | Out-Null
 New-Item -ItemType Directory -Path $paths.RUBRICS_DIR -Force | Out-Null
 New-Item -ItemType Directory -Path $paths.OUTPUTS_DIR -Force | Out-Null
 
-$template = Join-Path $paths.REPO_ROOT '.lcs/templates/design-template.md'
-if ($ForceReset -or -not (Test-Path $paths.DESIGN_FILE)) {
-    if (Test-Path $template) {
-        Copy-Item $template $paths.DESIGN_FILE -Force
-    } else {
-        New-Item -ItemType File -Path $paths.DESIGN_FILE -Force | Out-Null
-    }
-}
-
-foreach ($f in @($paths.CONTENT_MODEL_FILE, $paths.ASSESSMENT_MAP_FILE, $paths.DELIVERY_GUIDE_FILE)) {
-    if (-not (Test-Path $f)) { New-Item -ItemType File -Path $f -Force | Out-Null }
-}
-if (-not (Test-Path $paths.EXERCISE_DESIGN_FILE)) {
+if ($renderMdSidecar) {
+    $designTemplate = Join-Path $paths.REPO_ROOT '.lcs/templates/design-template.md'
     $exerciseTemplate = Join-Path $paths.REPO_ROOT '.lcs/templates/exercise-design-template.md'
-    if (Test-Path $exerciseTemplate -PathType Leaf) {
-        Copy-Item $exerciseTemplate $paths.EXERCISE_DESIGN_FILE -Force
-    } else {
-        New-Item -ItemType File -Path $paths.EXERCISE_DESIGN_FILE -Force | Out-Null
+    $briefTemplate = Join-Path $paths.REPO_ROOT '.lcs/templates/brief-template.md'
+
+    if (-not (Test-Path $paths.DESIGN_FILE -PathType Leaf)) {
+        if (Test-Path $designTemplate -PathType Leaf) {
+            Copy-Item -Path $designTemplate -Destination $paths.DESIGN_FILE -Force
+        } else {
+            New-Item -ItemType File -Path $paths.DESIGN_FILE -Force | Out-Null
+        }
+    }
+    foreach ($f in @($paths.CONTENT_MODEL_FILE, $paths.ASSESSMENT_MAP_FILE, $paths.DELIVERY_GUIDE_FILE, $paths.SEQUENCE_FILE, $paths.AUDIT_REPORT_FILE)) {
+        if (-not (Test-Path $f -PathType Leaf)) { New-Item -ItemType File -Path $f -Force | Out-Null }
+    }
+    if (-not (Test-Path $paths.EXERCISE_DESIGN_FILE -PathType Leaf)) {
+        if (Test-Path $exerciseTemplate -PathType Leaf) {
+            Copy-Item -Path $exerciseTemplate -Destination $paths.EXERCISE_DESIGN_FILE -Force
+        } else {
+            New-Item -ItemType File -Path $paths.EXERCISE_DESIGN_FILE -Force | Out-Null
+        }
+    }
+    if (-not (Test-Path $paths.BRIEF_FILE -PathType Leaf)) {
+        if (Test-Path $briefTemplate -PathType Leaf) {
+            Copy-Item -Path $briefTemplate -Destination $paths.BRIEF_FILE -Force
+        } else {
+            New-Item -ItemType File -Path $paths.BRIEF_FILE -Force | Out-Null
+        }
     }
 }
-if (-not (Test-Path $paths.SEQUENCE_FILE)) { New-Item -ItemType File -Path $paths.SEQUENCE_FILE -Force | Out-Null }
-if (-not (Test-Path $paths.AUDIT_REPORT_FILE)) { New-Item -ItemType File -Path $paths.AUDIT_REPORT_FILE -Force | Out-Null }
 
 $unitId = Split-Path $paths.UNIT_DIR -Leaf
 $nowUtc = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-
-if (-not (Test-Path $paths.BRIEF_FILE -PathType Leaf)) {
-    New-Item -ItemType File -Path $paths.BRIEF_FILE -Force | Out-Null
-}
-$briefChecksum = (Get-FileHash -Path $paths.BRIEF_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
 
 if ($ForceReset -or -not (Test-Path $paths.BRIEF_JSON_FILE)) {
     @"
@@ -177,16 +195,16 @@ if ($ForceReset -or -not (Test-Path $paths.CONTENT_MODEL_JSON_FILE)) {
   "unit_id": "$unitId",
   "course": {
     "id": "course-01",
-    "title": "Populate from design.md"
+    "title": "Populate from design.json"
   },
   "modules": [
     {
       "id": "module-01",
-      "title": "Populate from design.md",
+      "title": "Populate from design.json",
       "lessons": [
         {
           "id": "lesson-01",
-          "title": "Populate from design.md",
+          "title": "Populate from design.json",
           "lo_refs": ["LO1"],
           "estimated_minutes": 30
         }
@@ -222,7 +240,7 @@ if ($ForceReset -or -not (Test-Path $paths.EXERCISE_DESIGN_JSON_FILE)) {
       "lo_id": "LO1",
       "template_id": "mcq.v1",
       "day": 1,
-      "target_path": "outputs/module-01/exercises/ex001.md",
+      "target_path": "outputs/module-01/exercises/ex001.json",
       "status": "TODO",
       "template_schema_ref": "schemas/mcq.v1.schema.json",
       "template_rules_ref": "rules/mcq.v1.rules.md",
@@ -453,10 +471,31 @@ if ($ForceReset -or -not (Test-Path $paths.AUDIT_REPORT_JSON_FILE)) {
 "@ | Set-Content -Path $paths.AUDIT_REPORT_JSON_FILE -Encoding utf8
 }
 
+if ($ForceReset -or -not (Test-Path $paths.RUBRIC_GATES_FILE)) {
+    @"
+{
+  "contract_version": "$contractVersion",
+  "unit_id": "$unitId",
+  "generated_at": "$nowUtc",
+  "gates": [
+    {
+      "gate_id": "RB001",
+      "group": "alignment",
+      "status": "TODO",
+      "severity": "HIGH",
+      "evidence": "pending",
+      "checked": false
+    }
+  ]
+}
+"@ | Set-Content -Path $paths.RUBRIC_GATES_FILE -Encoding utf8
+}
+
 $assessmentBlueprintChecksum = (Get-FileHash -Path $paths.ASSESSMENT_BLUEPRINT_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
 $templateSelectionChecksum = (Get-FileHash -Path $paths.TEMPLATE_SELECTION_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
 $exerciseDesignJsonChecksum = (Get-FileHash -Path $paths.EXERCISE_DESIGN_JSON_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
-$exerciseDesignMdChecksum = (Get-FileHash -Path $paths.EXERCISE_DESIGN_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+$briefJsonChecksum = (Get-FileHash -Path $paths.BRIEF_JSON_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
+$rubricGatesChecksum = (Get-FileHash -Path $paths.RUBRIC_GATES_FILE -Algorithm SHA256).Hash.ToLowerInvariant()
 
 if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
     @"
@@ -475,11 +514,11 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
   ],
   "artifacts": [
     {
-      "id": "brief-md",
+      "id": "brief-json",
       "type": "brief",
-      "path": "brief.md",
-      "media_type": "text/markdown",
-      "checksum": "sha256:$briefChecksum"
+      "path": "brief.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$briefJsonChecksum"
     },
     {
       "id": "assessment-blueprint-json",
@@ -503,11 +542,11 @@ if ($ForceReset -or -not (Test-Path $paths.MANIFEST_FILE)) {
       "checksum": "sha256:$exerciseDesignJsonChecksum"
     },
     {
-      "id": "exercise-design-md",
-      "type": "exercise-design",
-      "path": "exercise-design.md",
-      "media_type": "text/markdown",
-      "checksum": "sha256:$exerciseDesignMdChecksum"
+      "id": "rubric-gates-json",
+      "type": "rubric-gates",
+      "path": "rubric-gates.json",
+      "media_type": "application/json",
+      "checksum": "sha256:$rubricGatesChecksum"
     }
   ],
   "gate_status": {
@@ -565,6 +604,8 @@ if ($Json) {
     [PSCustomObject]@{
         PROGRAM_ID = $paths.PROGRAM_ID
         UNIT_ID = $paths.CURRENT_UNIT
+        BRIEF_JSON_FILE = $paths.BRIEF_JSON_FILE
+        DESIGN_JSON_FILE = $paths.DESIGN_JSON_FILE
         BRIEF_FILE = $paths.BRIEF_FILE
         DESIGN_FILE = $paths.DESIGN_FILE
         UNIT_DIR = $paths.UNIT_DIR
@@ -574,6 +615,8 @@ if ($Json) {
 } else {
     Write-Output "PROGRAM_ID: $($paths.PROGRAM_ID)"
     Write-Output "UNIT_ID: $($paths.CURRENT_UNIT)"
+    Write-Output "BRIEF_JSON_FILE: $($paths.BRIEF_JSON_FILE)"
+    Write-Output "DESIGN_JSON_FILE: $($paths.DESIGN_JSON_FILE)"
     Write-Output "BRIEF_FILE: $($paths.BRIEF_FILE)"
     Write-Output "DESIGN_FILE: $($paths.DESIGN_FILE)"
     Write-Output "UNIT_DIR: $($paths.UNIT_DIR)"

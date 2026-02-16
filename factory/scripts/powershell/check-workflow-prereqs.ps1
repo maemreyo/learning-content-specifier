@@ -7,12 +7,14 @@ param(
     [switch]$IncludeSequence,
     [switch]$PathsOnly,
     [switch]$SkipBranchCheck,
+    [string]$Stage,
+    [string]$Intent,
     [switch]$Help
 )
 $ErrorActionPreference = 'Stop'
 
 if ($Help) {
-    Write-Output 'Usage: ./check-workflow-prereqs.ps1 [-Json] [-RequireSequence] [-RequireDesignContracts] [-IncludeSequence] [-PathsOnly] [-SkipBranchCheck]'
+    Write-Output 'Usage: ./check-workflow-prereqs.ps1 [-Json] [-RequireSequence] [-RequireDesignContracts] [-IncludeSequence] [-PathsOnly] [-SkipBranchCheck] [-Stage <stage>] [-Intent <text>]'
     exit 0
 }
 
@@ -27,7 +29,63 @@ if (-not $SkipBranchCheck) {
     if (-not (Test-UnitBranch -Branch $paths.CURRENT_UNIT -HasGit $paths.HAS_GIT)) { exit 1 }
 }
 
+$stageExplicit = $PSBoundParameters.ContainsKey('Stage') -and -not [string]::IsNullOrWhiteSpace($Stage)
+if (-not $Stage) {
+    if ($RequireDesignContracts -and $RequireSequence) {
+        $Stage = 'author'
+    } elseif ($RequireDesignContracts) {
+        $Stage = 'sequence'
+    } elseif ($RequireSequence) {
+        $Stage = 'issueize'
+    } else {
+        $Stage = 'refine'
+    }
+}
+
+function Invoke-StagePreflight {
+    param(
+        [Parameter(Mandatory = $true)][string]$RequestedStage
+    )
+
+    $loader = Join-Path $PSScriptRoot 'load-stage-context.ps1'
+    $loaderArgs = @('-Stage', $RequestedStage, '-Json')
+    if ($Intent) {
+        $loaderArgs += @('-Intent', $Intent)
+    }
+
+    $loaderOutput = & $loader @loaderArgs
+    if (-not $loaderOutput) {
+        Write-Output 'ERROR: load-stage-context failed to execute'
+        return $false
+    }
+
+    try {
+        $loaderPayload = $loaderOutput | ConvertFrom-Json
+    } catch {
+        Write-Output 'ERROR: Invalid load-stage-context output'
+        return $false
+    }
+
+    if ($loaderPayload.STATUS -ne 'PASS') {
+        $missing = @($loaderPayload.MISSING_INPUTS)
+        $blockers = @($loaderPayload.BLOCKERS)
+        $parts = @()
+        if ($missing.Count -gt 0) { $parts += ('missing=' + ($missing -join ',')) }
+        if ($blockers.Count -gt 0) { $parts += ('blockers=' + ($blockers -join '; ')) }
+        $summary = if ($parts.Count -gt 0) { $parts -join ' | ' } else { 'Unknown preflight blockers' }
+        Write-Output "ERROR: stage preflight BLOCK ($summary)"
+        return $false
+    }
+
+    return $true
+}
+
 if ($PathsOnly) {
+    # Maintain legacy paths-only behavior unless caller explicitly requests stage preflight.
+    if ($stageExplicit) {
+        if (-not (Invoke-StagePreflight -RequestedStage $Stage)) { exit 1 }
+    }
+
     if ($Json) {
         [PSCustomObject]@{
             UNIT_REPO_ROOT = $paths.REPO_ROOT
@@ -50,6 +108,7 @@ if ($PathsOnly) {
             UNIT_SEQUENCE_JSON_FILE = $paths.SEQUENCE_JSON_FILE
             UNIT_AUDIT_REPORT_FILE = $paths.AUDIT_REPORT_FILE
             UNIT_AUDIT_REPORT_JSON_FILE = $paths.AUDIT_REPORT_JSON_FILE
+            UNIT_RUBRIC_GATES_FILE = $paths.RUBRIC_GATES_FILE
             UNIT_MANIFEST_FILE = $paths.MANIFEST_FILE
             UNIT_CHARTER_FILE = $paths.PROGRAM_CHARTER_FILE
             SUBJECT_CHARTER_FILE = $paths.SUBJECT_CHARTER_FILE
@@ -75,6 +134,7 @@ if ($PathsOnly) {
         Write-Output "UNIT_SEQUENCE_JSON_FILE: $($paths.SEQUENCE_JSON_FILE)"
         Write-Output "UNIT_AUDIT_REPORT_FILE: $($paths.AUDIT_REPORT_FILE)"
         Write-Output "UNIT_AUDIT_REPORT_JSON_FILE: $($paths.AUDIT_REPORT_JSON_FILE)"
+        Write-Output "UNIT_RUBRIC_GATES_FILE: $($paths.RUBRIC_GATES_FILE)"
         Write-Output "UNIT_MANIFEST_FILE: $($paths.MANIFEST_FILE)"
         Write-Output "UNIT_CHARTER_FILE: $($paths.PROGRAM_CHARTER_FILE)"
         Write-Output "SUBJECT_CHARTER_FILE: $($paths.SUBJECT_CHARTER_FILE)"
@@ -82,52 +142,29 @@ if ($PathsOnly) {
     exit 0
 }
 
-if (-not (Test-Path $paths.UNIT_DIR -PathType Container)) {
-    Write-Output "ERROR: Unit directory not found: $($paths.UNIT_DIR)"
-    exit 1
-}
+if (-not (Invoke-StagePreflight -RequestedStage $Stage)) { exit 1 }
 
-if (-not (Test-Path $paths.DESIGN_FILE -PathType Leaf)) {
-    Write-Output "ERROR: design.md not found in $($paths.UNIT_DIR)"
-    Write-Output 'Run /lcs.design first.'
-    exit 1
-}
-
-if ($RequireSequence -and -not (Test-Path $paths.SEQUENCE_FILE -PathType Leaf)) {
-    Write-Output "ERROR: sequence.md not found in $($paths.UNIT_DIR)"
-    Write-Output 'Run /lcs.sequence first.'
-    exit 1
-}
-
-if ($RequireDesignContracts) {
-    $missingContracts = @()
-    if (-not (Test-Path $paths.ASSESSMENT_BLUEPRINT_FILE -PathType Leaf)) { $missingContracts += 'assessment-blueprint.json' }
-    if (-not (Test-Path $paths.TEMPLATE_SELECTION_FILE -PathType Leaf)) { $missingContracts += 'template-selection.json' }
-    if (-not (Test-Path $paths.EXERCISE_DESIGN_JSON_FILE -PathType Leaf)) { $missingContracts += 'exercise-design.json' }
-
-    if ($missingContracts.Count -gt 0) {
-        Write-Output "ERROR: missing required design contract artifacts in $($paths.UNIT_DIR): $($missingContracts -join ', ')"
-        Write-Output 'Run /lcs.design first and resolve design contract blockers.'
-        exit 1
-    }
-}
-
-$docs = @()
-if (Test-Path $paths.RESEARCH_FILE) { $docs += 'research.md' }
-if (Test-Path $paths.CONTENT_MODEL_FILE) { $docs += 'content-model.md' }
-if (Test-Path $paths.EXERCISE_DESIGN_FILE) { $docs += 'exercise-design.md' }
-if (Test-Path $paths.ASSESSMENT_MAP_FILE) { $docs += 'assessment-map.md' }
-if (Test-Path $paths.DELIVERY_GUIDE_FILE) { $docs += 'delivery-guide.md' }
-if ($IncludeSequence -and (Test-Path $paths.SEQUENCE_FILE)) { $docs += 'sequence.md' }
+$availableDocs = @(
+    'brief.json',
+    'design.json',
+    'content-model.json',
+    'design-decisions.json',
+    'assessment-blueprint.json',
+    'template-selection.json',
+    'exercise-design.json',
+    'sequence.json',
+    'rubric-gates.json',
+    'audit-report.json',
+    'outputs/manifest.json'
+) | Where-Object { Test-Path (Join-Path $paths.UNIT_DIR $_) -PathType Leaf }
 
 if ($Json) {
-    [PSCustomObject]@{ UNIT_DIR = $paths.UNIT_DIR; AVAILABLE_DOCS = $docs } | ConvertTo-Json -Compress
+    [PSCustomObject]@{ UNIT_DIR = $paths.UNIT_DIR; STAGE = $Stage; AVAILABLE_DOCS = $availableDocs } | ConvertTo-Json -Compress
 } else {
     Write-Output "UNIT_DIR:$($paths.UNIT_DIR)"
+    Write-Output "STAGE:$Stage"
     Write-Output 'AVAILABLE_DOCS:'
-    Test-FileExists -Path $paths.RESEARCH_FILE -Description 'research.md' | Out-Null
-    Test-FileExists -Path $paths.CONTENT_MODEL_FILE -Description 'content-model.md' | Out-Null
-    Test-FileExists -Path $paths.ASSESSMENT_MAP_FILE -Description 'assessment-map.md' | Out-Null
-    Test-FileExists -Path $paths.DELIVERY_GUIDE_FILE -Description 'delivery-guide.md' | Out-Null
-    if ($IncludeSequence) { Test-FileExists -Path $paths.SEQUENCE_FILE -Description 'sequence.md' | Out-Null }
+    foreach ($doc in $availableDocs) {
+        Write-Output "  ✓ $doc"
+    }
 }

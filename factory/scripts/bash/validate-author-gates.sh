@@ -30,7 +30,6 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
     PYTHON_BIN="python"
 fi
 
-audit_file="$AUDIT_REPORT_FILE"
 audit_json_file="$AUDIT_REPORT_JSON_FILE"
 rubric_unchecked=0
 rubric_blockers=0
@@ -86,7 +85,7 @@ PY
 fi
 
 rubric_parse_errors=0
-rubric_parse_output="$($PYTHON_BIN "$RUBRIC_VALIDATOR_TOOL" --rubrics-dir "$RUBRICS_DIR" --json 2>/dev/null || true)"
+rubric_parse_output="$($PYTHON_BIN "$RUBRIC_VALIDATOR_TOOL" --rubric-gates-file "$RUBRIC_GATES_FILE" --rubrics-dir "$RUBRICS_DIR" --json 2>/dev/null || true)"
 if [[ -z "$rubric_parse_output" ]]; then
     blockers+=("Rubric parser failed to execute")
 else
@@ -169,30 +168,8 @@ PY
     else
         blockers+=("Audit JSON invalid: $audit_value1")
     fi
-elif [[ -f "$audit_file" ]]; then
-    decision_line=$(grep -Eim1 '^Gate Decision:[[:space:]]*(PASS|BLOCK)$' "$audit_file" || true)
-    if [[ -n "$decision_line" ]]; then
-        audit_decision="${decision_line#*:}"
-        audit_decision="$(echo "$audit_decision" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
-    else
-        blockers+=("Audit report missing 'Gate Decision: PASS|BLOCK'")
-    fi
-
-    critical_line=$(grep -Eim1 '^Open Critical:[[:space:]]*[0-9]+' "$audit_file" || true)
-    if [[ -n "$critical_line" ]]; then
-        audit_open_critical="$(echo "$critical_line" | grep -Eo '[0-9]+' | head -1)"
-    else
-        blockers+=("Audit report missing 'Open Critical: <number>'")
-    fi
-
-    high_line=$(grep -Eim1 '^Open High:[[:space:]]*[0-9]+' "$audit_file" || true)
-    if [[ -n "$high_line" ]]; then
-        audit_open_high="$(echo "$high_line" | grep -Eo '[0-9]+' | head -1)"
-    else
-        blockers+=("Audit report missing 'Open High: <number>'")
-    fi
 else
-    blockers+=("Missing audit report: $audit_file")
+    blockers+=("Missing audit report JSON: $audit_json_file")
 fi
 
 if [[ "$audit_decision" != "PASS" ]]; then

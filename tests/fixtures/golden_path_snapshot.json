@@ -1,32 +1,32 @@
 {
   "available_docs": [
-    "assessment-map.md",
-    "content-model.md",
-    "delivery-guide.md",
-    "exercise-design.md",
-    "sequence.md"
+    "assessment-blueprint.json",
+    "audit-report.json",
+    "brief.json",
+    "content-model.json",
+    "design-decisions.json",
+    "design.json",
+    "exercise-design.json",
+    "outputs/manifest.json",
+    "rubric-gates.json",
+    "sequence.json",
+    "template-selection.json"
   ],
   "contract_status": "PASS",
   "gate_status": "PASS",
   "audit_decision": "PASS",
   "required_files": [
-    "assessment-map.md",
+    "assessment-blueprint.json",
     "audit-report.json",
-    "audit-report.md",
     "brief.json",
-    "brief.md",
     "content-model.json",
-    "content-model.md",
-    "delivery-guide.md",
     "design-decisions.json",
     "design.json",
-    "design.md",
     "exercise-design.json",
-    "exercise-design.md",
     "outputs/manifest.json",
-    "rubrics/default.md",
+    "rubric-gates.json",
     "sequence.json",
-    "sequence.md"
+    "template-selection.json"
   ],
   "manifest_summary": {
     "decision": "PASS",
@@ -34,10 +34,10 @@
     "open_high": 0,
     "artifact_ids": [
       "assessment-blueprint-json",
-      "brief-md",
-      "exercise-001-md",
+      "brief-json",
+      "exercise-001-json",
       "exercise-design-json",
-      "exercise-design-md",
+      "rubric-gates-json",
       "template-selection-json"
     ],
     "xapi_activity_count": 1,
